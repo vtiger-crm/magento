@@ -18,6 +18,19 @@
                     </restriction>
                 </complexContent>
             </complexType>
+            <complexType name="associativeMultiEntity">
+                <all>
+                    <element name="key" type="xsd:string" />
+                    <element name="value" type="typens:ArrayOfString" />
+                </all>
+            </complexType>
+            <complexType name="associativeMultiArray">
+                <complexContent>
+                    <restriction base="soapenc:Array">
+                        <attribute ref="soapenc:arrayType" wsdl:arrayType="typens:associativeMultiEntity[]" />
+                    </restriction>
+                </complexContent>
+            </complexType>
             <complexType name="filters">
                 <all>
                     <element name="filter" type="typens:associativeArray" minOccurs="0" />

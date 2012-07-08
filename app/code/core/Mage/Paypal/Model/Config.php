@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -105,6 +105,14 @@ class Mage_Paypal_Model_Config
     const AUTHORIZATION_AMOUNT_ZERO = 0;
     const AUTHORIZATION_AMOUNT_ONE = 1;
     const AUTHORIZATION_AMOUNT_FULL = 2;
+
+    /**
+     * Require Billing Address
+     * @var int
+     */
+    const REQUIRE_BILLING_ADDRESS_NO = 0;
+    const REQUIRE_BILLING_ADDRESS_ALL = 1;
+    const REQUIRE_BILLING_ADDRESS_VIRTUAL = 2;
 
     /**
      * Fraud management actions
@@ -475,60 +483,81 @@ class Mage_Paypal_Model_Config
     public function getCountryMethods($countryCode = null)
     {
         $countryMethods = array(
-            'US' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_DIRECT,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_WPP_PE_DIRECT,
-                self::METHOD_WPP_PE_EXPRESS,
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_PAYFLOWLINK,
-                self::METHOD_PAYFLOWADVANCED,
-            ),
-            'CA' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_DIRECT,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_PAYFLOWLINK,
-            ),
-            'GB' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_DIRECT,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_WPP_PE_DIRECT,
-                self::METHOD_WPP_PE_EXPRESS,
-                self::METHOD_HOSTEDPRO,
-            ),
-            'AU' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_HOSTEDPRO,
-            ),
-            'NZ' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_HOSTEDPRO,
-            ),
-            'DE' => array(
-                self::METHOD_WPS,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_HOSTEDPRO,
-            ),
             'other' => array(
                 self::METHOD_WPS,
                 self::METHOD_WPP_EXPRESS,
                 self::METHOD_BILLING_AGREEMENT,
+            ),
+            'US' => array(
+                self::METHOD_PAYFLOWADVANCED,
+                self::METHOD_WPP_DIRECT,
+                self::METHOD_WPS,
+                self::METHOD_PAYFLOWPRO,
+                self::METHOD_PAYFLOWLINK,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+                self::METHOD_WPP_PE_EXPRESS,
+            ),
+            'CA' => array(
+                self::METHOD_WPP_DIRECT,
+                self::METHOD_WPS,
+                self::METHOD_PAYFLOWPRO,
+                self::METHOD_PAYFLOWLINK,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'GB' => array(
+                self::METHOD_WPP_DIRECT,
+                self::METHOD_WPS,
+                self::METHOD_WPP_PE_DIRECT,
                 self::METHOD_HOSTEDPRO,
-            )
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+                self::METHOD_WPP_PE_EXPRESS,
+            ),
+            'AU' => array(
+                self::METHOD_WPS,
+                self::METHOD_PAYFLOWPRO,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'NZ' => array(
+                self::METHOD_WPS,
+                self::METHOD_PAYFLOWPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'JP' => array(
+                self::METHOD_WPS,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'FR' => array(
+                self::METHOD_WPS,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'IT' => array(
+                self::METHOD_WPS,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'ES' => array(
+                self::METHOD_WPS,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
+            'HK' => array(
+                self::METHOD_WPS,
+                self::METHOD_HOSTEDPRO,
+                self::METHOD_WPP_EXPRESS,
+                self::METHOD_BILLING_AGREEMENT,
+            ),
         );
         if ($countryCode === null) {
             return $countryMethods;
@@ -853,6 +882,20 @@ class Mage_Paypal_Model_Config
             $paymentActions[self::PAYMENT_ACTION_ORDER] = Mage::helper('paypal')->__('Order');
         }
         return $paymentActions;
+    }
+
+    /**
+     * Require Billing Address source getter
+     *
+     * @return array
+     */
+    public function getRequireBillingAddressOptions()
+    {
+        return array(
+            self::REQUIRE_BILLING_ADDRESS_ALL       => Mage::helper('paypal')->__('Yes'),
+            self::REQUIRE_BILLING_ADDRESS_NO        => Mage::helper('paypal')->__('No'),
+            self::REQUIRE_BILLING_ADDRESS_VIRTUAL   => Mage::helper('paypal')->__('For Virtual Quotes Only'),
+        );
     }
 
     /**
@@ -1189,6 +1232,7 @@ class Mage_Paypal_Model_Config
             case 'solution_type':
             case 'visible_on_cart':
             case 'visible_on_product':
+            case 'require_billing_address':
             case 'authorization_honor_period':
             case 'order_valid_period':
             case 'child_authorization_number':
@@ -1335,6 +1379,7 @@ class Mage_Paypal_Model_Config
             case 'cctypes':
             case 'sort_order':
             case 'debug':
+            case 'verify_peer':
                 return "payment/{$this->_methodCode}/{$fieldName}";
             default:
                 return null;

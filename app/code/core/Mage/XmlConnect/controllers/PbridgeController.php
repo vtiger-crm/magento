@@ -20,12 +20,12 @@
  *
  * @category    Mage
  * @package     Mage_XmlConnect
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
- * Pbridge controller
+ * Payment bridge controller
  *
  * @category    Mage
  * @package     Mage_XmlConnect
@@ -36,7 +36,7 @@ class Mage_XmlConnect_PbridgeController extends Mage_Core_Controller_Front_Actio
     /**
      * Load only action layout handles
      *
-     * @return Enterprise_Pbridge_PbridgeController
+     * @return Mage_XmlConnect_PbridgeController
      */
     protected function _initActionLayout()
     {
@@ -60,9 +60,7 @@ class Mage_XmlConnect_PbridgeController extends Mage_Core_Controller_Front_Actio
     protected function _checkPbridge()
     {
         if (!is_object(Mage::getConfig()->getNode('modules/Enterprise_Pbridge'))) {
-            $this->getResponse()->setBody(
-                $this->__('Payment Bridge module unavailable.')
-            );
+            $this->getResponse()->setBody($this->__('Payment Bridge module unavailable.'));
             return false;
         }
         return true;
@@ -93,7 +91,7 @@ class Mage_XmlConnect_PbridgeController extends Mage_Core_Controller_Front_Actio
     /**
      * Output action with params that was given by payment bridge
      *
-     * @return viod
+     * @return null
      */
     public function outputAction()
     {
@@ -102,12 +100,13 @@ class Mage_XmlConnect_PbridgeController extends Mage_Core_Controller_Front_Actio
         }
         $this->loadLayout(false);
 
-        $method = $this->getRequest()->getParam('method', false);
-        $originalPaymentMethod = $this->getRequest()->getParam('original_payment_method', false);
-        $token = $this->getRequest()->getParam('token', false);
-
-        $ccLast4 = $this->getRequest()->getParam('cc_last4', false);
-        $ccType  = $this->getRequest()->getParam('cc_type', false);
+        /** @var $helper Mage_Core_Helper_Data */
+        $helper = Mage::helper('core');
+        $method = $helper->escapeHtml($this->getRequest()->getParam('method', false));
+        $originalPaymentMethod = $helper->escapeHtml($this->getRequest()->getParam('original_payment_method', false));
+        $token = $helper->escapeHtml($this->getRequest()->getParam('token', false));
+        $ccLast4 = $helper->escapeHtml($this->getRequest()->getParam('cc_last4', false));
+        $ccType  = $helper->escapeHtml($this->getRequest()->getParam('cc_type', false));
 
         if ($originalPaymentMethod && $token && $ccLast4 && $ccType) {
             $message = Mage::helper('enterprise_pbridge')->__('Payment Bridge Selected');
@@ -130,7 +129,8 @@ EOT;
     </div>
 EOT;
         }
-
-        $this->getResponse()->setBody(html_entity_decode(Mage::helper('xmlconnect')->htmlize($body)));
+        $replacePattern = '{{content}}';
+        $content = html_entity_decode(Mage::helper('xmlconnect')->htmlize($replacePattern));
+        $this->getResponse()->setBody(str_replace($replacePattern, $body, $content));
     }
 }

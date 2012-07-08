@@ -20,13 +20,14 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Fieldset renderer for PayPal global settings
  * @author      Magento Core Team <core@magentocommerce.com>
+ * @deprecated  since 1.7.0.1
  */
 class Mage_Paypal_Block_Adminhtml_System_Config_Fieldset_Global
     extends Mage_Adminhtml_Block_Abstract

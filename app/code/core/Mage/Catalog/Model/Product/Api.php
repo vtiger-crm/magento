@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Catalog
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -83,7 +83,7 @@ class Mage_Catalog_Model_Product_Api extends Mage_Catalog_Model_Api_Resource
     /**
      * Retrieve list of products with basic info (id, sku, type, set, name)
      *
-     * @param array $filters
+     * @param null|object|array $filters
      * @param string|int $store
      * @return array
      */
@@ -93,34 +93,28 @@ class Mage_Catalog_Model_Product_Api extends Mage_Catalog_Model_Api_Resource
             ->addStoreFilter($this->_getStoreId($store))
             ->addAttributeToSelect('name');
 
-        if (is_array($filters)) {
-            try {
-                foreach ($filters as $field => $value) {
-                    if (isset($this->_filtersMap[$field])) {
-                        $field = $this->_filtersMap[$field];
-                    }
-
-                    $collection->addFieldToFilter($field, $value);
-                }
-            } catch (Mage_Core_Exception $e) {
-                $this->_fault('filters_invalid', $e->getMessage());
+        /** @var $apiHelper Mage_Api_Helper_Data */
+        $apiHelper = Mage::helper('api');
+        $filters = $apiHelper->parseFilters($filters, $this->_filtersMap);
+        try {
+            foreach ($filters as $field => $value) {
+                $collection->addFieldToFilter($field, $value);
             }
+        } catch (Mage_Core_Exception $e) {
+            $this->_fault('filters_invalid', $e->getMessage());
         }
-
         $result = array();
-
         foreach ($collection as $product) {
-//            $result[] = $product->getData();
-            $result[] = array( // Basic product data
+            $result[] = array(
                 'product_id' => $product->getId(),
                 'sku'        => $product->getSku(),
                 'name'       => $product->getName(),
                 'set'        => $product->getAttributeSetId(),
                 'type'       => $product->getTypeId(),
-                'category_ids'       => $product->getCategoryIds()
+                'category_ids' => $product->getCategoryIds(),
+                'website_ids'  => $product->getWebsiteIds()
             );
         }
-
         return $result;
     }
 
@@ -181,6 +175,16 @@ class Mage_Catalog_Model_Product_Api extends Mage_Catalog_Model_Api_Resource
             ->setAttributeSetId($set)
             ->setTypeId($type)
             ->setSku($sku);
+
+        if (!isset($productData['stock_data']) || !is_array($productData['stock_data'])) {
+            //Set default stock_data if not exist in product data
+            $product->setStockData(array('use_config_manage_stock' => 0));
+        }
+
+        foreach ($product->getMediaAttributes() as $mediaAttribute) {
+            $mediaAttrCode = $mediaAttribute->getAttributeCode();
+            $product->setData($mediaAttrCode, 'no_selection');
+        }
 
         $this->_prepareDataForSave($product, $productData);
 
@@ -262,6 +266,14 @@ class Mage_Catalog_Model_Product_Api extends Mage_Catalog_Model_Api_Resource
         }
 
         foreach ($product->getTypeInstance(true)->getEditableAttributes($product) as $attribute) {
+            //Unset data if object attribute has no value in current store
+            if (Mage_Catalog_Model_Abstract::DEFAULT_STORE_ID !== (int) $product->getStoreId()
+                && !$product->getExistsStoreValueFlag($attribute->getAttributeCode())
+                && !$attribute->isScopeGlobal()
+            ) {
+                $product->setData($attribute->getAttributeCode(), false);
+            }
+
             if ($this->_isAllowedAttribute($attribute)) {
                 if (isset($productData[$attribute->getAttributeCode()])) {
                     $product->setData(
@@ -303,8 +315,6 @@ class Mage_Catalog_Model_Product_Api extends Mage_Catalog_Model_Api_Resource
 
         if (isset($productData['stock_data']) && is_array($productData['stock_data'])) {
             $product->setStockData($productData['stock_data']);
-        } else {
-            $product->setStockData(array('use_config_manage_stock' => 0));
         }
 
         if (isset($productData['tier_price']) && is_array($productData['tier_price'])) {

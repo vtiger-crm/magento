@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Paypal
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -338,10 +338,14 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
         $client = new Varien_Http_Client();
         $result = new Varien_Object();
 
-        $_config = array('maxredirects'=>5, 'timeout'=>30);
+        $_config = array(
+            'maxredirects' => 5,
+            'timeout'    => 30,
+            'verifypeer' => $this->getConfigData('verify_peer')
+        );
 
         $_isProxy = $this->getConfigData('use_proxy', false);
-        if($_isProxy){
+        if ($_isProxy) {
             $_config['proxy'] = $this->getConfigData('proxy_host')
                 . ':'
                 . $this->getConfigData('proxy_port');//http://proxy.shr.secureserver.net:3128',
@@ -416,8 +420,11 @@ class Mage_Paypal_Model_Payflowpro extends  Mage_Payment_Model_Method_Cc
 
         $order = $payment->getOrder();
         if(!empty($order)){
-            $request->setCurrency($order->getBaseCurrencyCode())
-                    ->setCustref($order->getIncrementId());
+            $request->setCurrency($order->getBaseCurrencyCode());
+
+            $orderIncrementId = $order->getIncrementId();
+            $request->setCustref($orderIncrementId)
+                ->setComment1($orderIncrementId);
 
             $billing = $order->getBillingAddress();
             if (!empty($billing)) {

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2012 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -45,15 +45,16 @@ class Mage_Sales_Model_Order_Shipment_Api extends Mage_Sales_Model_Api_Resource
     }
 
     /**
-     * Retrive shipments by filters
+     * Retrieve shipments by filters
      *
-     * @param array $filters
+     * @param null|object|array $filters
      * @return array
      */
     public function items($filters = null)
     {
+        $shipments = array();
         //TODO: add full name logic
-        $collection = Mage::getResourceModel('sales/order_shipment_collection')
+        $shipmentCollection = Mage::getResourceModel('sales/order_shipment_collection')
             ->addAttributeToSelect('increment_id')
             ->addAttributeToSelect('created_at')
             ->addAttributeToSelect('total_qty')
@@ -62,27 +63,21 @@ class Mage_Sales_Model_Order_Shipment_Api extends Mage_Sales_Model_Api_Resource
             ->joinAttribute('order_increment_id', 'order/increment_id', 'order_id', null, 'left')
             ->joinAttribute('order_created_at', 'order/created_at', 'order_id', null, 'left');
 
-        if (is_array($filters)) {
-            try {
-                foreach ($filters as $field => $value) {
-                    if (isset($this->_attributesMap['shipment'][$field])) {
-                        $field = $this->_attributesMap['shipment'][$field];
-                    }
-
-                    $collection->addFieldToFilter($field, $value);
-                }
-            } catch (Mage_Core_Exception $e) {
-                $this->_fault('filters_invalid', $e->getMessage());
+        /** @var $apiHelper Mage_Api_Helper_Data */
+        $apiHelper = Mage::helper('api');
+        try {
+            $filters = $apiHelper->parseFilters($filters, $this->_attributesMap['shipment']);
+            foreach ($filters as $field => $value) {
+                $shipmentCollection->addFieldToFilter($field, $value);
             }
+        } catch (Mage_Core_Exception $e) {
+            $this->_fault('filters_invalid', $e->getMessage());
+        }
+        foreach ($shipmentCollection as $shipment) {
+            $shipments[] = $this->_getAttributes($shipment, 'shipment');
         }
 
-        $result = array();
-
-        foreach ($collection as $shipment) {
-            $result[] = $this->_getAttributes($shipment, 'shipment');
-        }
-
-        return $result;
+        return $shipments;
     }
 
     /**
@@ -131,8 +126,9 @@ class Mage_Sales_Model_Order_Shipment_Api extends Mage_Sales_Model_Api_Resource
      * @param boolean $includeComment
      * @return string
      */
-    public function create($orderIncrementId, $itemsQty = array(), $comment = null, $email = false, $includeComment = false)
-    {
+    public function create($orderIncrementId, $itemsQty = array(), $comment = null, $email = false,
+        $includeComment = false
+    ) {
         $order = Mage::getModel('sales/order')->loadByIncrementId($orderIncrementId);
 
         /**
@@ -239,6 +235,39 @@ class Mage_Sales_Model_Order_Shipment_Api extends Mage_Sales_Model_Api_Resource
             $track->delete();
         } catch (Mage_Core_Exception $e) {
             $this->_fault('track_not_deleted', $e->getMessage());
+        }
+
+        return true;
+    }
+
+    /**
+     * Send email with shipment data to customer
+     *
+     * @param string $shipmentIncrementId
+     * @param string $comment
+     * @return bool
+     */
+    public function sendInfo($shipmentIncrementId, $comment = '')
+    {
+        /* @var $shipment Mage_Sales_Model_Order_Shipment */
+        $shipment = Mage::getModel('sales/order_shipment')->loadByIncrementId($shipmentIncrementId);
+
+        if (!$shipment->getId()) {
+            $this->_fault('not_exists');
+        }
+
+        try {
+            $shipment->sendEmail(true, $comment)
+                ->setEmailSent(true)
+                ->save();
+            $historyItem = Mage::getResourceModel('sales/order_status_history_collection')
+                ->getUnnotifiedForInstance($shipment, Mage_Sales_Model_Order_Shipment::HISTORY_ENTITY_NAME);
+            if ($historyItem) {
+                $historyItem->setIsCustomerNotified(1);
+                $historyItem->save();
+            }
+        } catch (Mage_Core_Exception $e) {
+            $this->_fault('data_invalid', $e->getMessage());
         }
 
         return true;
