@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,8 @@
  * @package    Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Sales_Order_Create_Shipping_Method_Form extends Mage_Adminhtml_Block_Sales_Order_Create_Abstract
+class Mage_Adminhtml_Block_Sales_Order_Create_Shipping_Method_Form
+    extends Mage_Adminhtml_Block_Sales_Order_Create_Abstract
 {
     protected $_rates;
 
@@ -67,7 +68,7 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Shipping_Method_Form extends Mage_
                 $ratesFilter->addFilter($this->getStore()->getPriceFilter(), 'price');
 
                 foreach ($groups as $code => $groupItems) {
-                	$groups[$code] = $ratesFilter->filter($groupItems);
+                    $groups[$code] = $ratesFilter->filter($groupItems);
                 }
             }
             */
@@ -121,11 +122,11 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Shipping_Method_Form extends Mage_
         $rates = $this->getShippingRates();
         if (is_array($rates)) {
             foreach ($rates as $group) {
-            	foreach ($group as $code => $rate) {
-            		if ($rate->getCode() == $this->getShippingMethod()) {
-            		    return $rate;
-            		}
-            	}
+                foreach ($group as $code => $rate) {
+                    if ($rate->getCode() == $this->getShippingMethod()) {
+                        return $rate;
+                    }
+                }
             }
         }
         return false;
@@ -138,6 +139,16 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Shipping_Method_Form extends Mage_
 
     public function getShippingPrice($price, $flag)
     {
-        return $this->getQuote()->getStore()->convertPrice(Mage::helper('tax')->getShippingPrice($price, $flag, $this->getAddress()), true);
+        return $this->getQuote()->getStore()->convertPrice(
+            Mage::helper('tax')->getShippingPrice(
+                $price,
+                $flag,
+                $this->getAddress(),
+                null,
+                //We should send exact quote store to prevent fetching default config for admin store.
+                $this->getAddress()->getQuote()->getStore()
+            ),
+            true
+        );
     }
 }

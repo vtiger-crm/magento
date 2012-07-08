@@ -18,19 +18,34 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Log
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Log
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Prepare Log Online Visitors Model
  *
- * @category   Mage
- * @package    Mage_Log
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Log_Model_Resource_Visitor_Online _getResource()
+ * @method Mage_Log_Model_Resource_Visitor_Online getResource()
+ * @method string getVisitorType()
+ * @method Mage_Log_Model_Visitor_Online setVisitorType(string $value)
+ * @method int getRemoteAddr()
+ * @method Mage_Log_Model_Visitor_Online setRemoteAddr(int $value)
+ * @method string getFirstVisitAt()
+ * @method Mage_Log_Model_Visitor_Online setFirstVisitAt(string $value)
+ * @method string getLastVisitAt()
+ * @method Mage_Log_Model_Visitor_Online setLastVisitAt(string $value)
+ * @method int getCustomerId()
+ * @method Mage_Log_Model_Visitor_Online setCustomerId(int $value)
+ * @method string getLastUrl()
+ * @method Mage_Log_Model_Visitor_Online setLastUrl(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Log
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Log_Model_Visitor_Online extends Mage_Core_Model_Abstract
 {

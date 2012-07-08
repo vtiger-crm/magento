@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rss
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rss
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,7 @@
  * @package    Mage_Rss
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Rss_Block_Catalog_Tag extends Mage_Rss_Block_Abstract
+class Mage_Rss_Block_Catalog_Tag extends Mage_Rss_Block_Catalog_Abstract
 {
     protected function _construct()
     {
@@ -47,7 +47,7 @@ class Mage_Rss_Block_Catalog_Tag extends Mage_Rss_Block_Abstract
         //store id is store view id
         $storeId = $this->_getStoreId();
         $tagModel = Mage::registry('tag_model');
-        $newurl = Mage::getUrl('rss/catalog/new');
+        $newurl = Mage::getUrl('rss/catalog/tag/tagName/' . $tagModel->getName());
         $title = Mage::helper('rss')->__('Products tagged with %s', $tagModel->getName());
         $lang = Mage::getStoreConfig('general/locale/code');
 
@@ -64,31 +64,57 @@ class Mage_Rss_Block_Catalog_Tag extends Mage_Rss_Block_Abstract
             ->addTagFilter($tagModel->getId())
             ->addStoreFilter($storeId);
 
+        $_collection->setVisibility(Mage::getSingleton('catalog/product_visibility')->getVisibleInCatalogIds());
+
         $product = Mage::getModel('catalog/product');
 
-        Mage::getSingleton('core/resource_iterator')
-                ->walk($_collection->getSelect(), array(array($this, 'addTaggedItemXml')), array('rssObj'=> $rssObj, 'product'=>$product));
+        Mage::getSingleton('core/resource_iterator')->walk(
+            Mage::getResourceHelper('core')->getQueryUsingAnalyticFunction($_collection->getSelect()),
+            array(array($this, 'addTaggedItemXml')),
+            array('rssObj'=> $rssObj, 'product'=>$product),
+            $_collection->getSelect()->getAdapter()
+        );
 
         return $rssObj->createRssXml();
     }
 
+    /**
+     * Preparing data and adding to rss object
+     *
+     * @param array $args
+     */
     public function addTaggedItemXml($args)
     {
         $product = $args['product'];
+
+        $product->setAllowedInRss(true);
+        $product->setAllowedPriceInRss(true);
+        Mage::dispatchEvent('rss_catalog_tagged_item_xml_callback', $args);
+
+        if (!$product->getAllowedInRss()) {
+            //Skip adding product to RSS
+            return;
+        }
+
+        $allowedPriceInRss = $product->getAllowedPriceInRss();
+
         $product->unsetData()->load($args['row']['entity_id']);
         $description = '<table><tr>'.
         '<td><a href="'.$product->getProductUrl().'"><img src="'. $this->helper('catalog/image')->init($product, 'thumbnail')->resize(75, 75) .'" border="0" align="left" height="75" width="75"></a></td>'.
-        '<td  style="text-decoration:none;">'.$product->getDescription().
-        '<p> Price:'.Mage::helper('core')->currency($product->getFinalPrice()).'</p>'.
-        '</td>'.
-        '</tr></table>';
+        '<td  style="text-decoration:none;">'.$product->getDescription();
+
+        if ($allowedPriceInRss) {
+            $description .= $this->getPriceHtml($product,true);
+        }
+
+        $description .='</td></tr></table>';
+
         $rssObj = $args['rssObj'];
         $data = array(
                 'title'         => $product->getName(),
                 'link'          => $product->getProductUrl(),
                 'description'   => $description,
-
-                );
+            );
         $rssObj->_addEntry($data);
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Eav
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Eav
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -30,9 +30,10 @@
  *
  * @category   Mage
  * @package    Mage_Eav
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
-abstract class Mage_Eav_Model_Entity_Attribute_Source_Abstract implements Mage_Eav_Model_Entity_Attribute_Source_Interface
+abstract class Mage_Eav_Model_Entity_Attribute_Source_Abstract
+    implements Mage_Eav_Model_Entity_Attribute_Source_Interface
 {
     /**
      * Reference to the attribute instance
@@ -46,7 +47,7 @@ abstract class Mage_Eav_Model_Entity_Attribute_Source_Abstract implements Mage_E
      *
      * @var array
      */
-    protected $_options;
+    protected $_options                 = null;
 
     /**
      * Set attribute instance
@@ -82,7 +83,7 @@ abstract class Mage_Eav_Model_Entity_Attribute_Source_Abstract implements Mage_E
         // Fixed for tax_class_id and custom_design
         if (sizeof($options) > 0) foreach($options as $option) {
             if (isset($option['value']) && $option['value'] == $value) {
-                return $option;
+                return isset($option['label']) ? $option['label'] : $option['value'];
             }
         } // End
         if (isset($options[$value])) {
@@ -108,12 +109,12 @@ abstract class Mage_Eav_Model_Entity_Attribute_Source_Abstract implements Mage_E
      * @param string $dir direction
      * @return Mage_Eav_Model_Entity_Attribute_Source_Abstract
      */
-    public function addValueSortToCollection($collection, $dir = 'asc') {
+    public function addValueSortToCollection($collection, $dir = Varien_Data_Collection::SORT_ORDER_DESC) {
         return $this;
     }
 
     /**
-     * Retrieve Column(s) for Flat
+     * Retrieve flat column definition
      *
      * @return array
      */

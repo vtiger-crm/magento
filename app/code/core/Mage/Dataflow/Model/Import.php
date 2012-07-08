@@ -18,18 +18,29 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Dataflow
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Dataflow
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * DataFlow Import Model
  *
- * @category   Mage
- * @package    Mage_Dataflow
+ * @method Mage_Dataflow_Model_Resource_Import _getResource()
+ * @method Mage_Dataflow_Model_Resource_Import getResource()
+ * @method int getSessionId()
+ * @method Mage_Dataflow_Model_Import setSessionId(int $value)
+ * @method int getSerialNumber()
+ * @method Mage_Dataflow_Model_Import setSerialNumber(int $value)
+ * @method string getValue()
+ * @method Mage_Dataflow_Model_Import setValue(string $value)
+ * @method int getStatus()
+ * @method Mage_Dataflow_Model_Import setStatus(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Dataflow
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Dataflow_Model_Import extends Mage_Core_Model_Abstract

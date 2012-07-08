@@ -20,38 +20,44 @@
  * needs please refer to http://www.magentocommerce.com for more information.
  *
  * @category    Mage
- * @package    Mage_GoogleCheckout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @package     Mage_GoogleCheckout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_GoogleCheckout>
-            <version>0.7.3</version>
+            <version>1.6.0.1</version>
         </Mage_GoogleCheckout>
     </modules>
     <global>
         <sales>
-	        <quote>
-		        <item>
+            <quote>
+                <item>
                     <product_attributes>
                         <enable_googlecheckout/>
                     </product_attributes>
-		        </item>
-	        </quote>
+                </item>
+            </quote>
         </sales>
         <models>
             <googlecheckout>
                 <class>Mage_GoogleCheckout_Model</class>
-                <resourceModel>googlecheckout_mysql4</resourceModel>
+                <resourceModel>googlecheckout_resource</resourceModel>
             </googlecheckout>
-            <googlecheckout_mysql4>
-                <class>Mage_GoogleCheckout_Model_Mysql4</class>
+            <googlecheckout_resource>
+                <class>Mage_GoogleCheckout_Model_Resource</class>
+                <deprecatedNode>googlecheckout_mysql4</deprecatedNode>
                 <entities>
-                    <api_debug><table>googlecheckout_api_debug</table></api_debug>
+                    <api_debug>
+                        <table>googlecheckout_api_debug</table>
+                    </api_debug>
+                    <notification>
+                        <table>googlecheckout_notification</table>
+                    </notification>
                 </entities>
-            </googlecheckout_mysql4>
+            </googlecheckout_resource>
         </models>
         <helpers>
             <googlecheckout>
@@ -62,39 +68,16 @@
             <googlecheckout_setup>
                 <setup>
                     <module>Mage_GoogleCheckout</module>
-                    <class>Mage_GoogleCheckout_Model_Mysql4_Setup</class>
+                    <class>Mage_GoogleCheckout_Model_Resource_Setup</class>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </googlecheckout_setup>
-            <googlecheckout_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </googlecheckout_write>
-            <googlecheckout_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </googlecheckout_read>
         </resources>
         <blocks>
-            <googlecheckout><class>Mage_GoogleCheckout_Block</class></googlecheckout>
+            <googlecheckout>
+                <class>Mage_GoogleCheckout_Block</class>
+            </googlecheckout>
         </blocks>
     </global>
-<!--
-Something like this is to be added to resolve bug #4890
-<global>
-        <rewrite>
-            <googlecheckout>
-                <core>
-                <from>/^.*?googlecheckout\/api/</from>
-                <to>googlecheckout/api</to>
-            </googlecheckout>
-        </rewrite>
-</global>
--->
     <frontend>
         <secure_url>
             <googlecheckout_redirect>/googlecheckout/redirect/</googlecheckout_redirect>
@@ -126,7 +109,6 @@ Something like this is to be added to resolve bug #4890
             </updates>
         </layout>
     </frontend>
-
     <adminhtml>
         <translate>
             <modules>
@@ -137,25 +119,6 @@ Something like this is to be added to resolve bug #4890
                 </Mage_GoogleCheckout>
             </modules>
         </translate>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <config>
-                                    <children>
-                                        <google translate="title" module="googlecheckout">
-                                            <title>Google API</title>
-                                        </google>
-                                    </children>
-                                </config>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
         <events>
             <sales_order_shipment_track_save_after>
                 <observers>
@@ -177,7 +140,6 @@ Something like this is to be added to resolve bug #4890
             </sales_order_shipment_save_after>
         </events>
     </adminhtml>
-
     <default>
         <carriers>
             <googlecheckout>
@@ -197,6 +159,8 @@ Something like this is to be added to resolve bug #4890
                 <merchant_key backend_model="adminhtml/system_config_backend_encrypted"/>
                 <use_secure_callback_url>0</use_secure_callback_url>
                 <disable_default_tax_tables>0</disable_default_tax_tables>
+                <hide_cart_contents>1</hide_cart_contents>
+                <title>Google Checkout</title>
             </checkout>
             <checkout_shipping_carrier>
                 <address_category>COMMERCIAL</address_category>

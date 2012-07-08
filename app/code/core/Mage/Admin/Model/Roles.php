@@ -18,12 +18,34 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Admin
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Admin
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+/**
+ * Admin Roles Model
+ *
+ * @method Mage_Admin_Model_Resource_Roles _getResource()
+ * @method Mage_Admin_Model_Resource_Roles getResource()
+ * @method int getParentId()
+ * @method Mage_Admin_Model_Roles setParentId(int $value)
+ * @method int getTreeLevel()
+ * @method Mage_Admin_Model_Roles setTreeLevel(int $value)
+ * @method int getSortOrder()
+ * @method Mage_Admin_Model_Roles setSortOrder(int $value)
+ * @method string getRoleType()
+ * @method Mage_Admin_Model_Roles setRoleType(string $value)
+ * @method int getUserId()
+ * @method Mage_Admin_Model_Roles setUserId(int $value)
+ * @method string getRoleName()
+ * @method Mage_Admin_Model_Roles setRoleName(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Admin
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Admin_Model_Roles extends Mage_Core_Model_Abstract
 {
     /**
@@ -67,17 +89,18 @@ class Mage_Admin_Model_Roles extends Mage_Core_Model_Abstract
         return $this->getResource()->getRoleUsers($this);
     }
 
-    protected function _buildResourcesArray(Varien_Simplexml_Element $resource=null, $parentName=null, $level=0, $represent2Darray=null, $rawNodes = false, $module = 'adminhtml')
+    protected function _buildResourcesArray(Varien_Simplexml_Element $resource = null,
+        $parentName = null, $level = 0, $represent2Darray = null, $rawNodes = false, $module = 'adminhtml')
     {
         static $result;
         if (is_null($resource)) {
-            $resource = Mage::getConfig()->getNode('adminhtml/acl/resources');
+            $resource = Mage::getSingleton('admin/config')->getAdminhtmlConfig()->getNode('acl/resources');
             $resourceName = null;
             $level = -1;
         } else {
             $resourceName = $parentName;
-            if ($resource->getName()!='title' && $resource->getName()!='sort_order' && $resource->getName() != 'children') {
-                $resourceName = (is_null($parentName) ? '' : $parentName.'/').$resource->getName();
+            if ($resource->getName() != 'title' && $resource->getName() != 'sort_order' && $resource->getName() != 'children') {
+                $resourceName = (is_null($parentName) ? '' : $parentName . '/') . $resource->getName();
 
                 //assigning module for its' children nodes
                 if ($resource->getAttribute('module')) {
@@ -88,12 +111,6 @@ class Mage_Admin_Model_Roles extends Mage_Core_Model_Abstract
                     $resource->addAttribute("aclpath", $resourceName);
                     $resource->addAttribute("module_c", $module);
                 }
-
-                //if (!(string)$resource->title) {
-                //   return array();
-                //}
-
-                //$resource->title = Mage::helper($module)->__((string)$resource->title);
 
                 if ( is_null($represent2Darray) ) {
                     $result[$resourceName]['name']  = Mage::helper($module)->__((string)$resource->title);
@@ -113,7 +130,7 @@ class Mage_Admin_Model_Roles extends Mage_Core_Model_Abstract
             }
         }
         foreach ($children as $child) {
-            $this->_buildResourcesArray($child, $resourceName, $level+1, $represent2Darray, $rawNodes, $module);
+            $this->_buildResourcesArray($child, $resourceName, $level + 1, $represent2Darray, $rawNodes, $module);
         }
         if ($rawNodes) {
             return $resource;

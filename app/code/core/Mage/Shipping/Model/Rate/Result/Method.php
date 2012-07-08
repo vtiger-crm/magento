@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Shipping
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Shipping
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -36,5 +36,15 @@
  */
 class Mage_Shipping_Model_Rate_Result_Method extends Mage_Shipping_Model_Rate_Result_Abstract
 {
-
+    /**
+     * Round shipping carrier's method price
+     *
+     * @param string|float|int $price
+     * @return Mage_Shipping_Model_Rate_Result_Method
+     */
+    public function setPrice($price)
+    {
+        $this->setData('price', Mage::app()->getStore()->roundPrice($price));
+        return $this;
+    }
 }

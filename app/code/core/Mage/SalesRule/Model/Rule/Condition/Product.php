@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_SalesRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -44,11 +44,18 @@ class Mage_SalesRule_Model_Rule_Condition_Product extends Mage_CatalogRule_Model
      */
     public function validate(Varien_Object $object)
     {
-        $product = Mage::getModel('catalog/product')
-            ->load($object->getProductId())
+        $product = false;
+        if ($object->getProduct() instanceof Mage_Catalog_Model_Product) {
+            $product = $object->getProduct();
+        } else {
+            $product = Mage::getModel('catalog/product')
+                ->load($object->getProductId());
+        }
+
+        $product
             ->setQuoteItemQty($object->getQty())
-            ->setQuoteItemPrice($object->getPrice())
-            ->setQuoteItemRowTotal($object->getRowTotal());
+            ->setQuoteItemPrice($object->getPrice()) // possible bug: need to use $object->getBasePrice()
+            ->setQuoteItemRowTotal($object->getBaseRowTotal());
 
         return parent::validate($product);
     }

@@ -18,24 +18,119 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_CatalogRule_Model_Resource_Rule _getResource()
+ * @method Mage_CatalogRule_Model_Resource_Rule getResource()
+ * @method string getName()
+ * @method Mage_CatalogRule_Model_Rule setName(string $value)
+ * @method string getDescription()
+ * @method Mage_CatalogRule_Model_Rule setDescription(string $value)
+ * @method string getFromDate()
+ * @method Mage_CatalogRule_Model_Rule setFromDate(string $value)
+ * @method string getToDate()
+ * @method Mage_CatalogRule_Model_Rule setToDate(string $value)
+ * @method Mage_CatalogRule_Model_Rule setCustomerGroupIds(string $value)
+ * @method int getIsActive()
+ * @method Mage_CatalogRule_Model_Rule setIsActive(int $value)
+ * @method string getConditionsSerialized()
+ * @method Mage_CatalogRule_Model_Rule setConditionsSerialized(string $value)
+ * @method string getActionsSerialized()
+ * @method Mage_CatalogRule_Model_Rule setActionsSerialized(string $value)
+ * @method int getStopRulesProcessing()
+ * @method Mage_CatalogRule_Model_Rule setStopRulesProcessing(int $value)
+ * @method int getSortOrder()
+ * @method Mage_CatalogRule_Model_Rule setSortOrder(int $value)
+ * @method string getSimpleAction()
+ * @method Mage_CatalogRule_Model_Rule setSimpleAction(string $value)
+ * @method float getDiscountAmount()
+ * @method Mage_CatalogRule_Model_Rule setDiscountAmount(float $value)
+ * @method string getWebsiteIds()
+ * @method Mage_CatalogRule_Model_Rule setWebsiteIds(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_CatalogRule
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_CatalogRule_Model_Rule extends Mage_Rule_Model_Rule
 {
-    protected $_productIds = array();
+    const XML_NODE_RELATED_CACHE = 'global/catalogrule/related_cache_types';
+
+    /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'catalogrule_rule';
+
+    /**
+     * Parameter name in event
+     *
+     * In observe method you can use $observer->getEvent()->getRule() in this case
+     *
+     * @var string
+     */
+    protected $_eventObject = 'rule';
+
+    /**
+     * Matched product ids array
+     *
+     * @var array
+     */
+    protected $_productIds;
+
+    /**
+     * Limitation for products collection
+     *
+     * @var int|array|null
+     */
+    protected $_productsFilter = null;
 
     protected $_now;
 
+    /**
+     * Cached data of prices calculated by price rules
+     *
+     * @var array
+     */
+    protected static $_priceRulesData = array();
+
+    /**
+     * Init resource model and id field
+     */
     protected function _construct()
     {
         parent::_construct();
         $this->_init('catalogrule/rule');
         $this->setIdFieldName('rule_id');
+    }
+
+    /**
+     * Filtering products that must be checked for matching with rule
+     *
+     * @param  int|array $productIds
+     */
+    public function setProductsFilter($productIds)
+    {
+        $this->_productsFilter = $productIds;
+    }
+
+    /**
+     * Returns products filter
+     *
+     * @return array|int|null
+     */
+    public function getProductsFilter()
+    {
+        return $this->_productsFilter;
     }
 
     public function getConditionsInstance()
@@ -66,8 +161,8 @@ class Mage_CatalogRule_Model_Rule extends Mage_Rule_Model_Rule
         $str = Mage::helper('catalogrule')->__("Name: %s", $this->getName()) ."\n"
              . Mage::helper('catalogrule')->__("Start at: %s", $this->getStartAt()) ."\n"
              . Mage::helper('catalogrule')->__("Expire at: %s", $this->getExpireAt()) ."\n"
-             . Mage::helper('catalogrule')->__("Customer registered: %s", $this->getCustomerRegistered()) ."\n"
-             . Mage::helper('catalogrule')->__("Customer is new buyer: %s", $this->getCustomerNewBuyer()) ."\n"
+             . Mage::helper('catalogrule')->__("Customer Registered: %s", $this->getCustomerRegistered()) ."\n"
+             . Mage::helper('catalogrule')->__("Customer is a New Buyer: %s", $this->getCustomerNewBuyer()) ."\n"
              . Mage::helper('catalogrule')->__("Description: %s", $this->getDescription()) ."\n\n"
              . $this->getConditions()->toStringRecursive() ."\n\n"
              . $this->getActions()->toStringRecursive() ."\n\n";
@@ -94,87 +189,94 @@ class Mage_CatalogRule_Model_Rule extends Mage_Rule_Model_Rule
 
         return $out;
     }
-    /*
-    public function processProduct(Mage_Catalog_Model_Product $product)
-    {
-        $this->validateProduct($product) && $this->updateProduct($product);
-        return $this;
-    }
 
-    public function validateProduct(Mage_Catalog_Model_Product $product)
+    /**
+     * Invalidate related cache types
+     *
+     * @return Mage_CatalogRule_Model_Rule
+     */
+    protected function _invalidateCache()
     {
-        if (!$this->getIsCollectionValidated()) {
-            $result = $result && $this->getIsActive()
-                && (strtotime($this->getFromDate()) <= $this->getNow())
-                && (strtotime($this->getToDate()) >= $this->getNow())
-                && ($this->getCustomerRegistered()==2 || $this->getCustomerRegistered()==$env->getCustomerRegistered())
-                && ($this->getCustomerNewBuyer()==2 || $this->getCustomerNewBuyer()==$env->getCustomerNewBuyer())
-                && $this->getConditions()->validateProduct($product);
-        } else {
-            $result = $this->getConditions()->validateProduct($product);
+        $types = Mage::getConfig()->getNode(self::XML_NODE_RELATED_CACHE);
+        if ($types) {
+            $types = $types->asArray();
+            Mage::app()->getCacheInstance()->invalidateType(array_keys($types));
         }
-
-        return $result;
-    }
-
-    public function updateProduct(Mage_Sales_Model_Product $product)
-    {
-        $this->getActions()->updateProduct($product);
         return $this;
     }
-    */
-    public function getResourceCollection()
-    {
-        return Mage::getResourceModel('catalogrule/rule_collection');
-    }
 
+    /**
+     * Process rule related data after rule save
+     *
+     * @return Mage_CatalogRule_Model_Rule
+     */
     protected function _afterSave()
     {
         $this->_getResource()->updateRuleProductData($this);
         parent::_afterSave();
     }
 
+    /**
+     * Get array of product ids which are matched by rule
+     *
+     * @return array
+     */
     public function getMatchingProductIds()
     {
-        if (empty($this->_productIds)) {
-            $productCollection = Mage::getResourceModel('catalog/product_collection');
-            $websiteIds = explode(',', $this->getWebsiteIds());
-            if (!empty($websiteIds)) {
-                $productCollection->addWebsiteFilter($websiteIds);
+        if (is_null($this->_productIds)) {
+            $this->_productIds = array();
+            $this->setCollectedAttributes(array());
+            $websiteIds = $this->getWebsiteIds();
+            if (!is_array($websiteIds)) {
+                $websiteIds = explode(',', $websiteIds);
             }
 
-            $this->setCollectedAttributes(array());
-            $this->getConditions()->collectValidatedAttributes($productCollection);
+            if ($websiteIds) {
+                $productCollection = Mage::getResourceModel('catalog/product_collection')
+                    ->addWebsiteFilter($websiteIds);
+                if ($this->_productsFilter) {
+                    $productCollection->addIdFilter($this->_productsFilter);
+                }
 
-            $this->_productIds = array();
-            Mage::getSingleton('core/resource_iterator')->walk(
-                $productCollection->getSelect(),
-                array(array($this, 'callbackValidateProduct')),
-                array(
-                    'attributes'=>$this->getCollectedAttributes(),
-                    'product'=>Mage::getModel('catalog/product'),
-                )
-            );
+                $this->getConditions()->collectValidatedAttributes($productCollection);
+
+                Mage::getSingleton('core/resource_iterator')->walk(
+                    $productCollection->getSelect(),
+                    array(array($this, 'callbackValidateProduct')),
+                    array(
+                        'attributes' => $this->getCollectedAttributes(),
+                        'product'    => Mage::getModel('catalog/product'),
+                    )
+                );
+            }
         }
+
         return $this->_productIds;
     }
 
+    /**
+     * Callback function for product matching
+     *
+     * @param $args
+     * @return void
+     */
     public function callbackValidateProduct($args)
     {
-        $product = $args['product']->setData($args['row']);
-        if (!empty($args['attributes']['category_ids'])) {
-            $categoryCollection = $product->getCategoryCollection()->load();
-            $categories = array();
-            foreach ($categoryCollection as $category) {
-                $categories[] = $category->getId();
-            }
-            $product->setCategoryIds($categories);
-        }
+        $product = clone $args['product'];
+        $product->setData($args['row']);
+
         if ($this->getConditions()->validate($product)) {
             $this->_productIds[] = $product->getId();
         }
     }
 
+    /**
+     * Apply rule to product
+     *
+     * @param int|Mage_Catalog_Model_Product $product
+     * @param array $websiteIds
+     * @return void
+     */
     public function applyToProduct($product, $websiteIds=null)
     {
         if (is_numeric($product)) {
@@ -186,6 +288,11 @@ class Mage_CatalogRule_Model_Rule extends Mage_Rule_Model_Rule
         $this->getResource()->applyToProduct($this, $product, $websiteIds);
     }
 
+    /**
+     * Get array of assigned customer group ids
+     *
+     * @return array
+     */
     public function getCustomerGroupIds()
     {
         $ids = $this->getData('customer_group_ids');
@@ -200,5 +307,106 @@ class Mage_CatalogRule_Model_Rule extends Mage_Rule_Model_Rule
             $this->setCustomerGroupChecked(true);
         }
         return $ids;
+    }
+
+    /**
+     * Apply all price rules, invalidate related cache and refresh price index
+     *
+     * @return Mage_CatalogRule_Model_Rule
+     */
+    public function applyAll()
+    {
+        $this->getResourceCollection()->walk(array($this->_getResource(), 'updateRuleProductData'));
+        $this->_getResource()->applyAllRulesForDateRange();
+        $this->_invalidateCache();
+        $indexProcess = Mage::getSingleton('index/indexer')->getProcessByCode('catalog_product_price');
+        if ($indexProcess) {
+            $indexProcess->reindexAll();
+        }
+    }
+
+    /**
+     * Apply all price rules to product
+     *
+     * @param  int|Mage_Catalog_Model_Product $product
+     * @return Mage_CatalogRule_Model_Rule
+     */
+    public function applyAllRulesToProduct($product)
+    {
+        $this->_getResource()->applyAllRulesForDateRange(NULL, NULL, $product);
+        $this->_invalidateCache();
+
+        if ($product instanceof Mage_Catalog_Model_Product) {
+            $productId = $product->getId();
+        } else {
+            $productId = $product;
+        }
+
+        if ($productId) {
+            Mage::getSingleton('index/indexer')->processEntityAction(
+                new Varien_Object(array('id' => $productId)),
+                Mage_Catalog_Model_Product::ENTITY,
+                Mage_Catalog_Model_Product_Indexer_Price::EVENT_TYPE_REINDEX_PRICE
+            );
+        }
+    }
+
+    /**
+     * Calculate price using catalog price rule of product
+     *
+     * @param  Mage_Catalog_Model_Product $product
+     * @param  float $price
+     * @return float|null
+     */
+    public function calcProductPriceRule(Mage_Catalog_Model_Product $product, $price)
+    {
+        $priceRules = null;
+        $productId  = $product->getId();
+        $storeId    = $product->getStoreId();
+        $websiteId  = Mage::app()->getStore($storeId)->getWebsiteId();
+        if ($product->hasCustomerGroupId()) {
+            $customerGroupId = $product->getCustomerGroupId();
+        } else {
+            $customerGroupId = Mage::getSingleton('customer/session')->getCustomerGroupId();
+        }
+        $dateTs     = Mage::app()->getLocale()->storeTimeStamp($storeId);
+        $cacheKey   = date('Y-m-d', $dateTs) . "|$websiteId|$customerGroupId|$productId|$price";
+
+        if (!array_key_exists($cacheKey, self::$_priceRulesData)) {
+            $rulesData = $this->_getResource()->getRulesFromProduct($dateTs, $websiteId, $customerGroupId, $productId);
+            if ($rulesData) {
+                foreach ($rulesData as $ruleData) {
+                    if ($product->getParentId()) {
+                        if ($ruleData['sub_is_enable']) {
+                            $priceRules = Mage::helper('catalogrule')->calcPriceRule(
+                                $ruleData['sub_simple_action'],
+                                $ruleData['sub_discount_amount'],
+                                $priceRules ? $priceRules : $price
+                            );
+                        } else {
+                            $priceRules = $price;
+                        }
+                        if ($ruleData['stop_rules_processing']) {
+                            break;
+                        }
+                    } else {
+                        $priceRules = Mage::helper('catalogrule')->calcPriceRule(
+                            $ruleData['simple_action'],
+                            $ruleData['discount_amount'],
+                            $priceRules ? $priceRules :$price
+                        );
+                        if ($ruleData['stop_rules_processing']) {
+                            break;
+                        }
+                    }
+                }
+                return self::$_priceRulesData[$cacheKey] = $priceRules;
+            } else {
+                self::$_priceRulesData[$cacheKey] = null;
+            }
+        } else {
+            return self::$_priceRulesData[$cacheKey];
+        }
+        return null;
     }
 }

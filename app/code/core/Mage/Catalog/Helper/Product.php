@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,9 @@
  */
 class Mage_Catalog_Helper_Product extends Mage_Core_Helper_Url
 {
-    const XML_PATH_PRODUCT_URL_SUFFIX   = 'catalog/seo/product_url_suffix';
+    const XML_PATH_PRODUCT_URL_SUFFIX           = 'catalog/seo/product_url_suffix';
+    const XML_PATH_PRODUCT_URL_USE_CATEGORY     = 'catalog/seo/product_use_categories';
+    const XML_PATH_USE_PRODUCT_CANONICAL_TAG    = 'catalog/seo/product_canonical_tag';
 
     /**
      * Cache for product rewrite suffix
@@ -186,4 +188,257 @@ class Mage_Catalog_Helper_Product extends Mage_Core_Helper_Url
         }
         return $this->_productUrlSuffix[$storeId];
     }
+
+    /**
+     * Check if <link rel="canonical"> can be used for product
+     *
+     * @param $store
+     * @return bool
+     */
+    public function canUseCanonicalTag($store = null)
+    {
+        return Mage::getStoreConfig(self::XML_PATH_USE_PRODUCT_CANONICAL_TAG, $store);
+    }
+
+    /**
+     * Return information array of product attribute input types
+     * Only a small number of settings returned, so we won't break anything in current dataflow
+     * As soon as development process goes on we need to add there all possible settings
+     *
+     * @param string $inputType
+     * @return array
+     */
+    public function getAttributeInputTypes($inputType = null)
+    {
+        /**
+        * @todo specify there all relations for properties depending on input type
+        */
+        $inputTypes = array(
+            'multiselect'   => array(
+                'backend_model'     => 'eav/entity_attribute_backend_array'
+            ),
+            'boolean'       => array(
+                'source_model'      => 'eav/entity_attribute_source_boolean'
+            )
+        );
+
+        if (is_null($inputType)) {
+            return $inputTypes;
+        } else if (isset($inputTypes[$inputType])) {
+            return $inputTypes[$inputType];
+        }
+        return array();
+    }
+
+    /**
+     * Return default attribute backend model by input type
+     *
+     * @param string $inputType
+     * @return string|null
+     */
+    public function getAttributeBackendModelByInputType($inputType)
+    {
+        $inputTypes = $this->getAttributeInputTypes();
+        if (!empty($inputTypes[$inputType]['backend_model'])) {
+            return $inputTypes[$inputType]['backend_model'];
+        }
+        return null;
+    }
+
+    /**
+     * Return default attribute source model by input type
+     *
+     * @param string $inputType
+     * @return string|null
+     */
+    public function getAttributeSourceModelByInputType($inputType)
+    {
+        $inputTypes = $this->getAttributeInputTypes();
+        if (!empty($inputTypes[$inputType]['source_model'])) {
+            return $inputTypes[$inputType]['source_model'];
+        }
+        return null;
+    }
+
+    /**
+     * Inits product to be used for product controller actions and layouts
+     * $params can have following data:
+     *   'category_id' - id of category to check and append to product as current.
+     *     If empty (except FALSE) - will be guessed (e.g. from last visited) to load as current.
+     *
+     * @param int $productId
+     * @param Mage_Core_Controller_Front_Action $controller
+     * @param Varien_Object $params
+     *
+     * @return false|Mage_Catalog_Model_Product
+     */
+    public function initProduct($productId, $controller, $params = null)
+    {
+        // Prepare data for routine
+        if (!$params) {
+            $params = new Varien_Object();
+        }
+
+        // Init and load product
+        Mage::dispatchEvent('catalog_controller_product_init_before', array(
+            'controller_action' => $controller,
+            'params' => $params,
+        ));
+
+        if (!$productId) {
+            return false;
+        }
+
+        $product = Mage::getModel('catalog/product')
+            ->setStoreId(Mage::app()->getStore()->getId())
+            ->load($productId);
+
+        if (!$this->canShow($product)) {
+            return false;
+        }
+        if (!in_array(Mage::app()->getStore()->getWebsiteId(), $product->getWebsiteIds())) {
+            return false;
+        }
+
+        // Load product current category
+        $categoryId = $params->getCategoryId();
+        if (!$categoryId && ($categoryId !== false)) {
+            $lastId = Mage::getSingleton('catalog/session')->getLastVisitedCategoryId();
+            if ($product->canBeShowInCategory($lastId)) {
+                $categoryId = $lastId;
+            }
+        }
+
+        if ($categoryId) {
+            $category = Mage::getModel('catalog/category')->load($categoryId);
+            $product->setCategory($category);
+            Mage::register('current_category', $category);
+        }
+
+        // Register current data and dispatch final events
+        Mage::register('current_product', $product);
+        Mage::register('product', $product);
+
+        try {
+            Mage::dispatchEvent('catalog_controller_product_init', array('product' => $product));
+            Mage::dispatchEvent('catalog_controller_product_init_after',
+                            array('product' => $product,
+                                'controller_action' => $controller
+                            )
+            );
+        } catch (Mage_Core_Exception $e) {
+            Mage::logException($e);
+            return false;
+        }
+
+        return $product;
+    }
+
+    /**
+     * Prepares product options by buyRequest: retrieves values and assigns them as default.
+     * Also parses and adds product management related values - e.g. qty
+     *
+     * @param  Mage_Catalog_Model_Product $product
+     * @param  Varien_Object $buyRequest
+     * @return Mage_Catalog_Helper_Product
+     */
+    public function prepareProductOptions($product, $buyRequest)
+    {
+        $optionValues = $product->processBuyRequest($buyRequest);
+        $optionValues->setQty($buyRequest->getQty());
+        $product->setPreconfiguredValues($optionValues);
+
+        return $this;
+    }
+
+    /**
+     * Process $buyRequest and sets its options before saving configuration to some product item.
+     * This method is used to attach additional parameters to processed buyRequest.
+     *
+     * $params holds parameters of what operation must be performed:
+     * - 'current_config', Varien_Object or array - current buyRequest that configures product in this item,
+     *   used to restore currently attached files
+     * - 'files_prefix': string[a-z0-9_] - prefix that was added at frontend to names of file inputs,
+     *   so they won't intersect with other submitted options
+     *
+     * @param Varien_Object|array $buyRequest
+     * @param Varien_Object|array $params
+     * @return Varien_Object
+     */
+    public function addParamsToBuyRequest($buyRequest, $params)
+    {
+        if (is_array($buyRequest)) {
+            $buyRequest = new Varien_Object($buyRequest);
+        }
+        if (is_array($params)) {
+            $params = new Varien_Object($params);
+        }
+
+
+        // Ensure that currentConfig goes as Varien_Object - for easier work with it later
+        $currentConfig = $params->getCurrentConfig();
+        if ($currentConfig) {
+            if (is_array($currentConfig)) {
+                $params->setCurrentConfig(new Varien_Object($currentConfig));
+            } else if (!($currentConfig instanceof Varien_Object)) {
+                $params->unsCurrentConfig();
+            }
+        }
+
+        /*
+         * Notice that '_processing_params' must always be object to protect processing forged requests
+         * where '_processing_params' comes in $buyRequest as array from user input
+         */
+        $processingParams = $buyRequest->getData('_processing_params');
+        if (!$processingParams || !($processingParams instanceof Varien_Object)) {
+            $processingParams = new Varien_Object();
+            $buyRequest->setData('_processing_params', $processingParams);
+        }
+        $processingParams->addData($params->getData());
+
+        return $buyRequest;
+    }
+
+    /**
+     * Return loaded product instance
+     *
+     * @param  int|string $productId (SKU or ID)
+     * @param  int $store
+     * @param  string $identifierType
+     * @return Mage_Catalog_Model_Product
+     */
+    public function getProduct($productId, $store, $identifierType = null) {
+        $loadByIdOnFalse = false;
+        if ($identifierType == null) {
+            if (is_string($productId) && !preg_match("/^[+-]?[1-9][0-9]*$|^0$/", $productId)) {
+                $identifierType = 'sku';
+                $loadByIdOnFalse = true;
+            } else {
+                $identifierType = 'id';
+            }
+        }
+
+        /** @var $product Mage_Catalog_Model_Product */
+        $product = Mage::getModel('catalog/product');
+        if ($store !== null) {
+            $product->setStoreId($store);
+        }
+        if ($identifierType == 'sku') {
+            $idBySku = $product->getIdBySku($productId);
+            if ($idBySku) {
+                $productId = $idBySku;
+            }
+            if ($loadByIdOnFalse) {
+                $identifierType = 'id';
+            }
+        }
+
+        if ($identifierType == 'id' && is_numeric($productId)) {
+            $productId = !is_float($productId) ? (int) $productId : 0;
+            $product->load($productId);
+        }
+
+        return $product;
+    }
+
 }

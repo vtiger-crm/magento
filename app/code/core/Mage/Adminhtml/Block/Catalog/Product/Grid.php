@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -39,7 +39,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
         parent::__construct();
         $this->setId('productGrid');
         $this->setDefaultSort('entity_id');
-        $this->setDefaultDir('desc');
+        $this->setDefaultDir('DESC');
         $this->setSaveParametersInSession(true);
         $this->setUseAjax(true);
         $this->setVarNameFilter('product_filter');
@@ -59,17 +59,21 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
             ->addAttributeToSelect('sku')
             ->addAttributeToSelect('name')
             ->addAttributeToSelect('attribute_set_id')
-            ->addAttributeToSelect('type_id')
-            ->joinField('qty',
+            ->addAttributeToSelect('type_id');
+
+        if (Mage::helper('catalog')->isModuleEnabled('Mage_CatalogInventory')) {
+            $collection->joinField('qty',
                 'cataloginventory/stock_item',
                 'qty',
                 'product_id=entity_id',
                 '{{table}}.stock_id=1',
                 'left');
-
+        }
         if ($store->getId()) {
             //$collection->setStoreId($store->getId());
+            $adminStore = Mage_Core_Model_App::ADMIN_STORE_ID;
             $collection->addStoreFilter($store);
+            $collection->joinAttribute('name', 'catalog_product/name', 'entity_id', null, 'inner', $adminStore);
             $collection->joinAttribute('custom_name', 'catalog_product/name', 'entity_id', null, 'inner', $store->getId());
             $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner', $store->getId());
             $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner', $store->getId());
@@ -77,8 +81,8 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
         }
         else {
             $collection->addAttributeToSelect('price');
-            $collection->addAttributeToSelect('status');
-            $collection->addAttributeToSelect('visibility');
+            $collection->joinAttribute('status', 'catalog_product/status', 'entity_id', null, 'inner');
+            $collection->joinAttribute('visibility', 'catalog_product/visibility', 'entity_id', null, 'inner');
         }
 
         $this->setCollection($collection);
@@ -122,7 +126,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
         if ($store->getId()) {
             $this->addColumn('custom_name',
                 array(
-                    'header'=> Mage::helper('catalog')->__('Name In %s', $store->getName()),
+                    'header'=> Mage::helper('catalog')->__('Name in %s', $store->getName()),
                     'index' => 'custom_name',
             ));
         }
@@ -166,13 +170,15 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
                 'index' => 'price',
         ));
 
-        $this->addColumn('qty',
-            array(
-                'header'=> Mage::helper('catalog')->__('Qty'),
-                'width' => '100px',
-                'type'  => 'number',
-                'index' => 'qty',
-        ));
+        if (Mage::helper('catalog')->isModuleEnabled('Mage_CatalogInventory')) {
+            $this->addColumn('qty',
+                array(
+                    'header'=> Mage::helper('catalog')->__('Qty'),
+                    'width' => '100px',
+                    'type'  => 'number',
+                    'index' => 'qty',
+            ));
+        }
 
         $this->addColumn('visibility',
             array(
@@ -225,7 +231,9 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
                 'index'     => 'stores',
         ));
 
-        $this->addRssList('rss/catalog/notifystock', Mage::helper('catalog')->__('Notify Low Stock RSS'));
+        if (Mage::helper('catalog')->isModuleEnabled('Mage_Rss')) {
+            $this->addRssList('rss/catalog/notifystock', Mage::helper('catalog')->__('Notify Low Stock RSS'));
+        }
 
         return parent::_prepareColumns();
     }
@@ -258,10 +266,12 @@ class Mage_Adminhtml_Block_Catalog_Product_Grid extends Mage_Adminhtml_Block_Wid
              )
         ));
 
-        $this->getMassactionBlock()->addItem('attributes', array(
-            'label' => Mage::helper('catalog')->__('Update attributes'),
-            'url'   => $this->getUrl('*/catalog_product_action_attribute/edit', array('_current'=>true))
-        ));
+        if (Mage::getSingleton('admin/session')->isAllowed('catalog/update_attributes')){
+            $this->getMassactionBlock()->addItem('attributes', array(
+                'label' => Mage::helper('catalog')->__('Update Attributes'),
+                'url'   => $this->getUrl('*/catalog_product_action_attribute/edit', array('_current'=>true))
+            ));
+        }
 
         return $this;
     }

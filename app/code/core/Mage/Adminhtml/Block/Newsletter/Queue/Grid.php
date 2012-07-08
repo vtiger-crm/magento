@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -47,7 +47,6 @@ class Mage_Adminhtml_Block_Newsletter_Queue_Grid extends Mage_Adminhtml_Block_Wi
     protected function _prepareCollection()
     {
         $collection = Mage::getResourceModel('newsletter/queue_collection')
-            ->addTemplateInfo()
             ->addSubscribersInfo();
 
         $this->setCollection($collection);
@@ -79,9 +78,9 @@ class Mage_Adminhtml_Block_Newsletter_Queue_Grid extends Mage_Adminhtml_Block_Wi
             'default'	=> 	' ---- '
         ));
 
-        $this->addColumn('template_subject', array(
+        $this->addColumn('newsletter_subject', array(
             'header'    =>  Mage::helper('newsletter')->__('Subject'),
-            'index'     =>	'template_subject'
+            'index'     =>  'newsletter_subject'
         ));
 
          $this->addColumn('status', array(
@@ -89,18 +88,18 @@ class Mage_Adminhtml_Block_Newsletter_Queue_Grid extends Mage_Adminhtml_Block_Wi
             'index'		=> 'queue_status',
             'type'      => 'options',
             'options'   => array(
-        		Mage_Newsletter_Model_Queue::STATUS_SENT 	=> Mage::helper('newsletter')->__('Sent'),
-        		Mage_Newsletter_Model_Queue::STATUS_CANCEL	=> Mage::helper('newsletter')->__('Cancelled'),
-        		Mage_Newsletter_Model_Queue::STATUS_NEVER 	=> Mage::helper('newsletter')->__('Not Sent'),
-        		Mage_Newsletter_Model_Queue::STATUS_SENDING => Mage::helper('newsletter')->__('Sending'),
-        		Mage_Newsletter_Model_Queue::STATUS_PAUSE 	=> Mage::helper('newsletter')->__('Paused'),
+                Mage_Newsletter_Model_Queue::STATUS_SENT 	=> Mage::helper('newsletter')->__('Sent'),
+                Mage_Newsletter_Model_Queue::STATUS_CANCEL	=> Mage::helper('newsletter')->__('Cancelled'),
+                Mage_Newsletter_Model_Queue::STATUS_NEVER 	=> Mage::helper('newsletter')->__('Not Sent'),
+                Mage_Newsletter_Model_Queue::STATUS_SENDING => Mage::helper('newsletter')->__('Sending'),
+                Mage_Newsletter_Model_Queue::STATUS_PAUSE 	=> Mage::helper('newsletter')->__('Paused'),
             ),
             'width'     => '100px',
         ));
 
         $this->addColumn('subscribers_sent', array(
             'header'    =>  Mage::helper('newsletter')->__('Processed'),
-           	'type'		=> 'number',
+               'type'		=> 'number',
             'index'		=> 'subscribers_sent'
         ));
 

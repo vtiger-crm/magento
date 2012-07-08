@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,6 +33,12 @@
  */
 class Mage_Core_Model_Config_Options extends Varien_Object
 {
+    /**
+     * Var directory
+     *
+     * @var string
+     */
+    const VAR_DIRECTORY = 'var';
     /**
      * Flag cache for existing or already created directories
      *
@@ -68,7 +74,6 @@ class Mage_Core_Model_Config_Options extends Varien_Object
 
     public function getDir($type)
     {
-        $this->_construct();
         $method = 'get'.ucwords($type).'Dir';
         $dir = $this->$method();
         if (!$dir) {
@@ -139,7 +144,8 @@ class Mage_Core_Model_Config_Options extends Varien_Object
     public function getVarDir()
     {
         //$dir = $this->getDataSetDefault('var_dir', $this->getBaseDir().DS.'var');
-        $dir = isset($this->_data['var_dir']) ? $this->_data['var_dir'] : $this->_data['base_dir'].DS.'var';
+        $dir = isset($this->_data['var_dir']) ? $this->_data['var_dir']
+            : $this->_data['base_dir'] . DS . self::VAR_DIRECTORY;
         if (!$this->createDirIfNotExists($dir)) {
             $dir = $this->getSysTmpDir().DS.'magento'.DS.'var';
             if (!$this->createDirIfNotExists($dir)) {
@@ -215,9 +221,11 @@ class Mage_Core_Model_Config_Options extends Varien_Object
                 return false;
             }
         } else {
+            $oldUmask = umask(0);
             if (!@mkdir($dir, 0777, true)) {
                 return false;
             }
+            umask($oldUmask);
         }
         $this->_dirExists[$dir] = true;
         return true;

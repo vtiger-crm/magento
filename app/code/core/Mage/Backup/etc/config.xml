@@ -19,64 +19,38 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Backup
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Backup
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Backup>
-            <version>0.7.0</version>
+            <version>1.6.0.0</version>
         </Mage_Backup>
     </modules>
     <global>
         <models>
             <backup>
                 <class>Mage_Backup_Model</class>
-                <resourceModel>backup_mysql4</resourceModel>
+                <resourceModel>backup_resource</resourceModel>
             </backup>
-            <backup_mysql4>
-                <class>Mage_Backup_Model_Mysql4</class>
-            </backup_mysql4>
+            <backup_resource>
+                <class>Mage_Backup_Model_Resource</class>
+                <deprecatedNode>backup_mysql4</deprecatedNode>
+            </backup_resource>
         </models>
         <resources>
             <backup_setup>
                 <setup>
                     <module>Mage_Backup</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </backup_setup>
-            <backup_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </backup_write>
-            <backup_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </backup_read>
         </resources>
     </global>
     <adminhtml>
-        <menu>
-            <system>
-                <children>
-                    <tools>
-                        <children>
-                            <backup translate="title" module="backup">
-                                <title>Backups</title>
-                                <action>adminhtml/system_backup</action>
-                            </backup>
-                        </children>
-                    </tools>
-                </children>
-            </system>
-        </menu>
         <translate>
             <modules>
                 <Mage_Backup>
@@ -86,24 +60,5 @@
                 </Mage_Backup>
             </modules>
         </translate>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <tools>
-                                    <children>
-                                        <backup translate="title" module="backup">
-                                            <title>Backups</title>
-                                        </backup>
-                                    </children>
-                                </tools>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
     </adminhtml>
 </config>

@@ -18,46 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Reports
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Reports
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * New Accounts Report collection
  *
- * @category   Mage
- * @package    Mage_Reports
+ * @category    Mage
+ * @package     Mage_Reports
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-
-class Mage_Reports_Model_Mysql4_Accounts_Collection extends Mage_Reports_Model_Mysql4_Customer_Collection
+class Mage_Reports_Model_Mysql4_Accounts_Collection extends Mage_Reports_Model_Resource_Accounts_Collection
 {
-
-    protected function _joinFields($from = '', $to = '')
-    {
-        $this->addAttributeToFilter('created_at' , array("from" => $from, "to" => $to, "datetime" => true))
-            ->addExpressionAttributeToSelect("accounts", "COUNT({{entity_id}})", array("entity_id"))
-            ->getSelect()->group('("*")');
-
-        return $this;
-    }
-
-    public function setDateRange($from, $to)
-    {
-        $this->_reset()
-            ->_joinFields($from, $to);
-        return $this;
-    }
-
-    public function setStoreIds($storeIds)
-    {
-        $vals = array_values($storeIds);
-        if (count($storeIds) >= 1 && $vals[0] != '') {
-            $this->addAttributeToFilter('store_id', array('in' => (array)$storeIds));
-        }
-
-        return $this;
-    }
 }

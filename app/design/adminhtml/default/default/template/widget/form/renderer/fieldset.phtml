@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <?php $_element = $this->getElement() ?>
@@ -38,10 +38,13 @@
     <div class="fieldset <?php echo $_element->getClass() ?>" id="<?php echo $_element->getHtmlId() ?>">
 <?php endif; ?>
     <div class="hor-scroll">
+        <?php if ($_element->getComment()): ?>
+            <p class="comment"><?php echo $this->escapeHtml($_element->getComment()) ?></p>
+        <?php endif; ?>
         <?php if ($_element->hasHtmlContent()): ?>
             <?php echo $_element->getHtmlContent(); ?>
         <?php else: ?>
-        <table cellspacing="0" class="form-list">
+        <table cellspacing="0" class="<?php echo $_element->hasTableClass() ? $_element->getTableClass() : 'form-list'?>">
             <tbody>
                 <?php echo $_element->getChildrenHtml(); ?>
             </tbody>

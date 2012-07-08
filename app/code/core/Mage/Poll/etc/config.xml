@@ -19,16 +19,16 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Poll
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Poll
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Poll>
-            <version>0.7.2</version>
+            <version>1.6.0.0</version>
         </Mage_Poll>
     </modules>
     <frontend>
@@ -58,7 +58,6 @@
             </updates>
         </layout>
     </frontend>
-
     <adminhtml>
         <translate>
             <modules>
@@ -70,15 +69,15 @@
             </modules>
         </translate>
     </adminhtml>
-
     <global>
         <models>
             <poll>
                 <class>Mage_Poll_Model</class>
-                <resourceModel>poll_mysql4</resourceModel>
+                <resourceModel>poll_resource</resourceModel>
             </poll>
-            <poll_mysql4>
-                <class>Mage_Poll_Model_Mysql4</class>
+            <poll_resource>
+                <class>Mage_Poll_Model_Resource</class>
+                <deprecatedNode>poll_mysql4</deprecatedNode>
                 <entities>
                     <poll>
                         <table>poll</table>
@@ -93,27 +92,14 @@
                         <table>poll_store</table>
                     </poll_store>
                 </entities>
-            </poll_mysql4>
+            </poll_resource>
         </models>
         <resources>
             <poll_setup>
                 <setup>
                     <module>Mage_Poll</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </poll_setup>
-            <poll_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </poll_write>
-            <poll_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </poll_read>
         </resources>
         <blocks>
             <poll>

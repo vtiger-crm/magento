@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -35,6 +35,13 @@
 class Mage_Sales_Model_Observer
 {
     /**
+     * Expire quotes additional fields to filter
+     *
+     * @var array
+     */
+    protected $_expireQuotesFilterFields = array();
+
+    /**
      * Clean expired quotes (cron process)
      *
      * @param Mage_Cron_Model_Schedule $schedule
@@ -42,18 +49,47 @@ class Mage_Sales_Model_Observer
      */
     public function cleanExpiredQuotes($schedule)
     {
+        Mage::dispatchEvent('clear_expired_quotes_before', array('sales_observer' => $this));
+
         $lifetimes = Mage::getConfig()->getStoresConfigByPath('checkout/cart/delete_quote_after');
         foreach ($lifetimes as $storeId=>$lifetime) {
             $lifetime *= 86400;
 
+            /** @var $quotes Mage_Sales_Model_Mysql4_Quote_Collection */
             $quotes = Mage::getModel('sales/quote')->getCollection();
-            /* @var $quotes Mage_Sales_Model_Mysql4_Quote_Collection */
 
             $quotes->addFieldToFilter('store_id', $storeId);
             $quotes->addFieldToFilter('updated_at', array('to'=>date("Y-m-d", time()-$lifetime)));
             $quotes->addFieldToFilter('is_active', 0);
+
+            foreach ($this->getExpireQuotesAdditionalFilterFields() as $field => $condition) {
+                $quotes->addFieldToFilter($field, $condition);
+            }
+
             $quotes->walk('delete');
         }
+        return $this;
+    }
+
+    /**
+     * Retrieve expire quotes additional fields to filter
+     *
+     * @return array
+     */
+    public function getExpireQuotesAdditionalFilterFields()
+    {
+        return $this->_expireQuotesFilterFields;
+    }
+
+    /**
+     * Set expire quotes additional fields to filter
+     *
+     * @param array $fields
+     * @return Mage_Sales_Model_Observer
+     */
+    public function setExpireQuotesAdditionalFilterFields(array $fields)
+    {
+        $this->_expireQuotesFilterFields = $fields;
         return $this;
     }
 
@@ -118,4 +154,185 @@ class Mage_Sales_Model_Observer
 
         return $this;
     }
+
+    /**
+     * Refresh sales order report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_Sales_Model_Observer
+     */
+    public function aggregateSalesReportOrderData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('sales/report_order')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Refresh sales shipment report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_Sales_Model_Observer
+     */
+    public function aggregateSalesReportShipmentData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('sales/report_shipping')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Refresh sales invoiced report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_Sales_Model_Observer
+     */
+    public function aggregateSalesReportInvoicedData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('sales/report_invoiced')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Refresh sales refunded report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_Sales_Model_Observer
+     */
+    public function aggregateSalesReportRefundedData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('sales/report_refunded')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Refresh bestsellers report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_Sales_Model_Observer
+     */
+    public function aggregateSalesReportBestsellersData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('sales/report_bestsellers')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Add the recurring profile form when editing a product
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function prepareProductEditFormRecurringProfile($observer)
+    {
+        // replace the element of recurring payment profile field with a form
+        $profileElement = $observer->getEvent()->getProductElement();
+        $block = Mage::app()->getLayout()->createBlock('sales/adminhtml_recurring_profile_edit_form',
+            'adminhtml_recurring_profile_edit_form')->setParentElement($profileElement)
+            ->setProductEntity($observer->getEvent()->getProduct());
+        $observer->getEvent()->getResult()->output = $block->toHtml();
+
+        // make the profile element dependent on is_recurring
+        $dependencies = Mage::app()->getLayout()->createBlock('adminhtml/widget_form_element_dependence',
+            'adminhtml_recurring_profile_edit_form_dependence')->addFieldMap('is_recurring', 'product[is_recurring]')
+            ->addFieldMap($profileElement->getHtmlId(), $profileElement->getName())
+            ->addFieldDependence($profileElement->getName(), 'product[is_recurring]', '1')
+            ->addConfigOptions(array('levels_up' => 2));
+        $observer->getEvent()->getResult()->output .= $dependencies->toHtml();
+    }
+
+    /**
+     * Block admin ability to use customer billing agreements
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function restrictAdminBillingAgreementUsage($observer)
+    {
+        $methodInstance = $observer->getEvent()->getMethodInstance();
+        if (!($methodInstance instanceof Mage_Sales_Model_Payment_Method_Billing_AgreementAbstract)) {
+            return;
+        }
+        if (!Mage::getSingleton('admin/session')->isAllowed('sales/order/actions/use')) {
+            $observer->getEvent()->getResult()->isAvailable = false;
+        }
+    }
+
+    /**
+     * Set new customer group to all his quotes
+     *
+     * @param  Varien_Event_Observer $observer
+     * @return Mage_Sales_Model_Observer
+     */
+    public function customerSaveAfter(Varien_Event_Observer $observer)
+    {
+        /** @var $customer Mage_Customer_Model_Customer */
+        $customer = $observer->getEvent()->getCustomer();
+
+        if ($customer->getGroupId() !== $customer->getOrigData('group_id')) {
+            /**
+             * It is needed to process customer's quotes for all websites
+             * if customer accounts are shared between all of them
+             */
+            $websites = (Mage::getSingleton('customer/config_share')->isWebsiteScope())
+                ? array(Mage::app()->getWebsite($customer->getWebsiteId()))
+                : Mage::app()->getWebsites();
+
+            /** @var $quote Mage_Sales_Model_Quote */
+            $quote = Mage::getSingleton('sales/quote');
+
+            foreach ($websites as $website) {
+                $quote->setWebsite($website);
+                $quote->loadByCustomer($customer);
+
+                if ($quote->getId()) {
+                    $quote->setCustomerGroupId($customer->getGroupId());
+                    $quote->collectTotals();
+                    $quote->save();
+                }
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Set Quote information about MSRP price enabled
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function setQuoteCanApplyMsrp(Varien_Event_Observer $observer)
+    {
+        /** @var $quote Mage_Sales_Model_Quote */
+        $quote = $observer->getEvent()->getQuote();
+
+        $canApplyMsrp = false;
+        if (Mage::helper('catalog')->isMsrpEnabled()) {
+            foreach ($quote->getAllAddresses() as $adddress) {
+                if ($adddress->getCanApplyMsrp()) {
+                    $canApplyMsrp = true;
+                    break;
+                }
+            }
+        }
+
+        $quote->setCanApplyMsrp($canApplyMsrp);
+    }
 }
+

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -54,6 +54,12 @@ class Mage_Catalog_Model_Api_Resource extends Mage_Api_Model_Resource_Abstract
     protected $_storeIdSessionField   = 'store_id';
 
     /**
+     * Name of resource model in ACL list
+     * @var string
+     */
+    protected $_resourceAttributeAclName = 'catalog/category/attributes/field_';
+
+    /**
      * Check is attribute allowed
      *
      * @param Mage_Eav_Model_Entity_Attribute_Abstract $attribute
@@ -62,6 +68,13 @@ class Mage_Catalog_Model_Api_Resource extends Mage_Api_Model_Resource_Abstract
      */
     protected function _isAllowedAttribute($attribute, $attributes = null)
     {
+
+        if (Mage::getSingleton('api/server')->getApiName() == 'rest') {
+            if (!$this->_checkAttributeAcl($attribute)) {
+                return false;
+            }
+        }
+
         if (is_array($attributes)
             && !( in_array($attribute->getAttributeCode(), $attributes)
                   || in_array($attribute->getAttributeId(), $attributes))) {
@@ -100,24 +113,15 @@ class Mage_Catalog_Model_Api_Resource extends Mage_Api_Model_Resource_Abstract
      *
      * @param  int|string $productId (SKU or ID)
      * @param  int|string $store
+     * @param  string $identifierType
      * @return Mage_Catalog_Model_Product
      */
-    protected function _getProduct ($productId, $store = null)
+    protected function _getProduct($productId, $store = null, $identifierType = null)
     {
-        $product = Mage::getModel('catalog/product');
-
-        /* @var $product Mage_Catalog_Model_Product */
-
-        if (is_string($productId)) {
-            $idBySku = $product->getIdBySku($productId);
-            if ($idBySku) {
-                $productId = $idBySku;
-            }
+        $product = Mage::helper('catalog/product')->getProduct($productId, $this->_getStoreId($store), $identifierType);
+        if (is_null($product->getId())) {
+            $this->_fault('product_not_exists');
         }
-        if ($store !== null) {
-            $product->setStoreId($this->_getStoreId($store));
-        }
-        $product->load($productId);
         return $product;
     }
 

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,6 +33,19 @@
  */
 class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Attributes extends Mage_Adminhtml_Block_Catalog_Form
 {
+    /**
+     * Load Wysiwyg on demand and Prepare layout
+     */
+    protected function _prepareLayout()
+    {
+        parent::_prepareLayout();
+        if (Mage::helper('catalog')->isModuleEnabled('Mage_Cms')) {
+            if (Mage::getSingleton('cms/wysiwyg_config')->isEnabled()) {
+                $this->getLayout()->getBlock('head')->setCanLoadTinyMce(true);
+            }
+        }
+    }
+
     protected function _prepareForm()
     {
         if ($group = $this->getGroup()) {
@@ -44,16 +57,30 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Attributes extends Mage_Admi
             $form->setDataObject(Mage::registry('product'));
 
             $fieldset = $form->addFieldset('group_fields'.$group->getId(),
-                array('legend'=>Mage::helper('catalog')->__($group->getAttributeGroupName()))
-            );
+                array(
+                    'legend'=>Mage::helper('catalog')->__($group->getAttributeGroupName()),
+                    'class'=>'fieldset-wide',
+            ));
 
             $attributes = $this->getGroupAttributes();
 
             $this->_setFieldset($attributes, $fieldset, array('gallery'));
 
+            if ($urlKey = $form->getElement('url_key')) {
+                $urlKey->setRenderer(
+                    $this->getLayout()->createBlock('adminhtml/catalog_form_renderer_attribute_urlkey')
+                );
+            }
+
             if ($tierPrice = $form->getElement('tier_price')) {
                 $tierPrice->setRenderer(
                     $this->getLayout()->createBlock('adminhtml/catalog_product_edit_tab_price_tier')
+                );
+            }
+
+            if ($recurringProfile = $form->getElement('recurring_profile')) {
+                $recurringProfile->setRenderer(
+                    $this->getLayout()->createBlock('adminhtml/catalog_product_edit_tab_price_recurring')
                 );
             }
 
@@ -102,11 +129,11 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Attributes extends Mage_Admi
                     }
                 }
             }
+            $form->addValues($values);
+            $form->setFieldNameSuffix('product');
 
             Mage::dispatchEvent('adminhtml_catalog_product_edit_prepare_form', array('form'=>$form));
 
-            $form->addValues($values);
-            $form->setFieldNameSuffix('product');
             $this->setForm($form);
         }
     }
@@ -114,10 +141,11 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Attributes extends Mage_Admi
     protected function _getAdditionalElementTypes()
     {
         $result = array(
-            'price'   => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_price'),
-            'gallery' => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_gallery'),
-            'image'   => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_image'),
-            'boolean' => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_boolean')
+            'price'    => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_price'),
+            'gallery'  => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_gallery'),
+            'image'    => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_image'),
+            'boolean'  => Mage::getConfig()->getBlockClassName('adminhtml/catalog_product_helper_form_boolean'),
+            'textarea' => Mage::getConfig()->getBlockClassName('adminhtml/catalog_helper_form_wysiwyg')
         );
 
         $response = new Varien_Object();

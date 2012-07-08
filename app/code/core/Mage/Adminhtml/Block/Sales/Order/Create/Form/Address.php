@@ -18,107 +18,183 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Order create address form
  *
+ * @category    Mage
+ * @package     Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Sales_Order_Create_Form_Address extends Mage_Adminhtml_Block_Sales_Order_Create_Abstract
+class Mage_Adminhtml_Block_Sales_Order_Create_Form_Address extends Mage_Adminhtml_Block_Sales_Order_Create_Form_Abstract
 {
-    protected $_form;
+    /**
+     * Customer Address Form instance
+     *
+     * @var Mage_Customer_Model_Form
+     */
+    protected $_addressForm;
 
-    protected function _prepareLayout()
-    {
-        Varien_Data_Form::setElementRenderer(
-            $this->getLayout()->createBlock('adminhtml/widget_form_renderer_element')
-        );
-        Varien_Data_Form::setFieldsetRenderer(
-            $this->getLayout()->createBlock('adminhtml/widget_form_renderer_fieldset')
-        );
-        Varien_Data_Form::setFieldsetElementRenderer(
-            $this->getLayout()->createBlock('adminhtml/widget_form_renderer_fieldset_element')
-        );
-    }
-
+    /**
+     * Return Customer Address Collection as array
+     *
+     * @return array
+     */
     public function getAddressCollection()
     {
         return $this->getCustomer()->getAddresses();
     }
 
+    /**
+     * Return customer address form instance
+     *
+     * @return Mage_Customer_Model_Form
+     */
+    protected function _getAddressForm()
+    {
+        if (is_null($this->_addressForm)) {
+            $this->_addressForm = Mage::getModel('customer/form')
+                ->setFormCode('adminhtml_customer_address')
+                ->setStore($this->getStore());
+        }
+        return $this->_addressForm;
+    }
+
+    /**
+     * Return Customer Address Collection as JSON
+     *
+     * @return string
+     */
     public function getAddressCollectionJson()
     {
+        $addressForm = $this->_getAddressForm();
         $data = array();
+
+        $emptyAddress = $this->getCustomer()
+            ->getAddressById(null)
+            ->setCountryId(Mage::helper('core')->getDefaultCountry($this->getStore()));
+        $data[0] = $addressForm->setEntity($emptyAddress)
+            ->outputData(Mage_Customer_Model_Attribute_Data::OUTPUT_FORMAT_JSON);
+
         foreach ($this->getAddressCollection() as $address) {
-            $data[$address->getId()] = $address->getData();
+            $addressForm->setEntity($address);
+            $data[$address->getId()] = $addressForm->outputData(Mage_Customer_Model_Attribute_Data::OUTPUT_FORMAT_JSON);
         }
-        return Zend_Json::encode($data);
+        return Mage::helper('core')->jsonEncode($data);
     }
 
-    public function getForm()
-    {
-        $this->_prepareForm();
-        return $this->_form;
-    }
-
+    /**
+     * Prepare Form and add elements to form
+     *
+     * @return Mage_Adminhtml_Block_Sales_Order_Create_Form_Address
+     */
     protected function _prepareForm()
     {
-        if (!$this->_form) {
-            $this->_form = new Varien_Data_Form();
-            $fieldset = $this->_form->addFieldset('main', array('no_container'=>true));
-            $addressModel = Mage::getModel('customer/address');
+        $fieldset = $this->_form->addFieldset('main', array(
+            'no_container' => true
+        ));
 
-            foreach ($addressModel->getAttributes() as $attribute) {
-                if (!$attribute->getIsVisible()) {
-                    continue;
-                }
-                if ($inputType = $attribute->getFrontend()->getInputType()) {
-                    $element = $fieldset->addField($attribute->getAttributeCode(), $inputType,
-                        array(
-                            'name'  => $attribute->getAttributeCode(),
-                            'label' => $this->__($attribute->getFrontend()->getLabel()),
-                            'class' => $attribute->getFrontend()->getClass(),
-                            'required' => $attribute->getIsRequired(),
-                        )
-                    )
-                    ->setEntityAttribute($attribute);
+        /* @var $addressModel Mage_Customer_Model_Address */
+        $addressModel = Mage::getModel('customer/address');
 
-                    if ($inputType == 'select' || $inputType == 'multiselect') {
-                        $element->setValues($attribute->getFrontend()->getSelectOptions());
-                    }
-                }
-            }
+        $addressForm = $this->_getAddressForm()
+            ->setEntity($addressModel);
 
-            if ($regionElement = $this->_form->getElement('region')) {
-                $regionElement->setRenderer(
-                    $this->getLayout()->createBlock('adminhtml/customer_edit_renderer_region')
+        $attributes = $addressForm->getAttributes();
+        if(isset($attributes['street'])) {
+            Mage::helper('adminhtml/addresses')
+                ->processStreetAttribute($attributes['street']);
+        }
+        $this->_addAttributesToForm($attributes, $fieldset);
+
+        $prefixElement = $this->_form->getElement('prefix');
+        if ($prefixElement) {
+            $prefixOptions = $this->helper('customer')->getNamePrefixOptions($this->getStore());
+            if (!empty($prefixOptions)) {
+                $fieldset->removeField($prefixElement->getId());
+                $prefixField = $fieldset->addField($prefixElement->getId(),
+                    'select',
+                    $prefixElement->getData(),
+                    '^'
                 );
+                $prefixField->setValues($prefixOptions);
+                if ($this->getAddressId()) {
+                    $prefixField->addElementValues($this->getAddress()->getPrefix());
+                }
             }
-            if ($regionElement = $this->_form->getElement('region_id')) {
-                $regionElement->setNoDisplay(true);
+        }
+
+        $suffixElement = $this->_form->getElement('suffix');
+        if ($suffixElement) {
+            $suffixOptions = $this->helper('customer')->getNameSuffixOptions($this->getStore());
+            if (!empty($suffixOptions)) {
+                $fieldset->removeField($suffixElement->getId());
+                $suffixField = $fieldset->addField($suffixElement->getId(),
+                    'select',
+                    $suffixElement->getData(),
+                    $this->_form->getElement('lastname')->getId()
+                );
+                $suffixField->setValues($suffixOptions);
+                if ($this->getAddressId()) {
+                    $suffixField->addElementValues($this->getAddress()->getSuffix());
+                }
             }
-            $this->_form->setValues($this->getFormValues());
+        }
+
+
+        $regionElement = $this->_form->getElement('region_id');
+        if ($regionElement) {
+            $regionElement->setNoDisplay(true);
+        }
+
+        $this->_form->setValues($this->getFormValues());
+
+        if (!$this->_form->getElement('country_id')->getValue()) {
+            $this->_form->getElement('country_id')->setValue(
+                Mage::helper('core')->getDefaultCountry($this->getStore())
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add additional data to form element
+     *
+     * @param Varien_Data_Form_Element_Abstract $element
+     * @return Mage_Adminhtml_Block_Sales_Order_Create_Form_Abstract
+     */
+    protected function _addAdditionalFormElementData(Varien_Data_Form_Element_Abstract $element)
+    {
+        if ($element->getId() == 'region_id') {
+            $element->setNoDisplay(true);
         }
         return $this;
     }
 
-    public function getFormValues()
-    {
-        return array();
-    }
-
+    /**
+     * Return customer address id
+     *
+     * @return int|boolean
+     */
     public function getAddressId()
     {
         return false;
     }
 
+    /**
+     * Return customer address formated as one-line string
+     *
+     * @param Mage_Customer_Model_Address $address
+     * @return string
+     */
     public function getAddressAsString($address)
     {
-        return $address->format('oneline');
+        return $this->htmlEscape($address->format('oneline'));
     }
 }

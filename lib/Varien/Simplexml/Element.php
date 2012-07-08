@@ -140,18 +140,31 @@ class Varien_Simplexml_Element extends SimpleXMLElement
      * Find a descendant of a node by path
      *
      * @todo    Do we need to make it xpath look-a-like?
+     * @todo    Check if we still need all this and revert to plain XPath if this makes any sense
      * @todo    param string $path Subset of xpath. Example: "child/grand[@attrName='attrValue']/subGrand"
      * @param   string $path Example: "child/grand@attrName=attrValue/subGrand" (to make it faster without regex)
      * @return  Varien_Simplexml_Element
      */
     public function descend($path)
     {
-        #$node = $this->xpath($path);
-        #return $node[0];
+        # $node = $this->xpath($path);
+        # return $node[0];
         if (is_array($path)) {
             $pathArr = $path;
         } else {
-            $pathArr = explode('/', $path);
+            // Simple exploding by / does not suffice,
+            // as an attribute value may contain a / inside
+            // Note that there are three matches for different kinds of attribute values specification
+            if(strpos($path, "@") === false) {
+                $pathArr = explode('/', $path);
+            }
+            else {
+                $regex = "#([^@/\\\"]+(?:@[^=/]+=(?:\\\"[^\\\"]*\\\"|[^/]*))?)/?#";
+                $pathArr = $pathMatches = array();
+                if(preg_match_all($regex, $path, $pathMatches)) {
+                    $pathArr = $pathMatches[1];
+                }
+            }
         }
         $desc = $this;
         foreach ($pathArr as $nodeName) {
@@ -161,10 +174,15 @@ class Varien_Simplexml_Element extends SimpleXMLElement
                 $nodeName = $a[0];
                 $attributeName = $b[0];
                 $attributeValue = $b[1];
+                //
+                // Does a very simplistic trimming of attribute value.
+                //
+                $attributeValue = trim($attributeValue, '"');
                 $found = false;
-                foreach ($this->$nodeName as $desc) {
-                    if ((string)$nodeChild[$attributeName]===$attributeValue) {
+                foreach ($desc->$nodeName as $subdesc) {
+                    if ((string)$subdesc[$attributeName]===$attributeValue) {
                         $found = true;
+                        $desc = $subdesc;
                         break;
                     }
                 }
@@ -184,30 +202,54 @@ class Varien_Simplexml_Element extends SimpleXMLElement
     /**
      * Returns the node and children as an array
      *
-     * @return array
+     * @return array|string
      */
     public function asArray()
     {
-        $r = array();
+        return $this->_asArray();
+    }
 
-        $attributes = $this->attributes();
-        foreach($attributes as $k=>$v) {
-            if ($v) $r['@'][$k] = (string) $v;
-        }
+    /**
+     * asArray() analog, but without attributes
+     * @return array|string
+     */
+    public function asCanonicalArray()
+    {
+        return $this->_asArray(true);
+    }
 
-        if (!($children = $this->children())) {
-            $r = (string) $this;
-            return $r;
-        }
-
-        foreach($children as $childName=>$child) {
-            $r[$childName] = array();
-            foreach ($child as $index=>$element) {
-                $r[$childName][$index] = $element->asArray();
+    /**
+     * Returns the node and children as an array
+     *
+     * @param bool $isCanonical - whether to ignore attributes
+     * @return array|string
+     */
+    protected function _asArray($isCanonical = false)
+    {
+        $result = array();
+        if (!$isCanonical) {
+            // add attributes
+            foreach ($this->attributes() as $attributeName => $attribute) {
+                if ($attribute) {
+                    $result['@'][$attributeName] = (string)$attribute;
+                }
             }
         }
-
-        return $r;
+        // add children values
+        if ($this->hasChildren()) {
+            foreach ($this->children() as $childName => $child) {
+                $result[$childName] = $child->_asArray($isCanonical);
+            }
+        } else {
+            if (empty($result)) {
+                // return as string, if nothing was found
+                $result = (string) $this;
+            } else {
+                // value has zero key element
+                $result[0] = (string) $this;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -278,9 +320,9 @@ class Varien_Simplexml_Element extends SimpleXMLElement
      * @param  string
      * @return string
      */
-    public function xmlentities($value='')
+    public function xmlentities($value = null)
     {
-        if (empty($value)) {
+        if (is_null($value)) {
             $value = $this;
         }
         $value = (string)$value;

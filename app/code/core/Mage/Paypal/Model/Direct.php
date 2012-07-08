@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Paypal
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Paypal
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -32,7 +32,8 @@
  */
 class Mage_Paypal_Model_Direct extends Mage_Payment_Model_Method_Cc
 {
-    protected $_code  = 'paypal_direct';
+    protected $_code  = Mage_Paypal_Model_Config::METHOD_WPP_DIRECT;
+    protected $_infoBlockType = 'paypal/payment_info';
 
     /**
      * Availability options
@@ -40,263 +41,357 @@ class Mage_Paypal_Model_Direct extends Mage_Payment_Model_Method_Cc
     protected $_isGateway               = true;
     protected $_canAuthorize            = true;
     protected $_canCapture              = true;
-    protected $_canCapturePartial       = false;
-    protected $_canRefund               = false;
+    protected $_canCapturePartial       = true;
+    protected $_canRefund               = true;
+    protected $_canRefundInvoicePartial = true;
     protected $_canVoid                 = true;
     protected $_canUseInternal          = true;
     protected $_canUseCheckout          = true;
     protected $_canUseForMultishipping  = true;
     protected $_canSaveCc = false;
-
-    protected $_allowCurrencyCode = array('AUD', 'CAD', 'CZK', 'DKK', 'EUR', 'HKD', 'HUF', 'ILS', 'JPY', 'MXN', 'NOK', 'NZD', 'PLN', 'GBP', 'SGD', 'SEK', 'CHF', 'USD');
+    protected $_canFetchTransactionInfo = true;
+    protected $_canReviewPayment        = true;
 
     /**
-     * Check method for processing with base currency
+     * Website Payments Pro instance
+     *
+     * @var Mage_Paypal_Model_Pro
+     */
+    protected $_pro = null;
+
+    /**
+     * Website Payments Pro instance type
+     *
+     * @var $_proType string
+     */
+    protected $_proType = 'paypal/pro';
+
+    public function __construct($params = array())
+    {
+        $proInstance = array_shift($params);
+        if ($proInstance && ($proInstance instanceof Mage_Paypal_Model_Pro)) {
+            $this->_pro = $proInstance;
+        } else {
+            $this->_pro = Mage::getModel($this->_proType);
+        }
+        $this->_pro->setMethod($this->_code);
+    }
+
+    /**
+     * Store setter
+     * Also updates store ID in config object
+     *
+     * @param Mage_Core_Model_Store|int $store
+     */
+    public function setStore($store)
+    {
+        $this->setData('store', $store);
+        if (null === $store) {
+            $store = Mage::app()->getStore()->getId();
+        }
+        $this->_pro->getConfig()->setStoreId(is_object($store) ? $store->getId() : $store);
+        return $this;
+    }
+
+    /**
+     * Whether method is available for specified currency
      *
      * @param string $currencyCode
-     * @return boolean
+     * @return bool
      */
     public function canUseForCurrency($currencyCode)
     {
-        if (!in_array($currencyCode, $this->_allowCurrencyCode)) {
-            return false;
+        return $this->_pro->getConfig()->isCurrencyCodeSupported($currencyCode);
+    }
+
+    /**
+     * Payment action getter compatible with payment model
+     *
+     * @see Mage_Sales_Model_Payment::place()
+     * @return string
+     */
+    public function getConfigPaymentAction()
+    {
+        return $this->_pro->getConfig()->getPaymentAction();
+    }
+
+    /**
+     * Return available CC types for gateway based on merchant country
+     *
+     * @return string
+     */
+    public function getAllowedCcTypes()
+    {
+        $ccTypes = explode(',', $this->_pro->getConfig()->cctypes);
+        $country = $this->_pro->getConfig()->getMerchantCountry();
+
+        if ($country == 'GB') {
+            $ccTypes = array_intersect(array('SM', 'SO', 'MC', 'DI', 'VI'), $ccTypes);
+        } elseif ($country == 'CA') {
+            $ccTypes = array_intersect(array('MC', 'VI'), $ccTypes);
         }
-        return true;
+        return implode(',', $ccTypes);
     }
 
     /**
-     * Get Paypal API Model
-     *
-     * @return Mage_Paypal_Model_Api_Nvp
+     * Check whether payment method can be used
+     * @param Mage_Sales_Model_Quote
+     * @return bool
      */
-    public function getApi()
+    public function isAvailable($quote = null)
     {
-        return Mage::getSingleton('paypal/api_nvp');
-    }
-
-    /**
-     * Get paypal session namespace
-     *
-     * @return Mage_Paypal_Model_Session
-     */
-    public function getSession()
-    {
-        return Mage::getSingleton('paypal/session');
-    }
-
-    /**
-     * Get checkout session namespace
-     *
-     * @return Mage_Checkout_Model_Session
-     */
-    public function getCheckout()
-    {
-        return Mage::getSingleton('checkout/session');
-    }
-
-    /**
-     * Get current quote
-     *
-     * @return Mage_Sales_Model_Quote
-     */
-    public function getQuote()
-    {
-        return $this->getCheckout()->getQuote();
-    }
-
-    public function getRedirectUrl()
-    {
-        return $this->getApi()->getRedirectUrl();
-    }
-
-    public function getCountryRegionId()
-    {
-        $a = $this->getApi()->getShippingAddress();
-        return $this;
-    }
-
-    public function getPaymentAction()
-    {
-        $paymentAction = $this->getConfigData('payment_action');
-        if (!$paymentAction) {
-            $paymentAction = Mage_Paypal_Model_Api_Nvp::PAYMENT_TYPE_AUTH;
+        if (parent::isAvailable($quote) && $this->_pro->getConfig()->isMethodAvailable()) {
+            return true;
         }
-        return $paymentAction;
+        return false;
     }
 
+    /**
+     * Custom getter for payment configuration
+     *
+     * @param string $field
+     * @param int $storeId
+     * @return mixed
+     */
+    public function getConfigData($field, $storeId = null)
+    {
+        $value = null;
+        switch ($field)
+        {
+            case 'cctypes':
+                $value = $this->getAllowedCcTypes();
+                break;
+            default:
+                $value = $this->_pro->getConfig()->$field;
+        }
+        return $value;
+    }
+
+    /**
+     * Authorize payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return Mage_Paypal_Model_Direct
+     */
     public function authorize(Varien_Object $payment, $amount)
     {
-        $api = $this->getApi()
-            ->setPaymentType($this->getPaymentAction())
-            ->setAmount($amount)
-            ->setBillingAddress($payment->getOrder()->getBillingAddress())
-            ->setShippingAddress($payment->getOrder()->getShippingAddress())
-            ->setEmail($payment->getOrder()->getCustomerEmail())
-            ->setPayment($payment)
-            ->setInvNum($payment->getOrder()->getIncrementId());
-
-        if ($api->callDoDirectPayment()!==false) {
-            $payment
-                ->setStatus('APPROVED')
-                ->setCcTransId($api->getTransactionId())
-                ->setCcAvsStatus($api->getAvsCode())
-                ->setCcCidStatus($api->getCvv2Match());
-
-            #$payment->getOrder()->addStatusToHistory(Mage::getStoreConfig('payment/paypal_direct/order_status'));
-        } else {
-            $e = $api->getError();
-            if (isset($e['short_message'])) {
-                $message = $e['short_message'];
-            } else {
-                $message = Mage::helper('paypal')->__('There has been an error processing your payment. Please try later or contact us for help.');
-            }
-            if (isset($e['long_message'])) {
-                $message .= ': '.$e['long_message'];
-            }
-            Mage::throwException($message);
-        }
-        return $this;
+        return $this->_placeOrder($payment, $amount);
     }
 
-    public function capture(Varien_Object $payment, $amount)
-    {
-        $api = $this->getApi()
-            ->setPaymentType(Mage_Paypal_Model_Api_Nvp::PAYMENT_TYPE_SALE)
-            ->setAmount($amount)
-            ->setBillingAddress($payment->getOrder()->getBillingAddress())
-            ->setShippingAddress($payment->getOrder()->getShippingAddress())
-            ->setEmail($payment->getOrder()->getCustomerEmail())
-            ->setPayment($payment)
-            ->setInvNum($payment->getOrder()->getIncrementId());
-        ;
-        if ($payment->getCcTransId()) {
-            $api->setAuthorizationId($payment->getCcTransId())
-                ->setCompleteType('NotComplete');
-            $result = $api->callDoCapture()!==false;
-        } else {
-            $result = $api->callDoDirectPayment()!==false;
-        }
-        if ($result) {
-            $payment
-                ->setStatus('APPROVED')
-                //->setCcTransId($api->getTransactionId())
-                ->setLastTransId($api->getTransactionId())
-                ->setCcAvsStatus($api->getAvsCode())
-                ->setCcCidStatus($api->getCvv2Match());
-
-            #$payment->getOrder()->addStatusToHistory(Mage::getStoreConfig('payment/paypal_direct/order_status'));
-        } else {
-            $e = $api->getError();
-            if (isset($e['short_message'])) {
-                $message = $e['short_message'];
-            } else {
-                $message = Mage::helper('paypal')->__('There has been an error processing your payment. Please try later or contact us for help.');
-            }
-            if (isset($e['long_message'])) {
-                $message .= ': '.$e['long_message'];
-            }
-            Mage::throwException($message);
-        }
-        return $this;
-    }
-
-    public function onOrderValidate(Mage_Sales_Model_Order_Payment $payment)
-    {
-        $api = $this->getApi()
-            ->setPaymentType($this->getPaymentAction())
-            ->setAmount($payment->getOrder()->getGrandTotal())
-            ->setBillingAddress($payment->getOrder()->getBillingAddress())
-            ->setPayment($payment)
-            ->setInvNum($payment->getOrder()->getIncrementId());
-
-        if ($api->callDoDirectPayment()!==false) {
-            $payment
-                ->setStatus('APPROVED')
-                ->setCcTransId($api->getTransactionId())
-                ->setCcAvsStatus($api->getAvsCode())
-                ->setCcCidStatus($api->getCvv2Match());
-
-            #$payment->getOrder()->addStatusToHistory(Mage::getStoreConfig('payment/paypal_direct/order_status'));
-        } else {
-            $e = $api->getError();
-            if (isset($e['short_message'])) {
-                $message = $e['short_message'];
-            } else {
-                $message = Mage::helper('paypal')->__('There has been an error processing your payment. Please try later or contact us for help.');
-            }
-            if (isset($e['long_message'])) {
-                $message .= ': '.$e['long_message'];
-            }
-            $payment
-                ->setStatus('ERROR')
-                ->setStatusDescription($message);
-        }
-        return $this;
-    }
-
-      /**
-      * void
-      *
-      * @access public
-      * @param string $payment Varien_Object object
-      * @return Mage_Payment_Model_Abstract
-      */
+    /**
+     * Void payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return Mage_Paypal_Model_Direct
+     */
     public function void(Varien_Object $payment)
     {
-        $error = false;
-        if($payment->getVoidTransactionId()){
-            $api = $this->getApi();
-            $api->setPayment($payment);
-            $api->setAuthorizationId($payment->getVoidTransactionId());
-            if ($api->callDoVoid()!==false){
-                 $payment->setStatus('SUCCESS')
-                    ->setCcTransId($api->getTransactionId());
-            }else{
-               $e = $api->getError();
-               $error = $e['short_message'].': '.$e['long_message'];
-            }
-        }else{
-            $payment->setStatus('ERROR');
-            $error = Mage::helper('paypal')->__('Invalid transaction id');
-        }
-        if ($error !== false) {
-            Mage::throwException($error);
+        $this->_pro->void($payment);
+        return $this;
+    }
+
+    /**
+     * Capture payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return Mage_Paypal_Model_Direct
+     */
+    public function capture(Varien_Object $payment, $amount)
+    {
+        if (false === $this->_pro->capture($payment, $amount)) {
+            $this->_placeOrder($payment, $amount);
         }
         return $this;
     }
 
-      /**
-      * refund the amount with transaction id
-      *
-      * @access public
-      * @param string $payment Varien_Object object
-      * @return Mage_Payment_Model_Abstract
-      */
-      public function refund(Varien_Object $payment, $amount)
-      {
-          $error = false;
-          if($payment->getRefundTransactionId() && $amount>0){
-              $api = $this->getApi();
-              $api->setPayment($payment);
-              //we can refund the amount full or partial so it is good to set up as partial refund
-              $api->setTransactionId($payment->getRefundTransactionId())
-                ->setRefundType(Mage_Paypal_Model_Api_Nvp::REFUND_TYPE_PARTIAL)
-                ->setAmount($amount);
-
-             if ($api->callRefundTransaction()!==false){
-                 $payment->setStatus('SUCCESS')
-                    ->setCcTransId($api->getTransactionId());
-             }else{
-               $e = $api->getError();
-               $error = $e['short_message'].': '.$e['long_message'];
-             }
-        }else{
-            $error = Mage::helper('paypal')->__('Error in refunding the payment');
-        }
-        if ($error !== false) {
-            Mage::throwException($error);
-        }
+    /**
+     * Refund capture
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return Mage_Paypal_Model_Direct
+     */
+    public function refund(Varien_Object $payment, $amount)
+    {
+        $this->_pro->refund($payment, $amount);
         return $this;
-      }
+    }
 
+    /**
+     * Cancel payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return Mage_Paypal_Model_Direct
+     */
+    public function cancel(Varien_Object $payment)
+    {
+        $this->void($payment);
+
+        return $this;
+    }
+
+    /**
+     * Whether payment can be reviewed
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return bool
+     */
+    public function canReviewPayment(Mage_Payment_Model_Info $payment)
+    {
+        return parent::canReviewPayment($payment) && $this->_pro->canReviewPayment($payment);
+    }
+
+    /**
+     * Attempt to accept a pending payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return bool
+     */
+    public function acceptPayment(Mage_Payment_Model_Info $payment)
+    {
+        parent::acceptPayment($payment);
+        return $this->_pro->reviewPayment($payment, Mage_Paypal_Model_Pro::PAYMENT_REVIEW_ACCEPT);
+    }
+
+    /**
+     * Attempt to deny a pending payment
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @return bool
+     */
+    public function denyPayment(Mage_Payment_Model_Info $payment)
+    {
+        parent::denyPayment($payment);
+        return $this->_pro->reviewPayment($payment, Mage_Paypal_Model_Pro::PAYMENT_REVIEW_DENY);
+    }
+
+    /**
+     * Set fallback API URL if not defined in configuration
+     *
+     * @return Mage_Centinel_Model_Service
+     */
+    public function getCentinelValidator()
+    {
+        $validator = parent::getCentinelValidator();
+        if (!$validator->getCustomApiEndpointUrl()) {
+            $validator->setCustomApiEndpointUrl($this->_pro->getConfig()->centinelDefaultApiUrl);
+        }
+        return $validator;
+    }
+
+    /**
+     * Fetch transaction details info
+     *
+     * @param Mage_Payment_Model_Info $payment
+     * @param string $transactionId
+     * @return array
+     */
+    public function fetchTransactionInfo(Mage_Payment_Model_Info $payment, $transactionId)
+    {
+        return $this->_pro->fetchTransactionInfo($payment, $transactionId);
+    }
+
+    /**
+     * Place an order with authorization or capture action
+     *
+     * @param Mage_Sales_Model_Order_Payment $payment
+     * @param float $amount
+     * @return Mage_Paypal_Model_Direct
+     */
+    protected function _placeOrder(Mage_Sales_Model_Order_Payment $payment, $amount)
+    {
+        $order = $payment->getOrder();
+        $api = $this->_pro->getApi()
+            ->setPaymentAction($this->_pro->getConfig()->paymentAction)
+            ->setIpAddress(Mage::app()->getRequest()->getClientIp(false))
+            ->setAmount($amount)
+            ->setCurrencyCode($order->getBaseCurrencyCode())
+            ->setInvNum($order->getIncrementId())
+            ->setEmail($order->getCustomerEmail())
+            ->setNotifyUrl(Mage::getUrl('paypal/ipn/'))
+            ->setCreditCardType($payment->getCcType())
+            ->setCreditCardNumber($payment->getCcNumber())
+            ->setCreditCardExpirationDate(
+                $this->_getFormattedCcExpirationDate($payment->getCcExpMonth(), $payment->getCcExpYear())
+            )
+            ->setCreditCardCvv2($payment->getCcCid())
+            ->setMaestroSoloIssueNumber($payment->getCcSsIssue())
+        ;
+        if ($payment->getCcSsStartMonth() && $payment->getCcSsStartYear()) {
+            $year = sprintf('%02d', substr($payment->getCcSsStartYear(), -2, 2));
+            $api->setMaestroSoloIssueDate(
+                $this->_getFormattedCcExpirationDate($payment->getCcSsStartMonth(), $year)
+            );
+        }
+        if ($this->getIsCentinelValidationEnabled()) {
+            $this->getCentinelValidator()->exportCmpiData($api);
+        }
+
+        // add shipping and billing addresses
+        if ($order->getIsVirtual()) {
+            $api->setAddress($order->getBillingAddress())->setSuppressShipping(true);
+        } else {
+            $api->setAddress($order->getShippingAddress());
+            $api->setBillingAddress($order->getBillingAddress());
+        }
+
+        // add line items
+        $api->setPaypalCart(Mage::getModel('paypal/cart', array($order)))
+            ->setIsLineItemsEnabled($this->_pro->getConfig()->lineItemsEnabled)
+        ;
+
+        // call api and import transaction and other payment information
+        $api->callDoDirectPayment();
+        $this->_importResultToPayment($api, $payment);
+
+        try {
+            $api->callGetTransactionDetails();
+        } catch (Mage_Core_Exception $e) {
+            // if we recieve errors, but DoDirectPayment response is Success, then set Pending status for transaction
+            $payment->setIsTransactionPending(true);
+        }
+        $this->_importResultToPayment($api, $payment);
+        return $this;
+    }
+
+    /**
+     * Format credit card expiration date based on month and year values
+     * Format: mmyyyy
+     *
+     * @param string|int $month
+     * @param string|int $year
+     * @return string
+     */
+    protected function _getFormattedCcExpirationDate($month, $year)
+    {
+        return sprintf('%02d%02d', $month, $year);
+    }
+
+    /**
+     * Import direct payment results to payment
+     *
+     * @param Mage_Paypal_Model_Api_Nvp
+     * @param Mage_Sales_Model_Order_Payment
+     */
+    protected function _importResultToPayment($api, $payment)
+    {
+        $payment->setTransactionId($api->getTransactionId())->setIsTransactionClosed(0);
+        $this->_pro->importPaymentInfo($api, $payment);
+    }
+
+    /**
+     * Check void availability
+     *
+     * @param   Varien_Object $payment
+     * @return  bool
+     */
+    public function canVoid(Varien_Object $payment)
+    {
+        if ($payment instanceof Mage_Sales_Model_Order_Invoice
+            || $payment instanceof Mage_Sales_Model_Order_Creditmemo
+        ) {
+            return false;
+        }
+
+        return $this->_canVoid;
+    }
 }

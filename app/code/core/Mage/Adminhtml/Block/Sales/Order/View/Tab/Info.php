@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -87,16 +87,24 @@ class Mage_Adminhtml_Block_Sales_Order_View_Tab_Info
     }
 
     /**
-     * Retrive giftmessage block html
+     * Retrieve giftmessage block html
      *
+     * @deprecated after 1.4.2.0, use self::getGiftOptionsHtml() instead
      * @return string
      */
     public function getGiftmessageHtml()
     {
-        if (!$this->getOrder()->canInvoice()) {
-            return '';
-        }
         return $this->getChildHtml('order_giftmessage');
+    }
+
+    /**
+     * Retrieve gift options container block html
+     *
+     * @return string
+     */
+    public function getGiftOptionsHtml()
+    {
+        return $this->getChildHtml('gift_options');
     }
 
     public function getPaymentHtml()

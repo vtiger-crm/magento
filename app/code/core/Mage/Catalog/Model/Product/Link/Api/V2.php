@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,11 +42,11 @@ class Mage_Catalog_Model_Product_Link_Api_V2 extends Mage_Catalog_Model_Product_
      * @param array $data
      * @return boolean
      */
-    public function assign($type, $productId, $linkedProductId, $data = array())
+    public function assign($type, $productId, $linkedProductId, $data = array(), $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -67,9 +67,24 @@ class Mage_Catalog_Model_Product_Link_Api_V2 extends Mage_Catalog_Model_Product_
         }
 
         try {
-            $link->getResource()->saveProductLinks($product, $links, $typeId);
+            if ($type == 'grouped') {
+                $link->getResource()->saveGroupedLinks($product, $links, $typeId);
+            } else {
+                $link->getResource()->saveProductLinks($product, $links, $typeId);
+            }
+
+            $_linkInstance = Mage::getSingleton('catalog/product_link');
+            $_linkInstance->saveProductRelations($product);
+
+            $indexerStock = Mage::getModel('cataloginventory/stock_status');
+            $indexerStock->updateStatus($productId);
+
+            $indexerPrice = Mage::getResourceModel('catalog/product_indexer_price');
+            $indexerPrice->reindexProductIds($productId);
+
         } catch (Exception $e) {
-            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product not exists.'));
+            $this->_fault('data_invalid', $e->getMessage());
+            //$this->_fault('data_invalid', Mage::helper('catalog')->__('Link product does not exist.'));
         }
 
         return true;
@@ -84,11 +99,11 @@ class Mage_Catalog_Model_Product_Link_Api_V2 extends Mage_Catalog_Model_Product_
      * @param array $data
      * @return boolean
      */
-    public function update($type, $productId, $linkedProductId, $data = array())
+    public function update($type, $productId, $linkedProductId, $data = array(), $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -109,9 +124,23 @@ class Mage_Catalog_Model_Product_Link_Api_V2 extends Mage_Catalog_Model_Product_
         }
 
         try {
-            $link->getResource()->saveProductLinks($product, $links, $typeId);
+            if ($type == 'grouped') {
+                $link->getResource()->saveGroupedLinks($product, $links, $typeId);
+            } else {
+                $link->getResource()->saveProductLinks($product, $links, $typeId);
+            }
+
+            $_linkInstance = Mage::getSingleton('catalog/product_link');
+            $_linkInstance->saveProductRelations($product);
+
+            $indexerStock = Mage::getModel('cataloginventory/stock_status');
+            $indexerStock->updateStatus($productId);
+
+            $indexerPrice = Mage::getResourceModel('catalog/product_indexer_price');
+            $indexerPrice->reindexProductIds($productId);
+
         } catch (Exception $e) {
-            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product not exists.'));
+            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product does not exist.'));
         }
 
         return true;

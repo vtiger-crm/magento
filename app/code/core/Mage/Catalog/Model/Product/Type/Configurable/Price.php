@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -64,9 +64,15 @@ class Mage_Catalog_Model_Product_Type_Configurable_Price extends Mage_Catalog_Mo
                 $attribute->getPrices() ? $attribute->getPrices() : array(),
                 isset($selectedAttributes[$attributeId]) ? $selectedAttributes[$attributeId] : null
             );
+            $product->setParentId(true);
             if($value) {
                 if($value['pricing_value'] != 0) {
-                    $finalPrice += $this->_calcSelectionPrice($value, $basePrice);
+                    $product->setConfigurablePrice($this->_calcSelectionPrice($value, $basePrice));
+                    Mage::dispatchEvent(
+                        'catalog_product_type_configurable_price',
+                        array('product' => $product)
+                    );
+                    $finalPrice += $product->getConfigurablePrice();
                 }
             }
         }

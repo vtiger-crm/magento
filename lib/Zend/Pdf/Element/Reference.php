@@ -14,30 +14,25 @@
  *
  * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: Reference.php 22797 2010-08-06 15:02:12Z alexander $
  */
+
+
+/** Internally used classes */
+#require_once 'Zend/Pdf/Element/Null.php';
 
 
 /** Zend_Pdf_Element */
 #require_once 'Zend/Pdf/Element.php';
-
-/** Zend_Pdf_Element_Reference_Context */
-#require_once 'Zend/Pdf/Element/Reference/Context.php';
-
-/** Zend_Pdf_Element_Reference_Table */
-#require_once 'Zend/Pdf/Element/Reference/Table.php';
-
-/** Zend_Pdf_ElementFactory */
-#require_once 'Zend/Pdf/ElementFactory.php';
-
 
 /**
  * PDF file 'reference' element implementation
  *
  * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
@@ -96,9 +91,11 @@ class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
     public function __construct($objNum, $genNum = 0, Zend_Pdf_Element_Reference_Context $context, Zend_Pdf_ElementFactory $factory)
     {
         if ( !(is_integer($objNum) && $objNum > 0) ) {
+            #require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Object number must be positive integer');
         }
         if ( !(is_integer($genNum) && $genNum >= 0) ) {
+            #require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Generation number must be non-negative integer');
         }
 
@@ -164,10 +161,12 @@ class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
      */
     private function _dereference()
     {
-        $obj = $this->_context->getParser()->getObject(
-                       $this->_context->getRefTable()->getOffset($this->_objNum . ' ' . $this->_genNum . ' R'),
-                       $this->_context
-                                                      );
+        if (($obj = $this->_factory->fetchObject($this->_objNum . ' ' . $this->_genNum)) === null) {
+            $obj = $this->_context->getParser()->getObject(
+                           $this->_context->getRefTable()->getOffset($this->_objNum . ' ' . $this->_genNum . ' R'),
+                           $this->_context
+                                                          );
+        }
 
         if ($obj === null ) {
             $this->_ref = new Zend_Pdf_Element_Null();
@@ -175,13 +174,37 @@ class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
         }
 
         if ($obj->toString() != $this->_objNum . ' ' . $this->_genNum . ' R') {
+            #require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Incorrect reference to the object');
         }
 
         $this->_ref = $obj;
-        $this->setParentObject($obj);
+    }
 
-        $this->_factory->registerObject($this);
+    /**
+     * Detach PDF object from the factory (if applicable), clone it and attach to new factory.
+     *
+     * @param Zend_Pdf_ElementFactory $factory  The factory to attach
+     * @param array &$processed  List of already processed indirect objects, used to avoid objects duplication
+     * @param integer $mode  Cloning mode (defines filter for objects cloning)
+     * @returns Zend_Pdf_Element
+     */
+    public function makeClone(Zend_Pdf_ElementFactory $factory, array &$processed, $mode)
+    {
+        if ($this->_ref === null) {
+            $this->_dereference();
+        }
+
+        // This code duplicates code in Zend_Pdf_Element_Object class,
+        // but allows to avoid unnecessary method call in most cases
+        $id = spl_object_hash($this->_ref);
+        if (isset($processed[$id])) {
+            // Do nothing if object is already processed
+            // return it
+            return $processed[$id];
+        }
+
+        return $this->_ref->makeClone($factory, $processed, $mode);
     }
 
     /**
@@ -196,6 +219,19 @@ class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
         $this->_ref->touch();
     }
 
+    /**
+     * Return object, which can be used to identify object and its references identity
+     *
+     * @return Zend_Pdf_Element_Object
+     */
+    public function getObject()
+    {
+        if ($this->_ref === null) {
+            $this->_dereference();
+        }
+
+        return $this->_ref;
+    }
 
     /**
      * Get handler
@@ -240,20 +276,7 @@ class Zend_Pdf_Element_Reference extends Zend_Pdf_Element
             $this->_dereference();
         }
 
-        switch (count($args)) {
-            case 0:
-                return $this->_ref->$method();
-            case 1:
-                return $this->_ref->$method($args[0]);
-            case 2:
-                return $this->_ref->$method($args[0], $args[1]);
-            case 3:
-                return $this->_ref->$method($args[0], $args[1], $args[2]);
-            case 4:
-                return $this->_ref->$method($args[0], $args[1], $args[2], $args[3]);
-            default:
-                throw new Zend_Pdf_Exception('Unsupported number of arguments');
-        }
+        return call_user_func_array(array($this->_ref, $method), $args);
     }
 
     /**

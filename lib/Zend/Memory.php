@@ -12,9 +12,11 @@
  * obtain it through the world-wide-web, please send an email
  * to license@zend.com so we can send you a copy immediately.
  *
+ * @category   Zend
  * @package    Zend_Memory
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: Memory.php 20804 2010-02-01 15:49:16Z alexander $
  */
 
 /** Zend_Memory_Exception */
@@ -32,7 +34,7 @@
 /**
  * @category   Zend
  * @package    Zend_Memory
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Memory
@@ -51,17 +53,25 @@ class Zend_Memory
             return new Zend_Memory_Manager();
         }
 
-        // because lowercase will fail
-        $backend = @ucfirst(strtolower($backend));
+        // Look through available backendsand
+        // (that allows to specify it in any case)
+        $backendIsFound = false;
+        foreach (Zend_Cache::$availableBackends as $zendCacheBackend) {
+            if (strcasecmp($backend, $zendCacheBackend) == 0) {
+                $backend = $zendCacheBackend;
+                $backendIsFound = true;
+                break;
+            }
+        }
 
-        if (!in_array($backend, Zend_Cache::$availableBackends)) {
+        if (!$backendIsFound) {
             #require_once 'Zend/Memory/Exception.php';
             throw new Zend_Memory_Exception("Incorrect backend ($backend)");
         }
 
         $backendClass = 'Zend_Cache_Backend_' . $backend;
 
-        // For perfs reasons, we do not use the #Zend_Loader::loadClass() method
+        // For perfs reasons, we do not use the Zend_Loader::loadClass() method
         // (security controls are explicit)
         #require_once str_replace('_', DIRECTORY_SEPARATOR, $backendClass) . '.php';
 

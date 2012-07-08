@@ -18,18 +18,35 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_AdminNotification
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_AdminNotification
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * AdminNotification Inbox model
  *
- * @category   Mage
- * @package    Mage_AdminNotification
+ * @method Mage_AdminNotification_Model_Resource_Inbox _getResource()
+ * @method Mage_AdminNotification_Model_Resource_Inbox getResource()
+ * @method int getSeverity()
+ * @method Mage_AdminNotification_Model_Inbox setSeverity(int $value)
+ * @method string getDateAdded()
+ * @method Mage_AdminNotification_Model_Inbox setDateAdded(string $value)
+ * @method string getTitle()
+ * @method Mage_AdminNotification_Model_Inbox setTitle(string $value)
+ * @method string getDescription()
+ * @method Mage_AdminNotification_Model_Inbox setDescription(string $value)
+ * @method string getUrl()
+ * @method Mage_AdminNotification_Model_Inbox setUrl(string $value)
+ * @method int getIsRead()
+ * @method Mage_AdminNotification_Model_Inbox setIsRead(int $value)
+ * @method int getIsRemove()
+ * @method Mage_AdminNotification_Model_Inbox setIsRemove(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_AdminNotification
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_AdminNotification_Model_Inbox extends Mage_Core_Model_Abstract
@@ -98,6 +115,6 @@ class Mage_AdminNotification_Model_Inbox extends Mage_Core_Model_Abstract
      */
     public function parse(array $data)
     {
-        return $this->getResource()->parse($this, $data);;
+        return $this->getResource()->parse($this, $data);
     }
 }

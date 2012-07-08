@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,10 +33,60 @@
  */
 class Mage_Checkout_Block_Cart extends Mage_Checkout_Block_Cart_Abstract
 {
+    /**
+     * Prepare Quote Item Product URLs
+     *
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->prepareItemUrls();
+    }
+
+    /**
+     * prepare cart items URLs
+     */
+    public function prepareItemUrls()
+    {
+        $products = array();
+        /* @var $item Mage_Sales_Model_Quote_Item */
+        foreach ($this->getItems() as $item) {
+            $product    = $item->getProduct();
+            $option     = $item->getOptionByCode('product_type');
+            if ($option) {
+                $product = $option->getProduct();
+            }
+
+            if ($item->getStoreId() != Mage::app()->getStore()->getId()
+                && !$item->getRedirectUrl()
+                && !$product->isVisibleInSiteVisibility())
+            {
+                $products[$product->getId()] = $item->getStoreId();
+            }
+        }
+
+        if ($products) {
+            $products = Mage::getResourceSingleton('catalog/url')
+                ->getRewriteByProductStore($products);
+            foreach ($this->getItems() as $item) {
+                $product    = $item->getProduct();
+                $option     = $item->getOptionByCode('product_type');
+                if ($option) {
+                    $product = $option->getProduct();
+                }
+
+                if (isset($products[$product->getId()])) {
+                    $object = new Varien_Object($products[$product->getId()]);
+                    $item->getProduct()->setUrlDataObject($object);
+                }
+            }
+        }
+    }
 
     public function chooseTemplate()
     {
-        if ($this->getQuote()->getItemsCount()) {
+        $itemsCount = $this->getItemsCount() ? $this->getItemsCount() : $this->getQuote()->getItemsCount();
+        if ($itemsCount) {
             $this->setTemplate($this->getCartTemplate());
         } else {
             $this->setTemplate($this->getEmptyTemplate());
@@ -57,7 +107,8 @@ class Mage_Checkout_Block_Cart extends Mage_Checkout_Block_Cart_Abstract
     {
         $isActive = $this->_getData('is_wishlist_active');
         if ($isActive === null) {
-            $isActive = Mage::getStoreConfig('wishlist/general/active') && Mage::getSingleton('customer/session')->isLoggedIn();
+            $isActive = Mage::getStoreConfig('wishlist/general/active')
+                && Mage::getSingleton('customer/session')->isLoggedIn();
             $this->setIsWishlistActive($isActive);
         }
         return $isActive;
@@ -86,4 +137,46 @@ class Mage_Checkout_Block_Cart extends Mage_Checkout_Block_Cart_Abstract
         return $this->helper('checkout/cart')->getIsVirtualQuote();
     }
 
+    /**
+     * Return list of available checkout methods
+     *
+     * @param string $nameInLayout Container block alias in layout
+     * @return array
+     */
+    public function getMethods($nameInLayout)
+    {
+        if ($this->getChild($nameInLayout) instanceof Mage_Core_Block_Abstract) {
+            return $this->getChild($nameInLayout)->getSortedChildren();
+        }
+        return array();
+    }
+
+    /**
+     * Return HTML of checkout method (link, button etc.)
+     *
+     * @param string $name Block name in layout
+     * @return string
+     */
+    public function getMethodHtml($name)
+    {
+        $block = $this->getLayout()->getBlock($name);
+        if (!$block) {
+            Mage::throwException(Mage::helper('checkout')->__('Invalid method: %s', $name));
+        }
+        return $block->toHtml();
+    }
+
+    /**
+     * Return customer quote items
+     *
+     * @return array
+     */
+    public function getItems()
+    {
+        if ($this->getCustomItems()) {
+            return $this->getCustomItems();
+        }
+
+        return parent::getItems();
+    }
 }

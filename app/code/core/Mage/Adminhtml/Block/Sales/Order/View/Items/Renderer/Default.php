@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -39,8 +39,40 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     }
 
     /**
+     * Retrieve real html id for field
+     *
+     * @param string $name
+     * @return string
+     */
+    public function getFieldId($id)
+    {
+        return $this->getFieldIdPrefix() . $id;
+    }
+
+    /**
+     * Retrieve field html id prefix
+     *
+     * @return string
+     */
+    public function getFieldIdPrefix()
+    {
+        return 'order_item_' . $this->getItem()->getId() . '_';
+    }
+
+    /**
+     * Indicate that block can display container
+     *
+     * @return boolean
+     */
+    public function canDisplayContainer()
+    {
+        return $this->getRequest()->getParam('reload') != 1;
+    }
+
+    /**
      * Giftmessage object
      *
+     * @deprecated after 1.4.2.0
      * @var Mage_GiftMessage_Model_Message
      */
     protected $_giftMessage = array();
@@ -48,6 +80,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrive default value for giftmessage sender
      *
+     * @deprecated after 1.4.2.0
      * @return string
      */
     public function getDefaultSender()
@@ -66,6 +99,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrive default value for giftmessage recipient
      *
+     * @deprecated after 1.4.2.0
      * @return string
      */
     public function getDefaultRecipient()
@@ -94,6 +128,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrive real name for field
      *
+     * @deprecated after 1.4.2.0
      * @param string $name
      * @return string
      */
@@ -103,29 +138,9 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     }
 
     /**
-     * Retrive real html id for field
-     *
-     * @param string $name
-     * @return string
-     */
-    public function getFieldId($id)
-    {
-        return $this->getFieldIdPrefix() . $id;
-    }
-
-    /**
-     * Retrive field html id prefix
-     *
-     * @return string
-     */
-    public function getFieldIdPrefix()
-    {
-        return 'giftmessage_item_' . $this->getItem()->getId() . '_';
-    }
-
-    /**
      * Initialize gift message for entity
      *
+     * @deprecated after 1.4.2.0
      * @return Mage_Adminhtml_Block_Sales_Order_Edit_Items_Grid_Renderer_Name_Giftmessage
      */
     protected function _initMessage()
@@ -147,6 +162,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrive gift message for entity
      *
+     * @deprecated after 1.4.2.0
      * @return Mage_GiftMessage_Model_Message
      */
     public function getMessage()
@@ -161,6 +177,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrieve save url
      *
+     * @deprecated after 1.4.2.0
      * @return array
      */
     public function getSaveUrl()
@@ -175,6 +192,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     /**
      * Retrive block html id
      *
+     * @deprecated after 1.4.2.0
      * @return string
      */
     public function getHtmlId()
@@ -183,27 +201,44 @@ class Mage_Adminhtml_Block_Sales_Order_View_Items_Renderer_Default extends Mage_
     }
 
     /**
-     * Indicate that block can display container
-     *
-     * @return boolean
-     */
-    public function canDisplayContainer()
-    {
-        return $this->getRequest()->getParam('reload')!=1;
-    }
-
-    /**
      * Indicates that block can display giftmessages form
      *
+     * @deprecated after 1.4.2.0
      * @return boolean
      */
     public function canDisplayGiftmessage()
     {
-        if (!$this->getItem()->getOrder()->canInvoice()) {
-            return false;
-        }
         return $this->helper('giftmessage/message')->getIsMessagesAvailable(
             'order_item', $this->getItem(), $this->getItem()->getOrder()->getStoreId()
         );
     }
+
+    /**
+     * Display susbtotal price including tax
+     *
+     * @param Mage_Sales_Model_Order_Item $item
+     * @return string
+     */
+    public function displaySubtotalInclTax($item)
+    {
+        return $this->displayPrices(
+            $this->helper('checkout')->getBaseSubtotalInclTax($item),
+            $this->helper('checkout')->getSubtotalInclTax($item)
+        );
+    }
+
+    /**
+     * Display item price including tax
+     *
+     * @param Mage_Sales_Model_Order_Item $item
+     * @return string
+     */
+    public function displayPriceInclTax(Varien_Object $item)
+    {
+        return $this->displayPrices(
+            $this->helper('checkout')->getBasePriceInclTax($item),
+            $this->helper('checkout')->getPriceInclTax($item)
+        );
+    }
+
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -40,6 +40,20 @@ abstract class Mage_Sales_Model_Abstract extends Mage_Core_Model_Abstract
     abstract public function getStore();
 
     /**
+     * Processing object after save data
+     * Updates relevant grid table records.
+     *
+     * @return Mage_Core_Model_Abstract
+     */
+    protected function _afterSave()
+    {
+        if (!$this->getForceUpdateGridRecords()) {
+            $this->_getResource()->updateGridRecords($this->getId());
+        }
+        return parent::_afterSave();
+    }
+
+    /**
      * Get object created at date affected current active store timezone
      *
      * @return Zend_Date
@@ -47,7 +61,7 @@ abstract class Mage_Sales_Model_Abstract extends Mage_Core_Model_Abstract
     public function getCreatedAtDate()
     {
         return Mage::app()->getLocale()->date(
-            $this->_getResource()->mktime(($this->getCreatedAt())),
+            Varien_Date::toTimestamp($this->getCreatedAt()),
             null,
             null,
             true
@@ -63,7 +77,7 @@ abstract class Mage_Sales_Model_Abstract extends Mage_Core_Model_Abstract
     {
         return Mage::app()->getLocale()->storeDate(
             $this->getStore(),
-            $this->_getResource()->mktime(($this->getCreatedAt())),
+            Varien_Date::toTimestamp($this->getCreatedAt()),
             true
         );
     }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleBase
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleBase
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -44,9 +44,9 @@ class Mage_GoogleBase_Block_Adminhtml_Items_Product extends Mage_Adminhtml_Block
 
     protected function _beforeToHtml()
     {
-        $this->setId($this->getId().'_'.$this->getIndex());
-        $this->getChild('reset_filter_button')->setData('onclick', $this->getJsObjectName().'.resetFilter()');
-        $this->getChild('search_button')->setData('onclick', $this->getJsObjectName().'.doFilter()');
+        $this->setId($this->getId() . '_' . $this->getIndex());
+        $this->getChild('reset_filter_button')->setData('onclick', $this->getJsObjectName() . '.resetFilter()');
+        $this->getChild('search_button')->setData('onclick', $this->getJsObjectName() . '.doFilter()');
         return parent::_beforeToHtml();
     }
 
@@ -95,6 +95,15 @@ class Mage_GoogleBase_Block_Adminhtml_Items_Product extends Mage_Adminhtml_Block
             ->load()
             ->toOptionHash();
 
+        $this->addColumn('type',
+            array(
+                'header'=> Mage::helper('catalog')->__('Type'),
+                'width' => '60px',
+                'index' => 'type_id',
+                'type'  => 'options',
+                'options' => Mage::getSingleton('catalog/product_type')->getOptionArray(),
+        ));
+
         $this->addColumn('set_name',
             array(
                 'header'=> Mage::helper('catalog')->__('Attrib. Set Name'),
@@ -129,14 +138,14 @@ class Mage_GoogleBase_Block_Adminhtml_Items_Product extends Mage_Adminhtml_Block
 
         $this->getMassactionBlock()->addItem('add', array(
              'label'    => $this->__('Add to Google Base'),
-             'url'      => $this->getUrl('*/*/massAdd', array('_current'=>true)),
+             'url'      => $this->getUrl('*/*/massAdd', array('_current' => true)),
         ));
         return $this;
     }
 
     public function getGridUrl()
     {
-        return $this->getUrl('googlebase/selection/grid', array('index' => $this->getIndex(),'_current'=>true));
+        return $this->getUrl('*/googlebase_selection/grid', array('index' => $this->getIndex(), '_current' => true));
     }
 
     protected function _getGoogleBaseProductIds()

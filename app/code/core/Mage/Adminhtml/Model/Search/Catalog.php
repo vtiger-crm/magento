@@ -18,15 +18,26 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-
+/**
+ * Search Catalog Model
+ *
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Adminhtml_Model_Search_Catalog extends Varien_Object
 {
+    /**
+     * Load search results
+     *
+     * @return Mage_Adminhtml_Model_Search_Catalog
+     */
     public function load()
     {
         $arr = array();
@@ -36,7 +47,7 @@ class Mage_Adminhtml_Model_Search_Catalog extends Varien_Object
             return $this;
         }
 
-        $collection = Mage::helper('catalogSearch')->getQuery()->getResultCollection()
+        $collection = Mage::helper('catalogsearch')->getQuery()->getSearchCollection()
             ->addAttributeToSelect('name')
             ->addAttributeToSelect('description')
             ->addSearchFilter($this->getQuery())
@@ -45,12 +56,13 @@ class Mage_Adminhtml_Model_Search_Catalog extends Varien_Object
             ->load();
 
         foreach ($collection as $product) {
+            $description = strip_tags($product->getDescription());
             $arr[] = array(
                 'id'            => 'product/1/'.$product->getId(),
-                'type'          => 'Product',
+                'type'          => Mage::helper('adminhtml')->__('Product'),
                 'name'          => $product->getName(),
-                'description'   => Mage::helper('core/string')->substr($product->getDescription(), 0, 50),
-                'url'           => Mage::helper('adminhtml')->getUrl('*/catalog_product/edit', array('id'=>$product->getId())),
+                'description'   => Mage::helper('core/string')->substr($description, 0, 30),
+                'url' => Mage::helper('adminhtml')->getUrl('*/catalog_product/edit', array('id'=>$product->getId())),
             );
         }
 

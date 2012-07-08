@@ -27,8 +27,8 @@
 /**
  * Data collection
  *
- * @category   Varien
- * @package    Varien_Data
+ * @category    Varien
+ * @package     Varien_Data
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Varien_Data_Collection implements IteratorAggregate, Countable
@@ -83,7 +83,7 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
      *
      * if page size is false, then we works with all items
      *
-     * @var int || false
+     * @var int | false
      */
     protected $_pageSize = false;
 
@@ -128,7 +128,7 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
      */
     public function addFilter($field, $value, $type = 'and')
     {
-        $filter = array();
+        $filter = new Varien_Object(); // implements ArrayAccess
         $filter['field']   = $field;
         $filter['value']   = $value;
         $filter['type']    = strtolower($type);
@@ -136,6 +136,43 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
         $this->_filters[] = $filter;
         $this->_isFiltersRendered = false;
         return $this;
+    }
+
+    /**
+     * Search for a filter by specified field
+     *
+     * Multiple filters can be matched if an array is specified:
+     * - 'foo' -- get the first filter with field name 'foo'
+     * - array('foo') -- get all filters with field name 'foo'
+     * - array('foo', 'bar') -- get all filters with field name 'foo' or 'bar'
+     * - array() -- get all filters 
+     *
+     * @param string|array $field
+     * @return Varien_Object|array|null
+     */
+    public function getFilter($field)
+    {
+        if (is_array($field)) {
+            // empty array: get all filters
+            if (empty($field)) {
+                return $this->_filters;
+            }
+            // non-empty array: collect all filters that match specified field names
+            $result = array();
+            foreach ($this->_filters as $filter) {
+                if (in_array($filter['field'], $field)) {
+                    $result[] = $filter;
+                }
+            }
+            return $result; 
+        }
+
+        // get a first filter by specified name
+        foreach ($this->_filters as $filter) {
+            if ($filter['field'] === $field) {
+                return $filter;
+            }
+        }
     }
 
     /**
@@ -215,7 +252,10 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
     public function getSize()
     {
         $this->load();
-        return $this->_totalRecords;
+        if (is_null($this->_totalRecords)) {
+            $this->_totalRecords = count($this->getItems());
+        }
+        return intval($this->_totalRecords);
     }
 
     /**
@@ -292,9 +332,9 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
 
         $res = array();
         foreach ($this as $item) {
-        	if ($item->getData($column)==$value) {
-        	    $res[] = $item;
-        	}
+            if ($item->getData($column)==$value) {
+                $res[] = $item;
+            }
         }
         return $res;
     }
@@ -311,9 +351,9 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
         $this->load();
 
         foreach ($this as $item) {
-        	if ($item->getData($column)==$value) {
-        	    return $item;
-        	}
+            if ($item->getData($column)==$value) {
+                return $item;
+            }
         }
         return null;
     }
@@ -327,21 +367,41 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
     public function addItem(Varien_Object $item)
     {
         $itemId = $this->_getItemId($item);
+
         if (!is_null($itemId)) {
             if (isset($this->_items[$itemId])) {
                 throw new Exception('Item ('.get_class($item).') with the same id "'.$item->getId().'" already exist');
             }
             $this->_items[$itemId] = $item;
-        }
-        else {
+        } else {
             $this->_items[] = $item;
         }
         return $this;
     }
 
+    /**
+     * Retrieve item id
+     *
+     * @param Varien_Object $item
+     * @return mixed
+     */
     protected function _getItemId(Varien_Object $item)
     {
         return $item->getId();
+    }
+
+    /**
+     * Retrieve ids of all tems
+     *
+     * @return array
+     */
+    public function getAllIds()
+    {
+        $ids = array();
+        foreach ($this->getItems() as $item) {
+            $ids[] = $this->_getItemId($item);
+        }
+        return $ids;
     }
 
     /**
@@ -612,7 +672,7 @@ class Varien_Data_Collection implements IteratorAggregate, Countable
             foreach ($additional as $code => $field) {
                 $data[$code] = $item->getData($field);
             }
-        	$res[] = $data;
+            $res[] = $data;
         }
         return $res;
     }

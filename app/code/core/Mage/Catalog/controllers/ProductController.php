@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,58 +33,27 @@
 class Mage_Catalog_ProductController extends Mage_Core_Controller_Front_Action
 {
     /**
+     * Current applied design settings
+     *
+     * @deprecated after 1.4.2.0-beta1
+     * @var array
+     */
+    protected $_designProductSettingsApplied = array();
+
+    /**
      * Initialize requested product object
      *
      * @return Mage_Catalog_Model_Product
      */
     protected function _initProduct()
     {
-        Mage::dispatchEvent('catalog_controller_product_init_before', array('controller_action'=>$this));
         $categoryId = (int) $this->getRequest()->getParam('category', false);
         $productId  = (int) $this->getRequest()->getParam('id');
 
-        if (!$productId) {
-            return false;
-        }
+        $params = new Varien_Object();
+        $params->setCategoryId($categoryId);
 
-        $product = Mage::getModel('catalog/product')
-            ->setStoreId(Mage::app()->getStore()->getId())
-            ->load($productId);
-
-        if (!Mage::helper('catalog/product')->canShow($product)) {
-            return false;
-        }
-        if (!in_array(Mage::app()->getStore()->getWebsiteId(), $product->getWebsiteIds())) {
-            return false;
-        }
-
-        $category = null;
-        if ($categoryId) {
-            $category = Mage::getModel('catalog/category')->load($categoryId);
-            $product->setCategory($category);
-            Mage::register('current_category', $category);
-        }
-        elseif ($categoryId = Mage::getSingleton('catalog/session')->getLastVisitedCategoryId()) {
-            if ($product->canBeShowInCategory($categoryId)) {
-                $category = Mage::getModel('catalog/category')->load($categoryId);
-                $product->setCategory($category);
-                Mage::register('current_category', $category);
-            }
-        }
-
-
-        Mage::register('current_product', $product);
-        Mage::register('product', $product);
-
-        try {
-            Mage::dispatchEvent('catalog_controller_product_init', array('product'=>$product));
-            Mage::dispatchEvent('catalog_controller_product_init_after', array('product'=>$product, 'controller_action' => $this));
-        } catch (Mage_Core_Exception $e) {
-            Mage::logException($e);
-            return false;
-        }
-
-        return $product;
+        return Mage::helper('catalog/product')->initProduct($productId, $this, $params);
     }
 
     /**
@@ -95,67 +64,81 @@ class Mage_Catalog_ProductController extends Mage_Core_Controller_Front_Action
      */
     protected function _initProductLayout($product)
     {
-        $update = $this->getLayout()->getUpdate();
-        $update->addHandle('default');
-        $this->addActionLayoutHandles();
-
-        $update->addHandle('PRODUCT_TYPE_'.$product->getTypeId());
-        $update->addHandle('PRODUCT_'.$product->getId());
-
-        if ($product->getPageLayout()) {
-            $this->getLayout()->helper('page/layout')
-                ->applyHandle($product->getPageLayout());
-        }
-
-        $this->loadLayoutUpdates();
-
-
-        $update->addUpdate($product->getCustomLayoutUpdate());
-
-        $this->generateLayoutXml()->generateLayoutBlocks();
-
-        if ($product->getPageLayout()) {
-            $this->getLayout()->helper('page/layout')
-                ->applyTemplate($product->getPageLayout());
-        }
-
-        $currentCategory = Mage::registry('current_category');
-        if ($root = $this->getLayout()->getBlock('root')) {
-            $root->addBodyClass('product-'.$product->getUrlKey());
-            if ($currentCategory instanceof Mage_Catalog_Model_Category) {
-                $root->addBodyClass('categorypath-'.$currentCategory->getUrlPath())
-                    ->addBodyClass('category-'.$currentCategory->getUrlKey());
-            }
-        }
+        Mage::helper('catalog/product_view')->initProductLayout($product, $this);
         return $this;
     }
 
     /**
-     * View product action
+     * Recursively apply custom design settings to product if it's container
+     * category custom_use_for_products option is setted to 1.
+     * If not or product shows not in category - applyes product's internal settings
+     *
+     * @deprecated after 1.4.2.0-beta1, functionality moved to Mage_Catalog_Model_Design
+     * @param Mage_Catalog_Model_Category|Mage_Catalog_Model_Product $object
+     * @param Mage_Core_Model_Layout_Update $update
+     */
+    protected function _applyCustomDesignSettings($object, $update)
+    {
+        if ($object instanceof Mage_Catalog_Model_Category) {
+            // lookup the proper category recursively
+            if ($object->getCustomUseParentSettings()) {
+                $parentCategory = $object->getParentCategory();
+                if ($parentCategory && $parentCategory->getId() && $parentCategory->getLevel() > 1) {
+                    $this->_applyCustomDesignSettings($parentCategory, $update);
+                }
+                return;
+            }
+
+            // don't apply to the product
+            if (!$object->getCustomApplyToProducts()) {
+                return;
+            }
+        }
+
+        if ($this->_designProductSettingsApplied) {
+            return;
+        }
+
+        $date = $object->getCustomDesignDate();
+        if (array_key_exists('from', $date) && array_key_exists('to', $date)
+            && Mage::app()->getLocale()->isStoreDateInInterval(null, $date['from'], $date['to'])
+        ) {
+            if ($object->getPageLayout()) {
+                $this->_designProductSettingsApplied['layout'] = $object->getPageLayout();
+            }
+            $this->_designProductSettingsApplied['update'] = $object->getCustomLayoutUpdate();
+        }
+    }
+
+    /**
+     * Product view action
      */
     public function viewAction()
     {
-        if ($product = $this->_initProduct()) {
-            Mage::dispatchEvent('catalog_controller_product_view', array('product'=>$product));
+        // Get initial data from request
+        $categoryId = (int) $this->getRequest()->getParam('category', false);
+        $productId  = (int) $this->getRequest()->getParam('id');
+        $specifyOptions = $this->getRequest()->getParam('options');
 
-            if ($this->getRequest()->getParam('options')) {
-                $notice = $product->getTypeInstance(true)->getSpecifyOptionMessage();
-                Mage::getSingleton('catalog/session')->addNotice($notice);
-            }
+        // Prepare helper and params
+        $viewHelper = Mage::helper('catalog/product_view');
 
-            Mage::getSingleton('catalog/session')->setLastViewedProductId($product->getId());
-            Mage::getModel('catalog/design')->applyDesign($product, Mage_Catalog_Model_Design::APPLY_FOR_PRODUCT);
+        $params = new Varien_Object();
+        $params->setCategoryId($categoryId);
+        $params->setSpecifyOptions($specifyOptions);
 
-            $this->_initProductLayout($product);
-            $this->_initLayoutMessages('catalog/session');
-            $this->_initLayoutMessages('tag/session');
-            $this->_initLayoutMessages('checkout/session');
-            $this->renderLayout();
-        }
-        else {
-            if (isset($_GET['store'])  && !$this->getResponse()->isRedirect()) {
-                $this->_redirect('');
-            } elseif (!$this->getResponse()->isRedirect()) {
+        // Render page
+        try {
+            $viewHelper->prepareAndRender($productId, $this, $params);
+        } catch (Exception $e) {
+            if ($e->getCode() == $viewHelper->ERR_NO_PRODUCT_LOADED) {
+                if (isset($_GET['store'])  && !$this->getResponse()->isRedirect()) {
+                    $this->_redirect('');
+                } elseif (!$this->getResponse()->isRedirect()) {
+                    $this->_forward('noRoute');
+                }
+            } else {
+                Mage::logException($e);
                 $this->_forward('noRoute');
             }
         }
@@ -180,14 +163,18 @@ class Mage_Catalog_ProductController extends Mage_Core_Controller_Front_Action
 
     /**
      * Display product image action
+     *
+     * @deprecated
      */
     public function imageAction()
     {
         $size = (string) $this->getRequest()->getParam('size');
         if ($size) {
-            $imageFile = preg_replace("#.*/catalog/product/image/size/[0-9]*x[0-9]*#", '', $this->getRequest()->getRequestUri());
+            $imageFile = preg_replace("#.*/catalog/product/image/size/[0-9]*x[0-9]*#", '',
+                $this->getRequest()->getRequestUri());
         } else {
-            $imageFile = preg_replace("#.*/catalog/product/image#", '', $this->getRequest()->getRequestUri());
+            $imageFile = preg_replace("#.*/catalog/product/image#", '',
+                $this->getRequest()->getRequestUri());
         }
 
         if (!strstr($imageFile, '.')) {
@@ -199,7 +186,10 @@ class Mage_Catalog_ProductController extends Mage_Core_Controller_Front_Action
             $imageModel = Mage::getModel('catalog/product_image');
             $imageModel->setSize($size)
                 ->setBaseFile($imageFile)
-                ->resize()
+                /**
+                 * Resizing has been commented because this one method are deprecated
+                 */
+                //->resize()
                 ->setWatermark( Mage::getStoreConfig('catalog/watermark/image') )
                 ->saveFile()
                 ->push();

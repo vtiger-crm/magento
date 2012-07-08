@@ -18,14 +18,23 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rating
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rating
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Rating model
+ *
+ * @method Mage_Rating_Model_Resource_Rating getResource()
+ * @method Mage_Rating_Model_Resource_Rating _getResource()
+ * @method array getRatingCodes()
+ * @method Mage_Rating_Model_Rating setRatingCodes(array $value)
+ * @method array getStores()
+ * @method Mage_Rating_Model_Rating setStores(array $value)
+ * @method string getRatingCode()
+ * @method Mage_Rating_Model_Rating getRatingCode(string $value)
  *
  * @category   Mage
  * @package    Mage_Rating
@@ -33,7 +42,20 @@
  */
 class Mage_Rating_Model_Rating extends Mage_Core_Model_Abstract
 {
-    public function __construct()
+    /**
+     * rating entity codes
+     *
+     */
+    const ENTITY_PRODUCT_CODE           = 'product';
+    const ENTITY_PRODUCT_REVIEW_CODE    = 'product_review';
+    const ENTITY_REVIEW_CODE            = 'review';
+
+    /**
+     * Define resource model
+     *
+     * @return void
+     */
+    protected function _construct()
     {
         $this->_init('rating/rating');
     }
@@ -94,5 +116,16 @@ class Mage_Rating_Model_Rating extends Mage_Core_Model_Abstract
     {
         $this->setReviewId($reviewId);
         return $this->_getResource()->getReviewSummary($this, $onlyForCurrentStore);
+    }
+
+    /**
+     * Get rating entity type id by code
+     *
+     * @param string $entityCode
+     * @return int
+     */
+    public function getEntityIdByCode($entityCode)
+    {
+        return $this->getResource()->getEntityIdByCode($entityCode);
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Wishlist
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Wishlist
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -30,60 +30,55 @@
  *
  * @category   Mage
  * @package    Mage_Wishlist
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Wishlist_Block_Customer_Wishlist extends Mage_Catalog_Block_Product_Abstract
+class Mage_Wishlist_Block_Customer_Wishlist extends Mage_Wishlist_Block_Abstract
 {
+    /*
+     * List of product type configuration to render options list
+     */
+    protected $_optionsCfg = array();
 
-    protected $_wishlistLoaded = false;
+    /*
+     * Constructor of block - adds default renderer for product configuration
+     */
+    public function _construct()
+    {
+        parent::_construct();
+        $this->addOptionsRenderCfg('default', 'catalog/product_configuration', 'wishlist/options_list.phtml');
+    }
 
+    /**
+     * Add wishlist conditions to collection
+     *
+     * @param  Mage_Wishlist_Model_Mysql4_Item_Collection $collection
+     * @return Mage_Wishlist_Block_Customer_Wishlist
+     */
+    protected function _prepareCollection($collection)
+    {
+        $collection->setInStockFilter(true)->setOrder('added_at', 'ASC');
+        return $this;
+    }
+
+    /**
+     * Preparing global layout
+     *
+     * @return Mage_Wishlist_Block_Customer_Wishlist
+     */
     protected function _prepareLayout()
     {
-        if ($headBlock = $this->getLayout()->getBlock('head')) {
+        parent::_prepareLayout();
+        $headBlock = $this->getLayout()->getBlock('head');
+        if ($headBlock) {
             $headBlock->setTitle($this->__('My Wishlist'));
         }
     }
 
-    public function getWishlist()
-    {
-        if(!$this->_wishlistLoaded) {
-            Mage::registry('wishlist')
-                ->loadByCustomer(Mage::getSingleton('customer/session')->getCustomer());
-
-            $collection = Mage::registry('wishlist')->getProductCollection()
-                ->addAttributeToSelect(Mage::getSingleton('catalog/config')->getProductAttributes())
-                //->addAttributeToFilter('store_id', array('in'=>Mage::registry('wishlist')->getSharedStoreIds()))
-                ->addStoreFilter();
-
-            Mage::getSingleton('catalog/product_status')->addVisibleFilterToCollection($collection);
-            Mage::getSingleton('catalog/product_visibility')->addVisibleInSiteFilterToCollection($collection);
-
-            $this->_wishlistLoaded = true;
-        }
-
-        return Mage::registry('wishlist')->getProductCollection();
-    }
-
-    public function getEscapedDescription(Varien_Object $item)
-    {
-        return $this->htmlEscape($item->getWishlistItemDescription());
-    }
-
-    public function getFormatedDate($date)
-    {
-        return $this->formatDate($date, Mage_Core_Model_Locale::FORMAT_TYPE_MEDIUM);
-    }
-
-    public function getItemAddToCartUrl($item)
-    {
-        return $this->getUrl('*/*/cart',array('item'=>$item->getWishlistItemId()));
-    }
-
-    public function getItemRemoveUrl($item)
-    {
-        return $this->getUrl('*/*/remove',array('item'=>$item->getWishlistItemId()));
-    }
-
+    /**
+     * Retrieve Back URL
+     *
+     * @return string
+     */
     public function getBackUrl()
     {
         if ($this->getRefererUrl()) {
@@ -92,14 +87,118 @@ class Mage_Wishlist_Block_Customer_Wishlist extends Mage_Catalog_Block_Product_A
         return $this->getUrl('customer/account/');
     }
 
-    public function isSaleable()
+    /**
+     * Sets all options render configurations
+     *
+     * @param null|array $optionCfg
+     * @return Mage_Wishlist_Block_Customer_Wishlist
+     */
+    public function setOptionsRenderCfgs($optionCfg)
     {
-        foreach ($this->getWishlist() as $item) {
-            if ($item->isSaleable()) {
-                return true;
-            }
+        $this->_optionsCfg = $optionCfg;
+        return $this;
+    }
+
+    /**
+     * Returns all options render configurations
+     *
+     * @return array
+     */
+    public function getOptionsRenderCfgs()
+    {
+        return $this->_optionsCfg;
+    }
+
+    /*
+     * Adds config for rendering product type options
+     * If template is null - later default will be used
+     *
+     * @param string $productType
+     * @param string $helperName
+     * @param null|string $template
+     * @return Mage_Wishlist_Block_Customer_Wishlist
+     */
+    public function addOptionsRenderCfg($productType, $helperName, $template = null)
+    {
+        $this->_optionsCfg[$productType] = array('helper' => $helperName, 'template' => $template);
+        return $this;
+    }
+
+    /**
+     * Returns html for showing item options
+     *
+     * @param string $productType
+     * @return array|null
+     */
+    public function getOptionsRenderCfg($productType)
+    {
+        if (isset($this->_optionsCfg[$productType])) {
+            return $this->_optionsCfg[$productType];
+        } elseif (isset($this->_optionsCfg['default'])) {
+            return $this->_optionsCfg['default'];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns html for showing item options
+     *
+     * @param Mage_Wishlist_Model_Item $item
+     * @return string
+     */
+    public function getDetailsHtml(Mage_Wishlist_Model_Item $item)
+    {
+        $cfg = $this->getOptionsRenderCfg($item->getProduct()->getTypeId());
+        if (!$cfg) {
+            return '';
         }
 
-        return false;
+        $helper = Mage::helper($cfg['helper']);
+        if (!($helper instanceof Mage_Catalog_Helper_Product_Configuration_Interface)) {
+            Mage::throwException($this->__("Helper for wishlist options rendering doesn't implement required interface."));
+        }
+
+        $block = $this->getChild('item_options');
+        if (!$block) {
+            return '';
+        }
+
+        if ($cfg['template']) {
+            $template = $cfg['template'];
+        } else {
+            $cfgDefault = $this->getOptionsRenderCfg('default');
+            if (!$cfgDefault) {
+                return '';
+            }
+            $template = $cfgDefault['template'];
+        }
+
+        return $block->setTemplate($template)
+            ->setOptionList($helper->getOptions($item))
+            ->toHtml();
+    }
+
+    /**
+     * Returns default description to show in textarea field
+     *
+     * @param Mage_Wishlist_Model_Item $item
+     * @return string
+     */
+    public function getCommentValue(Mage_Wishlist_Model_Item $item)
+    {
+        return $this->hasDescription($item) ? $this->getEscapedDescription($item) : Mage::helper('wishlist')->defaultCommentString();
+    }
+
+    /**
+     * Returns qty to show visually to user
+     *
+     * @param Mage_Wishlist_Model_Item $item
+     * @return float
+     */
+    public function getAddToCartQty(Mage_Wishlist_Model_Item $item)
+    {
+        $qty = $this->getQty($item);
+        return $qty ? $qty : 1;
     }
 }

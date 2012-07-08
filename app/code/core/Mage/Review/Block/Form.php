@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Review
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Review
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -35,6 +35,8 @@ class Mage_Review_Block_Form extends Mage_Core_Block_Template
 {
     public function __construct()
     {
+        $customerSession = Mage::getSingleton('customer/session');
+
         parent::__construct();
 
         $data =  Mage::getSingleton('review/session')->getFormData(true);
@@ -42,10 +44,22 @@ class Mage_Review_Block_Form extends Mage_Core_Block_Template
 
         // add logged in customer name as nickname
         if (!$data->getNickname()) {
-            $customer = Mage::getSingleton('customer/session')->getCustomer();
+            $customer = $customerSession->getCustomer();
             if ($customer && $customer->getId()) {
                 $data->setNickname($customer->getFirstname());
             }
+        }
+
+        $this->setAllowWriteReviewFlag($customerSession->isLoggedIn() || Mage::helper('review')->getIsGuestAllowToWrite());
+        if (!$this->getAllowWriteReviewFlag) {
+            $this->setLoginLink(
+                Mage::getUrl('customer/account/login/', array(
+                    Mage_Customer_Helper_Data::REFERER_QUERY_PARAM_NAME => Mage::helper('core')->urlEncode(
+                        Mage::getUrl('*/*/*', array('_current' => true)) .
+                        '#review-form')
+                    )
+                )
+            );
         }
 
         $this->setTemplate('review/form.phtml')

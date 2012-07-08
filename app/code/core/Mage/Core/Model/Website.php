@@ -18,22 +18,34 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Core Website model
  *
- * @category   Mage
- * @package    Mage_Core
+ * @method Mage_Core_Model_Resource_Website _getResource()
+ * @method Mage_Core_Model_Resource_Website getResource()
+ * @method Mage_Core_Model_Website setCode(string $value)
+ * @method string getName()
+ * @method Mage_Core_Model_Website setName(string $value)
+ * @method int getSortOrder()
+ * @method Mage_Core_Model_Website setSortOrder(int $value)
+ * @method Mage_Core_Model_Website setDefaultGroupId(int $value)
+ * @method int getIsDefault()
+ * @method Mage_Core_Model_Website setIsDefault(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Core
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 
 class Mage_Core_Model_Website extends Mage_Core_Model_Abstract
 {
+    const ENTITY    = 'core_website';
     const CACHE_TAG = 'website';
     protected $_cacheTag = true;
 
@@ -195,7 +207,7 @@ class Mage_Core_Model_Website extends Mage_Core_Model_Abstract
             $config = Mage::getConfig()->getNode('websites/'.$this->getCode().'/'.$path);
             if (!$config) {
                 return false;
-                #throw Mage::exception('Mage_Core', Mage::helper('core')->__('Invalid websites configuration path: %s', $path));
+                #throw Mage::exception('Mage_Core', Mage::helper('core')->__('Invalid website\'s configuration path: %s', $path));
             }
             if ($config->hasChildren()) {
                 $value = array();
@@ -306,7 +318,7 @@ class Mage_Core_Model_Website extends Mage_Core_Model_Abstract
      */
     public function getDefaultGroup()
     {
-        if (!$this->getDefaultGroupId()) {
+        if (!$this->hasDefaultGroupId()) {
             return false;
         }
         if (is_null($this->_groups)) {
@@ -468,6 +480,8 @@ class Mage_Core_Model_Website extends Mage_Core_Model_Abstract
      */
     protected function _afterDelete()
     {
+        Mage::app()->clearWebsiteCache($this->getId());
+
         parent::_afterDelete();
         Mage::getConfig()->removeCache();
         return $this;
@@ -480,7 +494,9 @@ class Mage_Core_Model_Website extends Mage_Core_Model_Abstract
      */
     public function getBaseCurrencyCode()
     {
-        if ($this->getConfig(Mage_Core_Model_Store::XML_PATH_PRICE_SCOPE) == Mage_Core_Model_Store::PRICE_SCOPE_GLOBAL) {
+        if ($this->getConfig(Mage_Core_Model_Store::XML_PATH_PRICE_SCOPE)
+            == Mage_Core_Model_Store::PRICE_SCOPE_GLOBAL
+        ) {
             return Mage::app()->getBaseCurrencyCode();
         } else {
             return $this->getConfig(Mage_Directory_Model_Currency::XML_PATH_CURRENCY_BASE);

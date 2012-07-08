@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Review
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Review
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -35,6 +35,15 @@ class Mage_Review_Helper_Data extends Mage_Core_Helper_Abstract
 
     public function getDetail($origDetail){
         return nl2br(Mage::helper('core/string')->truncate($origDetail, 50));
+    }
+
+    /**
+     * getDetailHtml return short detail info in HTML
+     * @param string $origDetail Full detail info
+     * @return string
+     */
+    public function getDetailHtml($origDetail){
+        return nl2br(Mage::helper('core/string')->truncate($this->escapeHtml($origDetail), 50));
     }
 
     public function getIsGuestAllowToWrite()

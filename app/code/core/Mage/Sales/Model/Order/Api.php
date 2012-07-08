@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -71,20 +71,35 @@ class Mage_Sales_Model_Order_Api extends Mage_Sales_Model_Api_Resource
     public function items($filters = null)
     {
         //TODO: add full name logic
-        $collection = Mage::getResourceModel('sales/order_collection')
+        $billingAliasName = 'billing_o_a';
+        $shippingAliasName = 'shipping_o_a';
+        
+        $collection = Mage::getModel("sales/order")->getCollection()
             ->addAttributeToSelect('*')
-            ->joinAttribute('billing_firstname', 'order_address/firstname', 'billing_address_id', null, 'left')
-            ->joinAttribute('billing_lastname', 'order_address/lastname', 'billing_address_id', null, 'left')
-            ->joinAttribute('shipping_firstname', 'order_address/firstname', 'shipping_address_id', null, 'left')
-            ->joinAttribute('shipping_lastname', 'order_address/lastname', 'shipping_address_id', null, 'left')
-            ->addExpressionAttributeToSelect('billing_name',
-                'CONCAT({{billing_firstname}}, " ", {{billing_lastname}})',
-                array('billing_firstname', 'billing_lastname'))
-            ->addExpressionAttributeToSelect('shipping_name',
-                'CONCAT({{shipping_firstname}}, " ", {{shipping_lastname}})',
-                array('shipping_firstname', 'shipping_lastname'));
-
-
+            ->addAddressFields()
+            ->addExpressionFieldToSelect(
+                'billing_firstname', "{{billing_firstname}}", array('billing_firstname'=>"$billingAliasName.firstname")
+            )
+            ->addExpressionFieldToSelect(
+                'billing_lastname', "{{billing_lastname}}", array('billing_lastname'=>"$billingAliasName.lastname")
+            )
+            ->addExpressionFieldToSelect(
+                'shipping_firstname', "{{shipping_firstname}}", array('shipping_firstname'=>"$shippingAliasName.firstname")
+            )
+            ->addExpressionFieldToSelect(
+                'shipping_lastname', "{{shipping_lastname}}", array('shipping_lastname'=>"$shippingAliasName.lastname")
+            )
+            ->addExpressionFieldToSelect(
+                    'billing_name',
+                    "CONCAT({{billing_firstname}}, ' ', {{billing_lastname}})",
+                    array('billing_firstname'=>"$billingAliasName.firstname", 'billing_lastname'=>"$billingAliasName.lastname")
+            )
+            ->addExpressionFieldToSelect(
+                    'shipping_name',
+                    'CONCAT({{shipping_firstname}}, " ", {{shipping_lastname}})',
+                    array('shipping_firstname'=>"$shippingAliasName.firstname", 'shipping_lastname'=>"$shippingAliasName.lastname")
+            );
+        
         if (is_array($filters)) {
             try {
                 foreach ($filters as $field => $value) {
@@ -118,6 +133,12 @@ class Mage_Sales_Model_Order_Api extends Mage_Sales_Model_Api_Resource
     {
         $order = $this->_initOrder($orderIncrementId);
 
+        if ($order->getGiftMessageId() > 0) {
+            $order->setGiftMessage(
+                Mage::getSingleton('giftmessage/message')->load($order->getGiftMessageId())->getMessage()
+            );
+        }
+
         $result = $this->_getAttributes($order, 'order');
 
         $result['shipping_address'] = $this->_getAttributes($order->getShippingAddress(), 'order_address');
@@ -125,6 +146,12 @@ class Mage_Sales_Model_Order_Api extends Mage_Sales_Model_Api_Resource
         $result['items'] = array();
 
         foreach ($order->getAllItems() as $item) {
+            if ($item->getGiftMessageId() > 0) {
+                $item->setGiftMessage(
+                    Mage::getSingleton('giftmessage/message')->load($item->getGiftMessageId())->getMessage()
+                );
+            }
+
             $result['items'][] = $this->_getAttributes($item, 'order_item');
         }
 

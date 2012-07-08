@@ -18,12 +18,85 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_Sales_Model_Resource_Order_Creditmemo_Item _getResource()
+ * @method Mage_Sales_Model_Resource_Order_Creditmemo_Item getResource()
+ * @method int getParentId()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setParentId(int $value)
+ * @method float getWeeeTaxAppliedRowAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setWeeeTaxAppliedRowAmount(float $value)
+ * @method float getBasePrice()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBasePrice(float $value)
+ * @method float getBaseWeeeTaxRowDisposition()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseWeeeTaxRowDisposition(float $value)
+ * @method float getTaxAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setTaxAmount(float $value)
+ * @method float getBaseWeeeTaxAppliedAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseWeeeTaxAppliedAmount(float $value)
+ * @method float getWeeeTaxRowDisposition()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setWeeeTaxRowDisposition(float $value)
+ * @method float getBaseRowTotal()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseRowTotal(float $value)
+ * @method float getDiscountAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setDiscountAmount(float $value)
+ * @method float getRowTotal()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setRowTotal(float $value)
+ * @method float getWeeeTaxAppliedAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setWeeeTaxAppliedAmount(float $value)
+ * @method float getBaseDiscountAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseDiscountAmount(float $value)
+ * @method float getBaseWeeeTaxDisposition()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseWeeeTaxDisposition(float $value)
+ * @method float getPriceInclTax()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setPriceInclTax(float $value)
+ * @method float getBaseTaxAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseTaxAmount(float $value)
+ * @method float getWeeeTaxDisposition()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setWeeeTaxDisposition(float $value)
+ * @method float getBasePriceInclTax()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBasePriceInclTax(float $value)
+ * @method float getQty()
+ * @method float getBaseCost()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseCost(float $value)
+ * @method float getBaseWeeeTaxAppliedRowAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseWeeeTaxAppliedRowAmount(float $value)
+ * @method float getPrice()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setPrice(float $value)
+ * @method float getBaseRowTotalInclTax()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseRowTotalInclTax(float $value)
+ * @method float getRowTotalInclTax()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setRowTotalInclTax(float $value)
+ * @method int getProductId()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setProductId(int $value)
+ * @method int getOrderItemId()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setOrderItemId(int $value)
+ * @method string getAdditionalData()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setAdditionalData(string $value)
+ * @method string getDescription()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setDescription(string $value)
+ * @method string getWeeeTaxApplied()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setWeeeTaxApplied(string $value)
+ * @method string getSku()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setSku(string $value)
+ * @method string getName()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setName(string $value)
+ * @method float getHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setHiddenTaxAmount(float $value)
+ * @method float getBaseHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Creditmemo_Item setBaseHiddenTaxAmount(float $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
 {
     protected $_eventPrefix = 'sales_creditmemo_item';
@@ -48,6 +121,18 @@ class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
     public function setCreditmemo(Mage_Sales_Model_Order_Creditmemo $creditmemo)
     {
         $this->_creditmemo = $creditmemo;
+        return $this;
+    }
+
+    /**
+     * Init mapping array of short fields to
+     * its full names
+     *
+     * @return Varien_Object
+     */
+    protected function _initOldFieldsMap()
+    {
+        $this->_oldFieldsMap = Mage::helper('sales')->getOldFieldMap('creditmemo_item');
         return $this;
     }
 
@@ -130,7 +215,15 @@ class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
     public function register()
     {
         $this->getOrderItem()->setQtyRefunded(
-            $this->getOrderItem()->getQtyRefunded()+$this->getQty()
+            $this->getOrderItem()->getQtyRefunded() + $this->getQty()
+        );
+        $this->getOrderItem()->setTaxRefunded(
+            $this->getOrderItem()->getTaxRefunded()
+                + $this->getOrderItem()->getBaseTaxAmount() * $this->getQty() / $this->getOrderItem()->getQtyOrdered()
+        );
+        $this->getOrderItem()->setHiddenTaxRefunded(
+            $this->getOrderItem()->getHiddenTaxRefunded()
+                + $this->getOrderItem()->getHiddenTaxAmount() * $this->getQty() / $this->getOrderItem()->getQtyOrdered()
         );
         return $this;
     }
@@ -139,6 +232,14 @@ class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
     {
         $this->getOrderItem()->setQtyRefunded(
             $this->getOrderItem()->getQtyRefunded()-$this->getQty()
+        );
+        $this->getOrderItem()->setTaxRefunded(
+            $this->getOrderItem()->getTaxRefunded()
+                - $this->getOrderItem()->getBaseTaxAmount() * $this->getQty() / $this->getOrderItem()->getQtyOrdered()
+        );
+        $this->getOrderItem()->setHiddenTaxRefunded(
+            $this->getOrderItem()->getHiddenTaxRefunded()
+                - $this->getOrderItem()->getHiddenTaxAmount() * $this->getQty() / $this->getOrderItem()->getQtyOrdered()
         );
         return $this;
     }
@@ -150,11 +251,56 @@ class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
      */
     public function calcRowTotal()
     {
-        $rowTotal       = $this->getOrderItem()->getRowTotal()/$this->getOrderItem()->getQtyOrdered()*$this->getQty();
-        $baseRowTotal   = $this->getOrderItem()->getBaseRowTotal()/$this->getOrderItem()->getQtyOrdered()*$this->getQty();
-        
-        $this->setRowTotal($this->getCreditmemo()->getStore()->roundPrice($rowTotal));
-        $this->setBaseRowTotal($this->getCreditmemo()->getStore()->roundPrice($baseRowTotal));
+        $store          = $this->getCreditmemo()->getStore();
+        $orderItem      = $this->getOrderItem();
+        $orderItemQty   = $orderItem->getQtyOrdered();
+
+        $rowTotal       = $orderItem->getRowTotal();
+        $baseRowTotal   = $orderItem->getBaseRowTotal();
+        $rowTotalInclTax    = $orderItem->getRowTotalInclTax();
+        $baseRowTotalInclTax= $orderItem->getBaseRowTotalInclTax();
+
+        $rowTotal       = $rowTotal/$orderItemQty*$this->getQty();
+        $baseRowTotal   = $baseRowTotal/$orderItemQty*$this->getQty();
+
+        $this->setRowTotal($store->roundPrice($rowTotal));
+        $this->setBaseRowTotal($store->roundPrice($baseRowTotal));
+
+        if ($rowTotalInclTax && $baseRowTotalInclTax) {
+            $this->setRowTotalInclTax($store->roundPrice($rowTotalInclTax/$orderItemQty*$this->getQty()));
+            $this->setBaseRowTotalInclTax($store->roundPrice($baseRowTotalInclTax/$orderItemQty*$this->getQty()));
+        }
+        return $this;
+    }
+
+    /**
+     * Checking if the item is last
+     *
+     * @return bool
+     */
+    public function isLast()
+    {
+        $orderItem = $this->getOrderItem();
+        if ((string)(float)$this->getQty() == (string)(float)$orderItem->getQtyToRefund()
+                && !$orderItem->getQtyToInvoice()) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Before object save
+     *
+     * @return Mage_Sales_Model_Order_Creditmemo_Item
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+
+        if (!$this->getParentId() && $this->getCreditmemo()) {
+            $this->setParentId($this->getCreditmemo()->getId());
+        }
+
         return $this;
     }
 }

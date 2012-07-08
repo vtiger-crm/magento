@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Api
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Api
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,6 +33,13 @@
  */
 class Mage_Api_Model_Server
 {
+
+    /**
+     * Api Name by Adapter
+     * @var string
+     */
+    protected $_api = "";
+
     /**
      * Web service adapter
      *
@@ -44,24 +51,25 @@ class Mage_Api_Model_Server
     {
         $adapters = Mage::getSingleton('api/config')->getActiveAdapters();
         $handlers = Mage::getSingleton('api/config')->getHandlers();
+        $this->_api = $adapter;
         if (isset($adapters[$adapter])) {
             $adapterModel = Mage::getModel((string) $adapters[$adapter]->model);
             /* @var $adapterModel Mage_Api_Model_Server_Adapter_Interface */
             if (!($adapterModel instanceof Mage_Api_Model_Server_Adapter_Interface)) {
-                Mage::throwException(Mage::helper('api')->__('Invalid webservice adapter specified'));
+                Mage::throwException(Mage::helper('api')->__('Invalid webservice adapter specified.'));
             }
 
             $this->_adapter = $adapterModel;
             $this->_adapter->setController($controller);
 
             if (!isset($handlers->$handler)) {
-                Mage::throwException(Mage::helper('api')->__('Invalid webservice handler specified'));
+                Mage::throwException(Mage::helper('api')->__('Invalid webservice handler specified.'));
             }
 
             $handlerClassName = Mage::getConfig()->getModelClassName((string) $handlers->$handler->model);
             $this->_adapter->setHandler($handlerClassName);
         } else {
-            Mage::throwException(Mage::helper('api')->__('Invalid webservice adapter specified'));
+            Mage::throwException(Mage::helper('api')->__('Invalid webservice adapter specified.'));
         }
 
         return $this;
@@ -74,6 +82,15 @@ class Mage_Api_Model_Server
     public function run()
     {
         $this->getAdapter()->run();
+    }
+
+    /**
+     * Get Api name by Adapter
+     * @return string
+     */
+    public function getApiName()
+    {
+        return $this->_api;
     }
 
     /**

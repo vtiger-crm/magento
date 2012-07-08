@@ -12,25 +12,27 @@
  * obtain it through the world-wide-web, please send an email
  * to license@zend.com so we can send you a copy immediately.
  *
+ * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: Tiff.php 20096 2010-01-06 02:05:09Z bkarwin $
  */
+
+/** Internally used classes */
+#require_once 'Zend/Pdf/Element/Array.php';
+#require_once 'Zend/Pdf/Element/Name.php';
+#require_once 'Zend/Pdf/Element/Numeric.php';
+
 
 /** Zend_Pdf_Resource_Image */
 #require_once 'Zend/Pdf/Resource/Image.php';
-
-/** Zend_Pdf_Element_Numeric */
-#require_once 'Zend/Pdf/Element/Numeric.php';
-
-/** Zend_Pdf_Element_Name */
-#require_once 'Zend/Pdf/Element/Name.php';
 
 /**
  * TIFF image
  *
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Pdf_Resource_Image_Tiff extends Zend_Pdf_Resource_Image

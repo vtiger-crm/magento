@@ -18,18 +18,39 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Catalog product option model
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Catalog_Model_Resource_Product_Option _getResource()
+ * @method Mage_Catalog_Model_Resource_Product_Option getResource()
+ * @method int getProductId()
+ * @method Mage_Catalog_Model_Product_Option setProductId(int $value)
+ * @method string getType()
+ * @method Mage_Catalog_Model_Product_Option setType(string $value)
+ * @method int getIsRequire()
+ * @method Mage_Catalog_Model_Product_Option setIsRequire(int $value)
+ * @method string getSku()
+ * @method Mage_Catalog_Model_Product_Option setSku(string $value)
+ * @method int getMaxCharacters()
+ * @method Mage_Catalog_Model_Product_Option setMaxCharacters(int $value)
+ * @method string getFileExtension()
+ * @method Mage_Catalog_Model_Product_Option setFileExtension(string $value)
+ * @method int getImageSizeX()
+ * @method Mage_Catalog_Model_Product_Option setImageSizeX(int $value)
+ * @method int getImageSizeY()
+ * @method Mage_Catalog_Model_Product_Option setImageSizeY(int $value)
+ * @method int getSortOrder()
+ * @method Mage_Catalog_Model_Product_Option setSortOrder(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Catalog_Model_Product_Option extends Mage_Core_Model_Abstract
 {
@@ -178,7 +199,7 @@ class Mage_Catalog_Model_Product_Option extends Mage_Core_Model_Abstract
      * Get group name of option by given option type
      *
      * @param string $type
-     * @return array
+     * @return string
      */
     public function getGroupByType($type = null)
     {
@@ -431,5 +452,32 @@ class Mage_Catalog_Model_Product_Option extends Mage_Core_Model_Abstract
     public function getSearchableData($productId, $storeId)
     {
         return $this->_getResource()->getSearchableData($productId, $storeId);
+    }
+
+    /**
+     * Clearing object's data
+     *
+     * @return Mage_Catalog_Model_Product_Option
+     */
+    protected function _clearData()
+    {
+        $this->_data = array();
+        $this->_values = array();
+        return $this;
+    }
+
+    /**
+     * Clearing cyclic references
+     *
+     * @return Mage_Catalog_Model_Product_Option
+     */
+    protected function _clearReferences()
+    {
+        if (!empty($this->_values)) {
+            foreach ($this->_values as $value) {
+                $value->unsetOption();
+            }
+        }
+        return $this;
     }
 }

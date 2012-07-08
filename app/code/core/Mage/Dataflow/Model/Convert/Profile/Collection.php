@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Dataflow
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Dataflow
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -157,16 +157,43 @@ class Mage_Dataflow_Model_Convert_Profile_Collection
             if ($action->getParam('name')) {
                 $this->addContainer($action->getParam('name'), $container);
             }
-            foreach ($actionNode->var as $varNode) {
+
+            $country = '';
+
+            /** @var $varNode Varien_Simplexml_Element */
+            foreach ($actionNode->var as $key => $varNode) {
                 if ($varNode['name'] == 'map') {
                     $mapData = array();
                     foreach ($varNode->map as $mapNode) {
                         $mapData[(string)$mapNode['name']] = (string)$mapNode;
                     }
                     $container->setVar((string)$varNode['name'], $mapData);
-                }
-                else {
-                    $container->setVar((string)$varNode['name'], (string)$varNode);
+                }  else {
+                    $value = (string)$varNode;
+
+                    /**
+                     * Get state name from directory by iso name
+                     * (only for US)
+                     */
+                    if ($value && 'filter/country' == (string)$varNode['name']) {
+                        /**
+                         * Save country for convert state iso to name (for US only)
+                         */
+                        $country = $value;
+                    } elseif ($value && 'filter/region' == (string)$varNode['name'] && 'US' == $country) {
+                        /**
+                         * Get state name by iso for US
+                         */
+                        /** @var $region Mage_Directory_Model_Region */
+                        $region = Mage::getModel('directory/region');
+
+                        $state = $region->loadByCode($value, $country)->getDefaultName();
+                        if ($state) {
+                            $value = $state;
+                        }
+                    }
+
+                    $container->setVar((string)$varNode['name'], $value);
                 }
             }
         }

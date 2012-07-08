@@ -18,44 +18,90 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
- * Catalog comapare sidebar block
+ * Catalog Comapare Products Sidebar Block
  *
  * @category   Mage
  * @package    Mage_Catalog
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
- class Mage_Catalog_Block_Product_Compare_Sidebar extends Mage_Catalog_Block_Product_Abstract
- {
-     protected function _construct()
-     {
-         $this->setId('compare');
-     }
+class Mage_Catalog_Block_Product_Compare_Sidebar extends Mage_Catalog_Block_Product_Compare_Abstract
+{
+    /**
+     * Compare Products Collection
+     *
+     * @var null|Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Compare_Item_Collection
+     */
+    protected $_itemsCollection = null;
 
-     public function getItems()
-     {
-         return $this->helper('catalog/product_compare')->getItemCollection();
-     }
-
-    public function getRemoveUrl($item)
+    /**
+     * Initialize block
+     *
+     */
+    protected function _construct()
     {
-        return $this->helper('catalog/product_compare')->getRemoveUrl($item);
+        $this->setId('compare');
     }
 
+    /**
+     * Retrieve Compare Products Collection
+     *
+     * @return Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Compare_Item_Collection
+     */
+    public function getItems()
+    {
+        if ($this->_itemsCollection) {
+            return $this->_itemsCollection;
+        }
+        return $this->_getHelper()->getItemCollection();
+    }
+
+    /**
+     * Set Compare Products Collection
+     *
+     * @param Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Compare_Item_Collection $collection
+     * @return Mage_Catalog_Block_Product_Compare_Sidebar
+     */
+    public function setItems($collection)
+    {
+        $this->_itemsCollection = $collection;
+        return $this;
+    }
+
+    /**
+     * Retrieve compare product helper
+     *
+     * @return Mage_Catalog_Helper_Product_Compare
+     */
+    public function getCompareProductHelper()
+    {
+        return $this->_getHelper();
+    }
+
+    /**
+     * Retrieve Clean Compared Items URL
+     *
+     * @return string
+     */
     public function getClearUrl()
     {
-        return $this->helper('catalog/product_compare')->getClearListUrl();
+        return $this->_getHelper()->getClearListUrl();
     }
 
-     public function getCompareUrl()
-     {
-         return $this->helper('catalog/product_compare')->getListUrl();
-     }
- }
+    /**
+     * Retrieve Full Compare page URL
+     *
+     * @return string
+     */
+    public function getCompareUrl()
+    {
+        return $this->_getHelper()->getListUrl();
+    }
+}

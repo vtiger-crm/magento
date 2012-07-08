@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -45,7 +45,7 @@ class Mage_Adminhtml_Block_Report_Tag_Customer_Grid extends Mage_Adminhtml_Block
 
         $collection = Mage::getResourceModel('reports/tag_customer_collection');
 
-        $collection->addStatusFilter(Mage::getModel('tag/tag')->getApprovedStatus())
+        $collection->addStatusFilter(Mage_Tag_Model_Tag::STATUS_APPROVED)
             ->addGroupByCustomer()
             ->addTagedCount();
 
@@ -95,6 +95,7 @@ class Mage_Adminhtml_Block_Report_Tag_Customer_Grid extends Mage_Adminhtml_Block
                         'field'   => 'id'
                     )
                 ),
+                'is_system' => true,
                 'filter'    => false,
                 'sortable'  => false,
                 'index'     => 'stores',
@@ -103,7 +104,7 @@ class Mage_Adminhtml_Block_Report_Tag_Customer_Grid extends Mage_Adminhtml_Block
         $this->setFilterVisibility(false);
 
         $this->addExportType('*/*/exportCustomerCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportCustomerExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportCustomerExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -44,7 +44,7 @@ class Mage_Adminhtml_Block_System_Convert_Profile_Grid extends Mage_Adminhtml_Bl
     protected function _prepareCollection()
     {
         $collection = Mage::getResourceModel('dataflow/profile_collection')
-            ->addFieldToFilter('entity_type', array('eq'=>''));
+            ->addFieldToFilter('entity_type', array('null'=>''));
 
         $this->setCollection($collection);
 
@@ -89,21 +89,6 @@ class Mage_Adminhtml_Block_System_Convert_Profile_Grid extends Mage_Adminhtml_Bl
                 )
             )
         ));
-
-//        $this->addColumn('action', array(
-//            'header'    =>Mage::helper('adminhtml')->__('Action'),
-//            'width'     =>'60px',
-//            'sortable'  =>false,
-//            'filter'    => false,
-//            'type' => 'action',
-//            'actions' => array(
-//                array(
-//                    'url' => $this->getUrl('*/*/run').'id/$profile_id',
-//                    'caption' => Mage::helper('adminhtml')->__('Run in popup'),
-//                    'target' => '_blank',
-//                ),
-//            )
-//        ));
 
         return parent::_prepareColumns();
     }

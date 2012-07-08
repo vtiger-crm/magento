@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,71 +31,115 @@
  * @package    Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Report_Sales_Coupons_Grid extends Mage_Adminhtml_Block_Report_Grid
+class Mage_Adminhtml_Block_Report_Sales_Coupons_Grid extends Mage_Adminhtml_Block_Report_Grid_Abstract
 {
+    protected $_columnGroupBy = 'period';
+
     public function __construct()
     {
         parent::__construct();
-        $this->setId('gridCoupons');
-        $this->setSubReportSize(false);
+        $this->setCountTotals(true);
+        $this->setCountSubTotals(true);
     }
 
-    protected function _prepareCollection()
+    public function getResourceCollectionName()
     {
-        parent::_prepareCollection();
-        $this->getCollection()->initReport('reports/coupons_collection');
+        if (($this->getFilterData()->getData('report_type') == 'updated_at_order')) {
+            return 'salesrule/report_updatedat_collection';
+        } else {
+            return 'salesrule/report_collection';
+        }
     }
 
     protected function _prepareColumns()
     {
+        $this->addColumn('period', array(
+            'header'            => Mage::helper('salesrule')->__('Period'),
+            'index'             => 'period',
+            'width'             => 100,
+            'sortable'          => false,
+            'period_type'       => $this->getPeriodType(),
+            'renderer'          => 'adminhtml/report_sales_grid_column_renderer_date',
+            'totals_label'      => Mage::helper('salesrule')->__('Total'),
+            'subtotals_label'   => Mage::helper('salesrule')->__('Subtotal'),
+            'html_decorators' => array('nobr'),
+        ));
+
         $this->addColumn('coupon_code', array(
-            'header'    => $this->__('Coupon Code'),
+            'header'    => Mage::helper('salesrule')->__('Coupon Code'),
             'sortable'  => false,
             'index'     => 'coupon_code'
         ));
 
-        $this->addColumn('uses', array(
-            'header'    => $this->__('Number of Use'),
+        $this->addColumn('coupon_uses', array(
+            'header'    => Mage::helper('salesrule')->__('Number of Uses'),
             'sortable'  => false,
-            'index'     => 'uses',
+            'index'     => 'coupon_uses',
             'total'     => 'sum',
             'type'      => 'number'
         ));
 
-        $currency_code = $this->getCurrentCurrencyCode();
+        if ($this->getFilterData()->getStoreIds()) {
+            $this->setStoreIds(explode(',', $this->getFilterData()->getStoreIds()));
+        }
+        $currencyCode = $this->getCurrentCurrencyCode();
 
-        $this->addColumn('subtotal', array(
-            'header'        => $this->__('Subtotal Amount'),
+        $this->addColumn('subtotal_amount', array(
+            'header'        => Mage::helper('salesrule')->__('Sales Subtotal Amount'),
             'sortable'      => false,
             'type'          => 'currency',
-            'currency_code' => $currency_code,
-            'index'         => 'subtotal',
+            'currency_code' => $currencyCode,
             'total'         => 'sum',
-            'renderer'  =>'adminhtml/report_grid_column_renderer_currency'
+            'index'         => 'subtotal_amount'
         ));
 
-        $this->addColumn('discount', array(
-            'header'        => $this->__('Discount Amount'),
+        $this->addColumn('discount_amount', array(
+            'header'        => Mage::helper('salesrule')->__('Sales Discount Amount'),
             'sortable'      => false,
             'type'          => 'currency',
-            'currency_code' => $currency_code,
-            'index'         => 'discount',
+            'currency_code' => $currencyCode,
             'total'         => 'sum',
-            'renderer'  =>'adminhtml/report_grid_column_renderer_currency'
+            'index'         => 'discount_amount'
         ));
 
-        $this->addColumn('total', array(
-            'header'        => $this->__('Total Amount'),
+        $this->addColumn('total_amount', array(
+            'header'        => Mage::helper('salesrule')->__('Sales Total Amount'),
             'sortable'      => false,
             'type'          => 'currency',
-            'currency_code' => $currency_code,
-            'index'         => 'total',
+            'currency_code' => $currencyCode,
             'total'         => 'sum',
-            'renderer'  =>'adminhtml/report_grid_column_renderer_currency'
+            'index'         => 'total_amount'
         ));
 
-        $this->addExportType('*/*/exportCouponsCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportCouponsExcel', Mage::helper('reports')->__('Excel'));
+        $this->addColumn('subtotal_amount_actual', array(
+            'header'        => Mage::helper('salesrule')->__('Subtotal Amount'),
+            'sortable'      => false,
+            'type'          => 'currency',
+            'currency_code' => $currencyCode,
+            'total'         => 'sum',
+            'index'         => 'subtotal_amount_actual'
+        ));
+
+        $this->addColumn('discount_amount_actual', array(
+            'header'        => Mage::helper('salesrule')->__('Discount Amount'),
+            'sortable'      => false,
+            'type'          => 'currency',
+            'currency_code' => $currencyCode,
+            'total'         => 'sum',
+            'index'         => 'discount_amount_actual'
+        ));
+
+        $this->addColumn('total_amount_actual', array(
+            'header'        => Mage::helper('salesrule')->__('Total Amount'),
+            'sortable'      => false,
+            'type'          => 'currency',
+            'currency_code' => $currencyCode,
+            'total'         => 'sum',
+            'index'         => 'total_amount_actual'
+        ));
+
+        $this->addExportType('*/*/exportCouponsCsv', Mage::helper('adminhtml')->__('CSV'));
+        $this->addExportType('*/*/exportCouponsExcel', Mage::helper('adminhtml')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }

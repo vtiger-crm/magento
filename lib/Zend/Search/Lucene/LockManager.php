@@ -14,8 +14,9 @@
  *
  * @category   Zend
  * @package    Zend_Search_Lucene
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: LockManager.php 20096 2010-01-06 02:05:09Z bkarwin $
  */
 
 /** Zend_Search_Lucene_Storage_Directory */
@@ -29,7 +30,7 @@
  *
  * @category   Zend
  * @package    Zend_Search_Lucene
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Search_Lucene_LockManager
@@ -94,7 +95,6 @@ class Zend_Search_Lucene_LockManager
      * @return Zend_Search_Lucene_Storage_File
      * @throws Zend_Search_Lucene_Exception
      */
-
     private static function _startReadLockProcessing(Zend_Search_Lucene_Storage_Directory $lockDirectory)
     {
         $lock = $lockDirectory->createFile(self::READ_LOCK_PROCESSING_LOCK_FILE);
@@ -133,7 +133,6 @@ class Zend_Search_Lucene_LockManager
     {
         $lock = $lockDirectory->createFile(self::READ_LOCK_FILE);
         if (!$lock->lock(LOCK_SH)) {
-            self::_stopReadLockProcessing($lockDirectory);
             #require_once 'Zend/Search/Lucene/Exception.php';
             throw new Zend_Search_Lucene_Exception('Can\'t obtain shared reading index lock');
         }

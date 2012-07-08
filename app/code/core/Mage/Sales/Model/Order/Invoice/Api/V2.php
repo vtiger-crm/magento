@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,7 +42,7 @@ class Mage_Sales_Model_Order_Invoice_Api_V2 extends Mage_Sales_Model_Order_Invoi
     public function items($filters = null)
     {
         //TODO: add full name logic
-        $collection = Mage::getResourceModel('sales/order_invoice_collection')
+        $collection =  Mage::getModel('sales/order_invoice')->getCollection()
             ->addAttributeToSelect('order_id')
             ->addAttributeToSelect('increment_id')
             ->addAttributeToSelect('created_at')
@@ -57,26 +57,36 @@ class Mage_Sales_Model_Order_Invoice_Api_V2 extends Mage_Sales_Model_Order_Invoi
         $preparedFilters = array();
         if (isset($filters->filter)) {
             foreach ($filters->filter as $_filter) {
-                $preparedFilters[$_filter->key] = $_filter->value;
+                $preparedFilters[][$_filter->key] = $_filter->value;
             }
         }
         if (isset($filters->complex_filter)) {
             foreach ($filters->complex_filter as $_filter) {
                 $_value = $_filter->value;
-                $preparedFilters[$_filter->key] = array(
-                    $_value->key => $_value->value
-                );
+                if(is_object($_value)) {
+                    $preparedFilters[][$_filter->key] = array(
+                        $_value->key => $_value->value
+                    );
+                } elseif(is_array($_value)) {
+                    $preparedFilters[][$_filter->key] = array(
+                        $_value['key'] => $_value['value']
+                    );
+                } else {
+                    $preparedFilters[][$_filter->key] = $_value;
+                }
             }
         }
 
         if (!empty($preparedFilters)) {
             try {
-                foreach ($preparedFilters as $field => $value) {
-                    if (isset($this->_attributesMap['invoice'][$field])) {
-                        $field = $this->_attributesMap['invoice'][$field];
-                    }
+                foreach ($preparedFilters as $preparedFilter) {
+                    foreach ($preparedFilter as $field => $value) {
+                        if (isset($this->_attributesMap['order'][$field])) {
+                            $field = $this->_attributesMap['order'][$field];
+                        }
 
-                    $collection->addFieldToFilter($field, $value);
+                        $collection->addFieldToFilter($field, $value);
+                    }
                 }
             } catch (Mage_Core_Exception $e) {
                 $this->_fault('filters_invalid', $e->getMessage());
@@ -129,7 +139,7 @@ class Mage_Sales_Model_Order_Invoice_Api_V2 extends Mage_Sales_Model_Order_Invoi
          * Check invoice create availability
          */
         if (!$order->canInvoice()) {
-             $this->_fault('data_invalid', Mage::helper('sales')->__('Can not do invoice for order.'));
+             $this->_fault('data_invalid', Mage::helper('sales')->__('Cannot do invoice for order.'));
         }
 
         $invoice = $order->prepareInvoice($itemsQty);

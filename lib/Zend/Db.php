@@ -15,16 +15,10 @@
  *
  * @category   Zend
  * @package    Zend_Db
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Db.php 13136 2008-12-10 18:36:46Z doctorrock83 $
+ * @version    $Id: Db.php 23405 2010-11-19 19:46:10Z bittarman $
  */
-
-
-/**
- * @see Zend_Loader
- */
-#require_once 'Zend/Loader.php';
 
 
 /**
@@ -32,7 +26,7 @@
  *
  * @category   Zend
  * @package    Zend_Db
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Db
@@ -47,6 +41,11 @@ class Zend_Db
      * Use the CASE_FOLDING constant in the config of a Zend_Db_Adapter.
      */
     const CASE_FOLDING = 'caseFolding';
+
+    /**
+     * Use the FETCH_MODE constant in the config of a Zend_Db_Adapter.
+     */
+    const FETCH_MODE = 'fetchMode';
 
     /**
      * Use the AUTO_QUOTE_IDENTIFIERS constant in the config of a Zend_Db_Adapter.
@@ -91,9 +90,6 @@ class Zend_Db
      *    'NULL_TO_STRING', 'ERR_NONE', 'FETCH_ORI_NEXT',
      *    'FETCH_ORI_PRIOR', 'FETCH_ORI_FIRST', 'FETCH_ORI_LAST',
      *    'FETCH_ORI_ABS', 'FETCH_ORI_REL', 'CURSOR_FWDONLY', 'CURSOR_SCROLL',
-     *    'ERR_CANT_MAP', 'ERR_SYNTAX', 'ERR_CONSTRAINT', 'ERR_NOT_FOUND',
-     *    'ERR_ALREADY_EXISTS', 'ERR_NOT_IMPLEMENTED', 'ERR_MISMATCH',
-     *    'ERR_TRUNCATED', 'ERR_DISCONNECTED', 'ERR_NO_PERM',
      * );
      *
      * $const = array();
@@ -126,17 +122,7 @@ class Zend_Db
     const CASE_UPPER = 1;
     const CURSOR_FWDONLY = 0;
     const CURSOR_SCROLL = 1;
-    const ERR_ALREADY_EXISTS = NULL;
-    const ERR_CANT_MAP = NULL;
-    const ERR_CONSTRAINT = NULL;
-    const ERR_DISCONNECTED = NULL;
-    const ERR_MISMATCH = NULL;
-    const ERR_NO_PERM = NULL;
     const ERR_NONE = '00000';
-    const ERR_NOT_FOUND = NULL;
-    const ERR_NOT_IMPLEMENTED = NULL;
-    const ERR_SYNTAX = NULL;
-    const ERR_TRUNCATED = NULL;
     const ERRMODE_EXCEPTION = 2;
     const ERRMODE_SILENT = 0;
     const ERRMODE_WARNING = 1;
@@ -177,7 +163,10 @@ class Zend_Db
      *
      * First argument may be a string containing the base of the adapter class
      * name, e.g. 'Mysqli' corresponds to class Zend_Db_Adapter_Mysqli.  This
-     * is case-insensitive.
+     * name is currently case-insensitive, but is not ideal to rely on this behavior.
+     * If your class is named 'My_Company_Pdo_Mysql', where 'My_Company' is the namespace
+     * and 'Pdo_Mysql' is the adapter name, it is best to use the name exactly as it
+     * is defined in the class.  This will ensure proper use of the factory API.
      *
      * First argument may alternatively be an object of type Zend_Config.
      * The adapter class base name is read from the 'adapter' property.
@@ -247,14 +236,19 @@ class Zend_Db
             }
             unset($config['adapterNamespace']);
         }
-        $adapterName = strtolower($adapterNamespace . '_' . $adapter);
-        $adapterName = str_replace(' ', '_', ucwords(str_replace('_', ' ', $adapterName)));
+
+        // Adapter no longer normalized- see http://framework.zend.com/issues/browse/ZF-5606
+        $adapterName = $adapterNamespace . '_';
+        $adapterName .= str_replace(' ', '_', ucwords(str_replace('_', ' ', strtolower($adapter))));
 
         /*
          * Load the adapter class.  This throws an exception
          * if the specified class cannot be loaded.
          */
-        #Zend_Loader::loadClass($adapterName);
+        if (!class_exists($adapterName)) {
+            #require_once 'Zend/Loader.php';
+            Zend_Loader::loadClass($adapterName);
+        }
 
         /*
          * Create an instance of the adapter class.

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -40,10 +40,10 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Alerts_Stock extends Mage_Ad
 
         $this->setId('alertStock');
         $this->setDefaultSort('add_date');
-        $this->setDefaultSort('desc');
+        $this->setDefaultSort('DESC');
         $this->setUseAjax(true);
         $this->setFilterVisibility(false);
-        $this->setEmptyText(Mage::helper('catalog')->__('There are no customers for this alert'));
+        $this->setEmptyText(Mage::helper('catalog')->__('There are no customers for this alert.'));
     }
 
     protected function _prepareCollection()
@@ -53,10 +53,12 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Alerts_Stock extends Mage_Ad
         if ($store = $this->getRequest()->getParam('store')) {
             $websiteId = Mage::app()->getStore($store)->getWebsiteId();
         }
-        $collection = Mage::getModel('productalert/stock')
-            ->getCustomerCollection()
-            ->join($productId, $websiteId);
-        $this->setCollection($collection);
+        if (Mage::helper('catalog')->isModuleEnabled('Mage_ProductAlert')) {
+            $collection = Mage::getModel('productalert/stock')
+                ->getCustomerCollection()
+                ->join($productId, $websiteId);
+            $this->setCollection($collection);
+        }
         return parent::_prepareCollection();
     }
 
@@ -85,7 +87,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Alerts_Stock extends Mage_Ad
 
         $this->addColumn('send_date', array(
             'header'    => Mage::helper('catalog')->__('Last Notification'),
-            'index'     => 'last_send_date',
+            'index'     => 'send_date',
             'type'      => 'date'
         ));
 

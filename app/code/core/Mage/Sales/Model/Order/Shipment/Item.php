@@ -18,12 +18,43 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_Sales_Model_Resource_Order_Shipment_Item _getResource()
+ * @method Mage_Sales_Model_Resource_Order_Shipment_Item getResource()
+ * @method int getParentId()
+ * @method Mage_Sales_Model_Order_Shipment_Item setParentId(int $value)
+ * @method float getRowTotal()
+ * @method Mage_Sales_Model_Order_Shipment_Item setRowTotal(float $value)
+ * @method float getPrice()
+ * @method Mage_Sales_Model_Order_Shipment_Item setPrice(float $value)
+ * @method float getWeight()
+ * @method Mage_Sales_Model_Order_Shipment_Item setWeight(float $value)
+ * @method float getQty()
+ * @method int getProductId()
+ * @method Mage_Sales_Model_Order_Shipment_Item setProductId(int $value)
+ * @method int getOrderItemId()
+ * @method Mage_Sales_Model_Order_Shipment_Item setOrderItemId(int $value)
+ * @method string getAdditionalData()
+ * @method Mage_Sales_Model_Order_Shipment_Item setAdditionalData(string $value)
+ * @method string getDescription()
+ * @method Mage_Sales_Model_Order_Shipment_Item setDescription(string $value)
+ * @method string getName()
+ * @method Mage_Sales_Model_Order_Shipment_Item setName(string $value)
+ * @method string getSku()
+ * @method Mage_Sales_Model_Order_Shipment_Item setSku(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Order_Shipment_Item extends Mage_Core_Model_Abstract
 {
     protected $_eventPrefix = 'sales_shipment_item';
@@ -133,6 +164,22 @@ class Mage_Sales_Model_Order_Shipment_Item extends Mage_Core_Model_Abstract
         $this->getOrderItem()->setQtyShipped(
             $this->getOrderItem()->getQtyShipped()+$this->getQty()
         );
+        return $this;
+    }
+
+    /**
+     * Before object save
+     *
+     * @return Mage_Sales_Model_Order_Shipment_Item
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+
+        if (!$this->getParentId() && $this->getShipment()) {
+            $this->setParentId($this->getShipment()->getId());
+        }
+
         return $this;
     }
 

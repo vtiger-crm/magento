@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -76,6 +76,20 @@ class Mage_Adminhtml_Block_Widget_Tabs extends Mage_Adminhtml_Block_Widget
     }
 
     /**
+     * Add new tab after another
+     *
+     * @param   string $tabId new tab Id
+     * @param   array|Varien_Object $tab
+     * @param   string $afterTabId
+     * @return  Mage_Adminhtml_Block_Widget_Tabs
+     */
+    public function addTabAfter($tabId, $tab, $afterTabId)
+    {
+        $this->addTab($tabId, $tab);
+        $this->_tabs[$tabId]->setAfter($afterTabId);
+    }
+
+    /**
      * Add new tab
      *
      * @param   string $tabId
@@ -105,15 +119,11 @@ class Mage_Adminhtml_Block_Widget_Tabs extends Mage_Adminhtml_Block_Widget
             }
 
             if (!($this->_tabs[$tabId] instanceof Mage_Adminhtml_Block_Widget_Tab_Interface)) {
-                throw new Exception(Mage::helper('adminhtml')->__('Wrong tab configuration'));
+                throw new Exception(Mage::helper('adminhtml')->__('Wrong tab configuration.'));
             }
-            $this->_tabs[$tabId]->setTabId($tabId);
-
-            if (is_null($this->_activeTab)) $this->_activeTab = $tabId;
-            return $this;
         }
         else {
-            throw new Exception(Mage::helper('adminhtml')->__('Wrong tab configuration'));
+            throw new Exception(Mage::helper('adminhtml')->__('Wrong tab configuration.'));
         }
 
         if (is_null($this->_tabs[$tabId]->getUrl())) {
@@ -125,6 +135,7 @@ class Mage_Adminhtml_Block_Widget_Tabs extends Mage_Adminhtml_Block_Widget
         }
 
         $this->_tabs[$tabId]->setId($tabId);
+        $this->_tabs[$tabId]->setTabId($tabId);
 
         if (is_null($this->_activeTab)) $this->_activeTab = $tabId;
         if (true === $this->_tabs[$tabId]->getActive()) $this->setActiveTab($tabId);
@@ -139,13 +150,15 @@ class Mage_Adminhtml_Block_Widget_Tabs extends Mage_Adminhtml_Block_Widget
 
     /**
      * Set Active Tab
+     * Tab has to be not hidden and can show
      *
      * @param string $tabId
      * @return Mage_Adminhtml_Block_Widget_Tabs
      */
     public function setActiveTab($tabId)
     {
-        if (isset($this->_tabs[$tabId])) {
+        if (isset($this->_tabs[$tabId]) && $this->canShowTab($this->_tabs[$tabId])
+            && !$this->getTabIsHidden($this->_tabs[$tabId])) {
             $this->_activeTab = $tabId;
             if (!(is_null($this->_activeTab)) && ($tabId !== $this->_activeTab)) {
                 foreach ($this->_tabs as $id => $tab) {
@@ -345,8 +358,42 @@ class Mage_Adminhtml_Block_Widget_Tabs extends Mage_Adminhtml_Block_Widget
             }
         }
         if ($asJson) {
-            return Zend_Json::encode($result);
+            return Mage::helper('core')->jsonEncode($result);
         }
         return $result;
+    }
+
+    /**
+     * Set tab property by tab's identifier
+     *
+     * @param string $tab
+     * @param string $key
+     * @param mixed $value
+     * @return Mage_Adminhtml_Block_Widget_Tabs
+     */
+    public function setTabData($tab, $key, $value)
+    {
+        if (isset($this->_tabs[$tab]) && $this->_tabs[$tab] instanceof Varien_Object) {
+            if ($key == 'url') {
+                $value = $this->getUrl($value, array('_current' => true, '_use_rewrite' => true));
+            }
+            $this->_tabs[$tab]->setData($key, $value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Removes tab with passed id from tabs block
+     *
+     * @param string $tabId
+     * @return Mage_Adminhtml_Block_Widget_Tabs
+     */
+    public function removeTab($tabId)
+    {
+        if (isset($this->_tabs[$tabId])) {
+            unset($this->_tabs[$tabId]);
+        }
+        return $this;
     }
 }

@@ -19,31 +19,33 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_PaypalUk
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_PaypalUk
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_PaypalUk>
-            <version>0.7.0</version>
+            <version>1.6.0.0</version>
         </Mage_PaypalUk>
     </modules>
-
     <global>
         <models>
             <paypaluk>
                 <class>Mage_PaypalUk_Model</class>
-                <resourceModel>paypaluk_mysql4</resourceModel>
+                <resourceModel>paypaluk_resource</resourceModel>
             </paypaluk>
-            <paypaluk_mysql4>
-                <class>Mage_PaypalUk_Model_Mysql4</class>
+            <paypaluk_resource>
+                <class>Mage_PaypalUk_Model_Resource</class>
+                <deprecatedNode>paypaluk_mysql4</deprecatedNode>
                 <entities>
-                    <api_debug><table>paypaluk_api_debug</table></api_debug>
+                    <api_debug>
+                        <table>paypaluk_api_debug</table>
+                    </api_debug>
                 </entities>
-            </paypaluk_mysql4>
+            </paypaluk_resource>
         </models>
         <helpers>
             <paypaluk>
@@ -55,35 +57,13 @@
                 <setup>
                     <module>Mage_PaypalUk</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </paypaluk_setup>
-            <paypaluk_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </paypaluk_write>
-            <paypaluk_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </paypaluk_read>
         </resources>
         <blocks>
-            <paypaluk><class>Mage_PaypalUk_Block</class></paypaluk>
+            <paypaluk>
+                <class>Mage_PaypalUk_Block</class>
+            </paypaluk>
         </blocks>
-        <payment>
-            <cc>
-                <types>
-                    <SS>
-                        <code>SS</code>
-                        <name>Switch/Solo</name>
-                        <order>40</order>
-                    </SS>
-                </types>
-            </cc>
-        </payment>
     </global>
     <frontend>
         <secure_url>
@@ -126,29 +106,13 @@
             </modules>
         </translate>
     </adminhtml>
-
     <default>
-        <paypal>
-            <wpuk>
-                <url>https://pilot-payflowpro.verisign.com/transaction</url>
-                <partner>PayPalUK</partner>
-                <user backend_model="adminhtml/system_config_backend_encrypted"/>
-                <pwd backend_model="adminhtml/system_config_backend_encrypted"/>
-            </wpuk>
-        </paypal>
         <payment>
             <paypaluk_express>
-                <payment_action>authorize</payment_action>
                 <model>paypaluk/express</model>
-                <title>PaypalUk Express</title>
-                <allowspecific>0</allowspecific>
             </paypaluk_express>
             <paypaluk_direct>
-                <payment_action>authorize</payment_action>
                 <model>paypaluk/direct</model>
-                <title>PaypalUk Direct</title>
-                <cctypes>AE,VI,MC,DI</cctypes>
-                <allowspecific>0</allowspecific>
             </paypaluk_direct>
         </payment>
     </default>

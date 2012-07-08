@@ -18,35 +18,21 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * Enter description here ...
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Mysql4_Order_Attribute_Backend_Parent
-    extends Mage_Eav_Model_Entity_Attribute_Backend_Abstract
+    extends Mage_Sales_Model_Resource_Order_Attribute_Backend_Parent
 {
-    public function afterSave($object)
-    {
-        parent::afterSave($object);
-
-        foreach ($object->getAddressesCollection() as $item) {
-            $item->save();
-        }
-        foreach ($object->getItemsCollection() as $item) {
-            $item->save();
-        }
-        foreach ($object->getPaymentsCollection() as $item) {
-            $item->save();
-        }
-        foreach ($object->getStatusHistoryCollection() as $item) {
-            $item->save();
-        }
-        foreach ($object->getRelatedObjects() as $object) {
-            $object->save();
-        }
-        return $this;
-    }
 }

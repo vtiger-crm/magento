@@ -18,32 +18,37 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
+/** @var $this Mage_Adminhtml_Block_Sales_Order_Totals_Tax */
 ?>
-<?php $_source  = $this->getSource() ?>
-<?php $_order   = $this->getOrder() ?>
-<?php $this->setPriceDataObject($_source) ?>
-<?php $_currency= $this->getCurrency() ?>
+<?php
+/** @var $_source Mage_Sales_Model_Order_Invoice */
+$_source    = $this->getSource();
+$_order     = $this->getOrder();
+$_fullInfo  = $this->getFullTaxInfo();
+?>
 
-<?php if ((float) $_order->getTaxAmount()): ?>
-    <?php if ($this->helper('tax')->displayFullSummary()): ?>
-        <?php $isTop = 1; ?>
-        <?php foreach ($this->getFullTaxInfo() as $info): ?>
+<?php if ($this->displayFullSummary()): ?>
+    <?php $isTop = 1; ?>
+    <?php if (isset($_fullInfo[0]['rates'])): ?>
+        <?php foreach ($_fullInfo as $info): ?>
             <?php if (isset($info['hidden']) && $info['hidden']) continue; ?>
-            <?php $percent = $info['percent']; ?>
-            <?php $amount = $info['amount']; ?>
-            <?php $baseAmount = $info['base_amount']; ?>
-            <?php $rates = $info['rates']; ?>
-            <?php $isFirst = 1; ?>
+            <?php
+                $percent    = $info['percent'];
+                $amount     = $info['amount'];
+                $baseAmount = $info['base_amount'];
+                $rates      = $info['rates'];
+                $isFirst    = 1;
+            ?>
 
             <?php foreach ($rates as $rate): ?>
-            <tr class="tax-details<?php if ($isTop): echo ' tax-details-first'; endif; ?>" style="display:none;">
-                <?php if ($rate['percent']): ?>
-                    <td class="label"><?php echo $rate['title']; ?> (<?php echo $rate['percent']; ?>%)<br /></td>
+            <tr class="summary-details<?php if ($isTop): echo ' summary-details-first'; endif; ?>" style="display:none;">
+                <?php if (!is_null($rate['percent'])): ?>
+                    <td class="label"><?php echo $rate['title']; ?> (<?php echo (float)$rate['percent']; ?>%)<br /></td>
                 <?php else: ?>
                     <td class="label"><?php echo $rate['title']; ?><br /></td>
                 <?php endif; ?>
@@ -51,24 +56,51 @@
                     <td rowspan="<?php echo count($rates); ?>"><?php echo $this->displayAmount($amount, $baseAmount); ?></td>
                 <?php endif; ?>
             </tr>
-            <?php $isFirst = 0; ?>
-    		<?php $isTop = 0; ?>
+            <?php
+                $isFirst = 0;
+                $isTop = 0;
+            ?>
             <?php endforeach; ?>
         <?php endforeach; ?>
-    <?php endif;?>
+    <?php else: ?>
+        <?php foreach ($_fullInfo as $info): ?>
+            <?php
+                $percent    = $info['percent'];
+                $amount     = $info['tax_amount'];
+                $baseAmount = $info['base_tax_amount'];
+                $isFirst    = 1;
+            ?>
 
-    <tr<?php if ($this->helper('tax')->displayFullSummary()): ?> class="tax-total" onclick="expandDetails(this, '.tax-details')"<?php endif; ?>>
-        <td class="label">
-            <div class="tax-collapse">
-            <?php if ($this->helper('tax')->displayFullSummary()): ?>
-                <?php echo Mage::helper('sales')->__('Total Tax') ?>
-            <?php else: ?>
-                <?php echo Mage::helper('sales')->__('Tax') ?>
-            <?php endif;?>
-            </div>
-        </td>
-        <td>
-            <?php echo $this->displayAmount($this->getOrder()->getTaxAmount(), $this->getOrder()->getBaseTaxAmount()); ?>
-        </td>
-    </tr>
+            <tr class="summary-details<?php if ($isTop): echo ' summary-details-first'; endif; ?>" style="display:none;">
+                <?php if (!is_null($info['percent'])): ?>
+                    <td class="label"><?php echo $info['title']; ?> (<?php echo (float)$info['percent']; ?>%)<br /></td>
+                <?php else: ?>
+                    <td class="label"><?php echo $info['title']; ?><br /></td>
+                <?php endif; ?>
+                    <td><?php echo $this->displayAmount($amount, $baseAmount); ?></td>
+            </tr>
+            <?php
+                $isFirst = 0;
+                $isTop = 0;
+            ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
+<?php endif;?>
+<?php if ($this->displayFullSummary() && $_fullInfo): ?>
+<tr class="summary-total" onclick="expandDetails(this, '.summary-details')">
+<?php else: ?>
+<tr>
 <?php endif; ?>
+    <td class="label">
+        <div class="summary-collapse">
+        <?php if ($this->helper('tax')->displayFullSummary()): ?>
+            <?php echo Mage::helper('sales')->__('Total Tax') ?>
+        <?php else: ?>
+            <?php echo Mage::helper('sales')->__('Tax') ?>
+        <?php endif;?>
+        </div>
+    </td>
+    <td>
+        <?php echo $this->displayAmount($_source->getTaxAmount(), $_source->getBaseTaxAmount()); ?>
+    </td>
+</tr>

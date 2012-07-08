@@ -18,22 +18,48 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
- * Catalog compare item model
+ * Catalog Compare Item Model
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Catalog_Model_Resource_Product_Compare_Item _getResource()
+ * @method Mage_Catalog_Model_Resource_Product_Compare_Item getResource()
+ * @method Mage_Catalog_Model_Product_Compare_Item setVisitorId(int $value)
+ * @method Mage_Catalog_Model_Product_Compare_Item setCustomerId(int $value)
+ * @method int getProductId()
+ * @method Mage_Catalog_Model_Product_Compare_Item setProductId(int $value)
+ * @method int getStoreId()
+ * @method Mage_Catalog_Model_Product_Compare_Item setStoreId(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
 {
+
+    /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'catalog_compare_item';
+
+    /**
+     * Parameter name in event
+     *
+     * In observe method you can use $observer->getEvent()->getItem() in this case
+     *
+     * @var string
+     */
+    protected $_eventObject = 'item';
+
     /**
      * Initialize resourse model
      *
@@ -41,6 +67,31 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
     protected function _construct()
     {
         $this->_init('catalog/product_compare_item');
+    }
+
+    /**
+     * Retrieve Resource instance
+     *
+     * @return Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Compare_Item
+     */
+    protected function _getResource()
+    {
+        return parent::_getResource();
+    }
+
+    /**
+     * Set current store before save
+     *
+     * @return Mage_Catalog_Model_Product_Compare_Item
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+        if (!$this->hasStoreId()) {
+            $this->setStoreId(Mage::app()->getStore()->getId());
+        }
+
+        return $this;
     }
 
     /**
@@ -52,7 +103,6 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
     public function addCustomerData(Mage_Customer_Model_Customer $customer)
     {
         $this->setCustomerId($customer->getId());
-        $this->setVisitorId(0);
         return $this;
     }
 
@@ -91,7 +141,7 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
         if ($product instanceof Mage_Catalog_Model_Product) {
             $this->setProductId($product->getId());
         }
-        elseif(intval($product)) {
+        else if(intval($product)) {
             $this->setProductId(intval($product));
         }
 
@@ -120,31 +170,9 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
      */
     public function bindCustomerLogin()
     {
-        $customer = Mage::getSingleton('customer/session')->getCustomer();
-        $visitorItemCollection = Mage::getResourceModel('catalog/product_compare_item_collection')
-            ->setObject('catalog/product_compare_item')
-            ->setVisitorId(Mage::getSingleton('log/visitor')->getId())
-            ->load();
+        $this->_getResource()->updateCustomerFromVisitor($this);
 
-        $customerItemCollection = $this->getResourceCollection()
-            ->setCustomerId($customer->getId())
-            ->useProductItem(true)
-            ->load();
-
-        $customerProductIds = $customerItemCollection->getProductIds();
-
-        foreach ($visitorItemCollection as $item) {
-            if (in_array($item->getProductId(), $customerProductIds)) {
-                $item->delete();
-            }
-            else {
-                $item->setCustomerId($customer->getId())
-                    ->setVisitorId(0)
-                    ->save();
-            }
-        }
-
-        Mage::helper('catalog/product_compare')->calculate();
+        Mage::helper('catalog/product_compare')->setCustomerId($this->getCustomerId())->calculate();
         return $this;
     }
 
@@ -154,9 +182,11 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
      * @param Varien_Event_Observer $observer
      * @return Mage_Catalog_Model_Product_Compare_Item
      */
-    public function bindCustomerLogout(Varien_Event_Observer $observer)
+    public function bindCustomerLogout(Varien_Event_Observer $observer = null)
     {
-        Mage::getSingleton('log/visitor')->setCatalogCompareItemsCount(0);
+        $this->_getResource()->purgeVisitorByCustomer($this);
+
+        Mage::helper('catalog/product_compare')->calculate(true);
         return $this;
     }
 
@@ -169,5 +199,33 @@ class Mage_Catalog_Model_Product_Compare_Item extends Mage_Core_Model_Abstract
     {
         $this->_getResource()->clean($this);
         return $this;
+    }
+
+    /**
+     * Retrieve Customer Id if loggined
+     *
+     * @return int
+     */
+    public function getCustomerId()
+    {
+        if (!$this->hasData('customer_id')) {
+            $customerId = Mage::getSingleton('customer/session')->getCustomerId();
+            $this->setData('customer_id', $customerId);
+        }
+        return $this->getData('customer_id');
+    }
+
+    /**
+     * Retrieve Visitor Id
+     *
+     * @return int
+     */
+    public function getVisitorId()
+    {
+        if (!$this->hasData('visitor_id')) {
+            $visitorId = Mage::getSingleton('log/visitor')->getId();
+            $this->setData('visitor_id', $visitorId);
+        }
+        return $this->getData('visitor_id');
     }
 }

@@ -18,61 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CheckoutAgreement
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Mage_Checkout_Model_Mysql4_Agreement_Collection extends Mage_Core_Model_Mysql4_Collection_Abstract
+
+/**
+ * Enter description here ...
+ *
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
+class Mage_Checkout_Model_Mysql4_Agreement_Collection extends Mage_Checkout_Model_Resource_Agreement_Collection
 {
-    /**
-     * @var bool
-     */
-    protected $_isStoreFilterWithAdmin = true;
-
-    /**
-     * Initialize resource
-     *
-     */
-    protected function _construct()
-    {
-        $this->_init('checkout/agreement');
-    }
-
-    /**
-     * Filter collection by specified store ids
-     *
-     * @param int|Mage_Core_Model_Store $store
-     * @return Mage_Checkout_Model_Mysql4_Agreement_Collection
-     */
-    public function addStoreFilter($store)
-    {
-        if ($store instanceof Mage_Core_Model_Store) {
-            $store = array($store->getId());
-        }
-
-        $read = $this->getConnection();
-        $this->getSelect()->join(
-            array('store_table' => $this->getTable('checkout/agreement_store')),
-            'main_table.agreement_id = store_table.agreement_id',
-            array()
-        )
-        ->where('store_table.store_id in (?)', ($this->_isStoreFilterWithAdmin ? array(0, $store) : $store))
-        ->group('main_table.agreement_id');
-
-        return $this;
-    }
-
-    /**
-     * Make store filter using admin website or not
-     *
-     * @param bool $value
-     * @return Mage_Checkout_Model_Mysql4_Agreement_Collection
-     */
-    public function setIsStoreFilterWithAdmin($value)
-    {
-        $this->_isStoreFilterWithAdmin = (bool)$value;
-        return $this;
-    }
 }

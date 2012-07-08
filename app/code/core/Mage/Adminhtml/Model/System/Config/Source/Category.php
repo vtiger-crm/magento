@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -40,14 +40,14 @@ class Mage_Adminhtml_Model_System_Config_Source_Category
         $collection = Mage::getResourceModel('catalog/category_collection');
 
         $collection->addAttributeToSelect('name')
-            ->addPathFilter('^1/[0-9]+$')
+            ->addRootLevelFilter()
             ->load();
 
         $options = array();
 
         if ($addEmpty) {
             $options[] = array(
-                'label' => Mage::helper('adminhtml')->__('-- Please select a category --'),
+                'label' => Mage::helper('adminhtml')->__('-- Please Select a Category --'),
                 'value' => ''
             );
         }

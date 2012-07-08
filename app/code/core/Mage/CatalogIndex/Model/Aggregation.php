@@ -18,16 +18,29 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Index data aggregation model
  *
  * Allow cache some aggregated data with tag dependency
+ *
+ * @method Mage_CatalogIndex_Model_Resource_Aggregation _getResource()
+ * @method Mage_CatalogIndex_Model_Resource_Aggregation getResource()
+ * @method int getStoreId()
+ * @method Mage_CatalogIndex_Model_Aggregation setStoreId(int $value)
+ * @method string getCreatedAt()
+ * @method Mage_CatalogIndex_Model_Aggregation setCreatedAt(string $value)
+ * @method string getKey()
+ * @method Mage_CatalogIndex_Model_Aggregation setKey(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_CatalogIndex_Model_Aggregation extends Mage_Core_Model_Abstract
 {
@@ -91,13 +104,13 @@ class Mage_CatalogIndex_Model_Aggregation extends Mage_Core_Model_Abstract
     }
 
     /**
-     * Delete cached aggreagation data
+     * Delete cached aggregation data
      *
      * @param   array $tags
      * @param   int|null|string $store
      * @return  Mage_CatalogIndex_Model_Aggregation
      */
-    public function clearCacheData($tags=array(), $store=null)
+    public function clearCacheData($tags = array(), $store = null)
     {
         $tags    = $this->_processTags($tags);
         if ($store !== null) {
@@ -119,7 +132,7 @@ class Mage_CatalogIndex_Model_Aggregation extends Mage_Core_Model_Abstract
         if (!empty($categoryPaths)) {
             $tags = array();
             foreach ($categoryPaths as $path) {
-            	$tags[] = Mage_Catalog_Model_Category::CACHE_TAG.':'.$path;
+                $tags[] = Mage_Catalog_Model_Category::CACHE_TAG.':'.$path;
             }
             $this->clearCacheData($tags);
         }
@@ -151,11 +164,11 @@ class Mage_CatalogIndex_Model_Aggregation extends Mage_Core_Model_Abstract
     {
         $newTags = array();
         foreach ($tags as $tag) {
-            $tagInfo = split(':', $tag);
+            $tagInfo = explode(':', $tag);
             if (count($tagInfo)==1) {
                 $newTags[] = $tagInfo[0];
             } else {
-                $tagVariants = split('/', $tagInfo[1]);
+                $tagVariants = explode('/', $tagInfo[1]);
                 foreach ($tagVariants as $tagVariant) {
                     $newTags[] = $tagInfo[0] . $tagVariant;
                 }

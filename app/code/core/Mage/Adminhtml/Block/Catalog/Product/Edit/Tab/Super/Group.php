@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,8 @@
  * @package    Mage_Adminhtml
  * @author     Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adminhtml_Block_Widget_Grid implements Mage_Adminhtml_Block_Widget_Tab_Interface
+class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adminhtml_Block_Widget_Grid
+    implements Mage_Adminhtml_Block_Widget_Tab_Interface
 {
     public function __construct()
     {
@@ -56,7 +57,7 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adm
     }
 
     /**
-     * Retirve currently edited product model
+     * Retrieve currently edited product model
      *
      * @return Mage_Catalog_Model_Product
      */
@@ -87,10 +88,17 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adm
         return $this;
     }
 
+    /**
+     * Prepare collection
+     *
+     * @return Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group
+     */
     protected function _prepareCollection()
     {
         $allowProductTypes = array();
-        foreach (Mage::getConfig()->getNode('global/catalog/product/type/grouped/allow_product_types')->children() as $type) {
+        $allowProductTypeNodes = Mage::getConfig()
+            ->getNode('global/catalog/product/type/grouped/allow_product_types')->children();
+        foreach ($allowProductTypeNodes as $type) {
             $allowProductTypes[] = $type->getName();
         }
 
@@ -101,6 +109,9 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adm
             ->addFilterByRequiredOptions()
             ->addAttributeToFilter('type_id', $allowProductTypes);
 
+        if ($this->getIsReadonly() === true) {
+            $collection->addFieldToFilter('entity_id', array('in' => $this->_getSelectedProducts()));
+        }
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
@@ -162,16 +173,46 @@ class Mage_Adminhtml_Block_Catalog_Product_Edit_Tab_Super_Group extends Mage_Adm
         return parent::_prepareColumns();
     }
 
+    /**
+     * Get Grid Url
+     *
+     * @return string
+     */
     public function getGridUrl()
     {
-        return $this->_getData('grid_url') ? $this->_getData('grid_url') : $this->getUrl('*/*/superGroup', array('_current'=>true));
+        return $this->_getData('grid_url')
+            ? $this->_getData('grid_url') : $this->getUrl('*/*/superGroupGridOnly', array('_current'=>true));
     }
 
+    /**
+     * Retrieve selected grouped products
+     *
+     * @return array
+     */
     protected function _getSelectedProducts()
     {
-        $products = $this->getRequest()->getPost('products', null);
+        $products = $this->getProductsGrouped();
         if (!is_array($products)) {
-            $products = $this->_getProduct()->getTypeInstance(true)->getAssociatedProductIds($this->_getProduct());
+            $products = array_keys($this->getSelectedGroupedProducts());
+        }
+        return $products;
+    }
+
+    /**
+     * Retrieve grouped products
+     *
+     * @return array
+     */
+    public function getSelectedGroupedProducts()
+    {
+        $associatedProducts = Mage::registry('current_product')->getTypeInstance(true)
+            ->getAssociatedProducts(Mage::registry('current_product'));
+        $products = array();
+        foreach ($associatedProducts as $product) {
+            $products[$product->getId()] = array(
+                'qty'       => $product->getQty(),
+                'position'  => $product->getPosition()
+            );
         }
         return $products;
     }

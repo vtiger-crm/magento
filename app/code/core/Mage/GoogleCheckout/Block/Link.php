@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleCheckout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleCheckout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -58,9 +58,13 @@ class Mage_GoogleCheckout_Block_Link extends Mage_Core_Block_Template
         return $this->getUrl('googlecheckout/redirect/checkout');
     }
 
+    /**
+     * @deprecated after 1.4.1.1
+     * @return bool
+     */
     public function getIsActiveAanalytics()
     {
-        return Mage::getStoreConfig('google/analytics/active');
+        return false;
     }
 
     public function getImageWidth()
@@ -75,15 +79,17 @@ class Mage_GoogleCheckout_Block_Link extends Mage_Core_Block_Template
          return $v[1];
     }
 
+    /**
+     * Check whether method is available and render HTML
+     * @return string
+     */
     public function _toHtml()
     {
-        if (!Mage::getSingleton('checkout/session')->getQuote()->validateMinimumAmount()) {
-            return '';
-        }
-        if (Mage::getStoreConfigFlag('google/checkout/active')) {
+        $quote = Mage::getSingleton('checkout/session')->getQuote();
+        if (Mage::getModel('googlecheckout/payment')->isAvailable($quote) && $quote->validateMinimumAmount()) {
+            Mage::dispatchEvent('googlecheckout_block_link_html_before', array('block' => $this));
             return parent::_toHtml();
         }
-
         return '';
     }
 

@@ -18,31 +18,21 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * Enter description here ...
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Mysql4_Quote_Address_Attribute_Frontend_Discount
-    extends Mage_Sales_Model_Mysql4_Quote_Address_Attribute_Frontend
+    extends Mage_Sales_Model_Resource_Quote_Address_Attribute_Frontend_Discount
 {
-    public function fetchTotals(Mage_Sales_Model_Quote_Address $address)
-    {
-        $amount = $address->getDiscountAmount();
-        if ($amount!=0) {
-            $title = Mage::helper('sales')->__('Discount');
-            if ($address->getQuote()->getCouponCode()) {
-                $title .= ' ('.$address->getQuote()->getCouponCode().')';
-            }
-            $address->addTotal(array(
-                'code'=>'discount', 
-                'title'=>$title, 
-                'value'=>-$amount
-            ));
-        }
-        return $this;
-    }
-
 }

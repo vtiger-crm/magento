@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Install
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Install
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -81,7 +81,7 @@ class Mage_Install_Block_Config extends Mage_Install_Block_Abstract
     public function getSessionSaveOptions()
     {
         return array(
-            'files' => Mage::helper('install')->__('File system'),
+            'files' => Mage::helper('install')->__('File System'),
             'db'    => Mage::helper('install')->__('Database'),
         );
     }
@@ -91,7 +91,7 @@ class Mage_Install_Block_Config extends Mage_Install_Block_Abstract
         $html = $this->getLayout()->createBlock('core/html_select')
             ->setName('config[session_save]')
             ->setId('session_save')
-            ->setTitle(Mage::helper('install')->__('Save session files in'))
+            ->setTitle(Mage::helper('install')->__('Save Session Files In'))
             ->setClass('required-entry')
             ->setOptions($this->getSessionSaveOptions())
             ->getHtml();

@@ -18,17 +18,34 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <script type="text/javascript">
+//<![CDATA[
 function saveAndContinueEdit(){
-    editForm.submit($('edit_form').action+'back/edit/tab/' + product_attribute_tabsJsTabs.activeTab.id);
+    disableElements('save');
+    var activeTab = product_attribute_tabsJsTabs.activeTab.id;
+    if (editForm.submit($('edit_form').action+'back/edit/tab/' + activeTab) == false) {
+        enableElements('save');
+     }
+    varienGlobalEvents.attachEventHandler('formValidateAjaxComplete', function (){
+        enableElements('save');
+    });
 }
 
+function saveAttribute(){
+    disableElements('save');
+    if (editForm.submit() == false){
+        enableElements('save');
+    }
+    varienGlobalEvents.attachEventHandler('formValidateAjaxComplete', function (){
+        enableElements('save');
+    });
+}
 
 function toggleApplyVisibility(select) {
     if ($(select).value == 1) {
@@ -63,10 +80,10 @@ function bindAttributeInputType()
     switchDefaultValueField();
     checkIsConfigurableVisibility();
     if($('frontend_input') && ($('frontend_input').value=='select' || $('frontend_input').value=='multiselect' || $('frontend_input').value=='price')){
-        if($('is_filterable')){
+        if($('is_filterable') && !$('is_filterable').getAttribute('readonly')){
             $('is_filterable').disabled = false;
         }
-        if($('is_filterable_in_search')){
+        if($('is_filterable_in_search') && !$('is_filterable_in_search').getAttribute('readonly')){
             $('is_filterable_in_search').disabled = false;
         }
         if($('backend_type') && $('backend_type').options){
@@ -93,21 +110,33 @@ function bindAttributeInputType()
         }
     }
     else {
-        if ($('used_for_sort_by')) {
+        if ($('used_for_sort_by') && !$('used_for_sort_by').getAttribute('readonly')) {
             $('used_for_sort_by').disabled = false;
         }
     }
 
-    if ($('frontend_input') && ($('frontend_input').value=='text' || $('frontend_input').value=='textarea')) {
-        if($('is_html_allowed_on_front')){
+    setRowVisibility('is_wysiwyg_enabled', false);
+    setRowVisibility('is_html_allowed_on_front', false);
+    if ($('frontend_input').value=='textarea') {
+        setRowVisibility('is_wysiwyg_enabled', true);
+        if($('is_wysiwyg_enabled').value == '0'){
+            setRowVisibility('is_html_allowed_on_front', true);
             $('is_html_allowed_on_front').disabled = false;
         }
+        $('frontend_class').value = '';
+        $('frontend_class').disabled = true;
     }
-    else {
-        if($('is_html_allowed_on_front')){
-            $('is_html_allowed_on_front').selectedIndex=0;
-            $('is_html_allowed_on_front').disabled = true;
+    else if($('frontend_input').value=='text'){
+        setRowVisibility('is_html_allowed_on_front', true);
+        $('is_html_allowed_on_front').disabled = false;
+
+        if (!$('frontend_class').getAttribute('readonly')) {
+            $('frontend_class').disabled = false;
         }
+    }
+    else{
+        $('frontend_class').value = '';
+        $('frontend_class').disabled = true;
     }
 
     switchIsFilterable();
@@ -119,7 +148,9 @@ function switchIsFilterable()
         if ($('is_filterable').selectedIndex == 0) {
             $('position').disabled = true;
         } else {
-            $('position').disabled = false;
+            if (!$('position').getAttribute('readonly')){
+                $('position').disabled = false;
+            }
         }
     }
 }
@@ -296,5 +327,5 @@ if ($('is_required')) {
     Event.observe($('is_required'), 'change', updateRequriedOptions);
 }
 bindAttributeInputType();
-
+//]]>
 </script>

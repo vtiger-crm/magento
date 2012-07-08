@@ -14,9 +14,9 @@
  *
  * @category   Zend
  * @package    Zend_Paginator
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Interface.php 12519 2008-11-10 18:41:24Z alexander $
+ * @version    $Id: Interface.php 23314 2010-11-08 19:48:10Z matthew $
  */
 
 /**
@@ -24,18 +24,11 @@
  *
  * @category   Zend
  * @package    Zend_Paginator
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 interface Zend_Paginator_Adapter_Interface extends Countable
 {
-    /**
-     * Returns the total number of rows in the collection.
-     *
-     * @return integer
-     */
-    //public function count();
-    
     /**
      * Returns an collection of items for a page.
      *

@@ -17,8 +17,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 var giftMessagesController = {
@@ -27,6 +29,13 @@ var giftMessagesController = {
         if(!$(source).value.blank()) {
             objects.each(function(item) {
                $(item).addClassName('required-entry');
+               var label = findFieldLabel($(item));
+               if (label) {
+                   var span = label.down('span');
+                   if (!span) {
+                       Element.insert(label, {bottom: '&nbsp;<span class="required">*</span>'});
+                   }
+               }
             });
         } else {
             objects.each(function(item) {
@@ -34,6 +43,19 @@ var giftMessagesController = {
                     $(source).formObj.validator.reset(item);
                 }
                 $(item).removeClassName('required-entry');
+                var label = findFieldLabel($(item));
+                if (label) {
+                    var span = label.down('span');
+                    if (span) {
+                        Element.remove(span);
+                    }
+                }
+                // Hide validation advices if exist
+                if ($(item) && $(item).advices) {
+                    $(item).advices.each(function (pair) {
+                        if (pair.value != null) pair.value.hide();
+                    });
+                }
             });
         }
     },
@@ -44,10 +66,6 @@ var giftMessagesController = {
             $(container).down('.action-link').addClassName('open');
             $(container).down('.default-text').hide();
             $(container).down('.close-text').show();
-            this.toogleRequired(this.getFieldId(container, 'message'), [
-                this.getFieldId(container, 'sender'),
-                this.getFieldId(container, 'recipient')
-            ]);
         } else {
             $(container).toogleGiftMessage = false;
             $(this.getFieldId(container, 'message')).formObj = $(this.getFieldId(container, 'form'));
@@ -84,11 +102,6 @@ var giftMessagesController = {
         return false;
     },
     saveGiftMessage: function(container) {
-        this.toogleRequired(this.getFieldId(container, 'message'), [
-            this.getFieldId(container, 'sender'),
-            this.getFieldId(container, 'recipient')
-        ]);
-
         $(this.getFieldId(container, 'message')).formObj = $(this.getFieldId(container, 'form'));
 
         if(!$(this.getFieldId(container, 'form')).validator) {
@@ -109,3 +122,150 @@ var giftMessagesController = {
     }
 };
 
+function findFieldLabel(field) {
+    var tdField = $(field).up('td');
+    if (tdField) {
+       var tdLabel = tdField.previous('td');
+       if (tdLabel) {
+           var label = tdLabel.down('label');
+           if (label) {
+               return label;
+           }
+       }
+    }
+
+    return false;
+}
+
+
+/********************* GIFT OPTIONS POPUP ***********************/
+var GiftOptionsPopup = Class.create();
+GiftOptionsPopup.prototype = {
+    giftOptionsWindowMask: null,
+    giftOptionsWindow: null,
+
+    initialize: function() {
+        $$('.action-link').each(function (el) {
+            Event.observe(el, 'click', this.showItemGiftOptions.bind(this));
+        }, this);
+
+        // Move giftcard popup to start of body, because soon it will contain FORM tag that can break DOM layout if within other FORM
+        var oldPopupContainer = $('gift_options_configure');
+        if (oldPopupContainer) {
+            oldPopupContainer.remove();
+        }
+
+        var newPopupContainer = $('gift_options_configure_new');
+        $(document.body).insert({top: newPopupContainer});
+        newPopupContainer.id = 'gift_options_configure';
+
+        // Put controls container inside a FORM tag so we can use Validator
+        var form = new Element('form', {action: '#', id: 'gift_options_configuration_form', method: 'post'});
+        var formContents = $('gift_options_form_contents');
+        if (formContents) {
+            formContents.parentNode.appendChild(form);
+            form.appendChild(formContents);
+        }
+    },
+
+    showItemGiftOptions : function(event) {
+        var element = Event.element(event).id;
+        var itemId = element.sub('gift_options_link_','');
+
+        toggleSelectsUnderBlock(this.giftOptionsWindowMask, false);
+        this.giftOptionsWindowMask = $('gift_options_window_mask');
+        this.giftOptionsWindow = $('gift_options_configure');
+        this.giftOptionsWindow.select('select').each(function(el){
+            el.style.visibility = 'visible';
+        });
+
+        this.giftOptionsWindowMask.setStyle({'height': $('html-body').getHeight() + 'px'}).show();
+        this.giftOptionsWindow.setStyle({'marginTop': -this.giftOptionsWindow.getHeight()/2 + 'px', 'display': 'block'});
+        this.setTitle(itemId);
+
+        Event.observe($('gift_options_cancel_button'), 'click', this.onCloseButton.bind(this));
+        Event.observe($('gift_options_ok_button'), 'click', this.onOkButton.bind(this));
+        Event.stop(event);
+    },
+
+    setTitle : function (itemId) {
+        var productTitleElement = $('order_item_' + itemId + '_title');
+        var productTitle = '';
+        if (productTitleElement) {
+            productTitle = productTitleElement.innerHTML;
+        }
+        $('gift_options_configure_title').update(productTitle);
+    },
+
+    onOkButton : function() {
+        var giftOptionsForm = new varienForm('gift_options_configuration_form');
+        giftOptionsForm.canShowError = true;
+        if (!giftOptionsForm.validate()) {
+            return false;
+        }
+        giftOptionsForm.validator.reset();
+        this.closeWindow();
+        return true;
+    },
+
+    onCloseButton : function() {
+        this.closeWindow();
+    },
+
+    closeWindow : function() {
+        toggleSelectsUnderBlock(this.giftOptionsWindowMask, true);
+        this.giftOptionsWindowMask.style.display = 'none';
+        this.giftOptionsWindow.style.display = 'none';
+    }
+}
+
+
+/********************* GIFT OPTIONS SET ***********************/
+GiftMessageSet = Class.create();
+GiftMessageSet.prototype = {
+    destPrefix: 'current_item_giftmessage_',
+    sourcePrefix: 'giftmessage_',
+    fields: ['sender', 'recipient', 'message'],
+    isObserved: false,
+
+    initialize: function() {
+        $$('.action-link').each(function (el) {
+            Event.observe(el, 'click', this.setData.bind(this));
+        }, this);
+    },
+
+    setData: function(event) {
+        var element = Event.element(event).id;
+        this.id = element.sub('gift_options_link_','');
+
+        if ($('gift-message-form-data-' + this.id)) {
+            this.fields.each(function(el) {
+                if ($(this.sourcePrefix + this.id + '_' + el) && $(this.destPrefix + el)) {
+                    $(this.destPrefix + el).value = $(this.sourcePrefix + this.id + '_' + el).value
+                }
+            }, this);
+            $('gift_options_giftmessage').show();
+        } else {
+            $('gift_options_giftmessage').hide();
+        }
+
+        if (!this.isObserved) {
+            Event.observe('gift_options_ok_button', 'click', this.saveData.bind(this));
+            this.isObserved = true;
+        }
+    },
+
+    saveData: function(event){
+        this.fields.each(function(el) {
+            if ($(this.sourcePrefix + this.id + '_' + el) && $(this.destPrefix + el)) {
+                $(this.sourcePrefix + this.id + '_' + el).value = $(this.destPrefix + el).value;
+            }
+        }, this);
+        if ($(this.sourcePrefix + this.id + '_form')) {
+            $(this.sourcePrefix + this.id + '_form').request();
+        } else if (typeof(order) != 'undefined') {
+            var data = order.serializeData('gift_options_data_' + this.id);
+            order.loadArea(['items'], true, data.toObject());
+        }
+    }
+}

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -56,6 +56,7 @@ class Mage_Adminhtml_Block_Report_Product_Lowstock_Grid extends Mage_Adminhtml_B
             $storeId = '';
         }
 
+        /** @var $collection Mage_Reports_Model_Resource_Product_Lowstock_Collection  */
         $collection = Mage::getResourceModel('reports/product_lowstock_collection')
             ->addAttributeToSelect('*')
             ->setStoreId($storeId)
@@ -63,7 +64,7 @@ class Mage_Adminhtml_Block_Report_Product_Lowstock_Grid extends Mage_Adminhtml_B
             ->joinInventoryItem('qty')
             ->useManageStockFilter($storeId)
             ->useNotifyStockQtyFilter($storeId)
-            ->setOrder('qty', 'asc');
+            ->setOrder('qty', Varien_Data_Collection::SORT_ORDER_ASC);
 
         if( $storeId ) {
             $collection->addStoreFilter($storeId);
@@ -82,7 +83,7 @@ class Mage_Adminhtml_Block_Report_Product_Lowstock_Grid extends Mage_Adminhtml_B
         ));
 
         $this->addColumn('sku', array(
-            'header'    =>Mage::helper('reports')->__('Product Sku'),
+            'header'    =>Mage::helper('reports')->__('Product SKU'),
             'sortable'  =>false,
             'index'     =>'sku'
         ));
@@ -98,7 +99,7 @@ class Mage_Adminhtml_Block_Report_Product_Lowstock_Grid extends Mage_Adminhtml_B
         ));
 
         $this->addExportType('*/*/exportLowstockCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportLowstockExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportLowstockExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }

@@ -18,15 +18,16 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleBase
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleBase
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Google Base Feed Model
  *
+ * @deprecated after 1.5.1.0
  * @category   Mage
  * @package    Mage_GoogleBase
  * @author     Magento Core Team <core@magentocommerce.com>
@@ -63,6 +64,11 @@ class Mage_GoogleBase_Model_Service_Feed extends Mage_GoogleBase_Model_Service
         if (!stristr($id, 'http://')) {
             $id = self::ITEMS_LOCATION . '/' . $id;
         }
+        if (!strstr($id, '?')) {
+            $id = $id . '?content=attributes,meta';
+        } elseif (!stristr($id, 'content=')) {
+            $id = $id . '&content=attributes,meta';
+        }
         try {
             $entry = $this->getService($storeId)->getGbaseItemEntry($id);
             return $this->_getEntryStats($entry);
@@ -79,7 +85,7 @@ class Mage_GoogleBase_Model_Service_Feed extends Mage_GoogleBase_Model_Service
      */
     protected function _getEntryStats($entry)
     {
-        $result = array();
+        $result = $_stats = array();
 
         $draft = 'no';
         if (is_object($entry->getControl()) && is_object($entry->getControl()->getDraft())) {
@@ -89,9 +95,39 @@ class Mage_GoogleBase_Model_Service_Feed extends Mage_GoogleBase_Model_Service
 
         $expirationDate = $entry->getGbaseAttribute('expiration_date');
         if (isset($expirationDate[0]) && is_object($expirationDate[0])) {
-            $result['expires'] = Mage::getSingleton('googlebase/service_item')->gBaseDate2DateTime($expirationDate[0]->getText());
+            $result['expires'] = Mage::getSingleton('googlebase/service_item')
+                                    ->gBaseDate2DateTime($expirationDate[0]->getText());
         }
 
+        $allAttributes = $entry->getExtensionElements();
+        $elementsCount = count($allAttributes);
+        if($elementsCount) {
+            $statsElement = null;
+            for ($i = 0; $i < $elementsCount; $i++) {
+                /**
+                 * @var $extAttribute Zend_Gdata_App_Extension_Element
+                 */
+                $extAttribute = $allAttributes[$i];
+                if ((string)$extAttribute->rootElement == 'stats') {
+                    $statsElement = $extAttribute;
+                    break;
+                }
+            }
+            if ($statsElement) {
+                $_stats = $statsElement->getExtensionElements();
+            }
+            $statsCount = count($_stats);
+            for ($i = 0; $i < $statsCount; $i++) {
+                /**
+                 * @var $_currentElement Zend_Gdata_App_Extension_Element
+                 */
+                $_currentElement = $_stats[$i];
+                $_currentAttributes = $_currentElement->getExtensionAttributes();
+                if (isset($_currentAttributes['total']) && isset($_currentAttributes['total']['value'])) {
+                    $result[(string)$_currentElement->rootElement] = $_currentAttributes['total']['value'];
+                }
+            }
+        }
         return $result;
     }
 
@@ -106,32 +142,32 @@ class Mage_GoogleBase_Model_Service_Feed extends Mage_GoogleBase_Model_Service
         $locale = Mage::getSingleton('googlebase/config')->getCountryInfo($targetCountry, 'locale');
         $location = self::ITEM_TYPES_LOCATION . '/' . $locale;
 
-        $feed = $this->getGuestService()->getFeed($location);
-
         $itemTypes = array();
-        foreach ($feed->entries as $entry) {
-            $type = $entry->extensionElements[0]->text;
-            $item = new Varien_Object();
-            $item->setId($type);
-            $item->setName($entry->title->text);
-            $item->setLocation($entry->id->text);
-            $itemTypes[$type] = $item;
+        foreach ($this->getGuestService()->getFeed($location)->entries as $entry) {
+            if (isset($entry->extensionElements[1])) { // has attributes node?
+                $typeAttributes = $entry->extensionElements[1]->extensionElements;
+                if (is_array($typeAttributes) && !empty($typeAttributes)) { // only items with attributes allowed
+                    $type = $entry->extensionElements[0]->text;
+                    $item = new Varien_Object();
+                    $item->setId($type);
+                    $item->setName($entry->title->text);
+                    $item->setLocation($entry->id->text);
+                    $itemTypes[$type] = $item;
 
-            $typeAttributes = $entry->extensionElements[1]->extensionElements;
-            $attributes = array();
-            if (is_array($typeAttributes)) {
-                foreach($typeAttributes as $attr) {
-                    $name = $attr->extensionAttributes['name']['value'];
-                    $type = $attr->extensionAttributes['type']['value'];
-                    $attribute = new Varien_Object();
-                    $attribute->setId($name);
-                    $attribute->setName($name);
-                    $attribute->setType($type);
-                    $attributes[$name] = $attribute;
+                    $attributes = array();
+                    foreach($typeAttributes as $attr) {
+                        $name = $attr->extensionAttributes['name']['value'];
+                        $type = $attr->extensionAttributes['type']['value'];
+                        $attribute = new Varien_Object();
+                        $attribute->setId($name);
+                        $attribute->setName($name);
+                        $attribute->setType($type);
+                        $attributes[$name] = $attribute;
+                    }
+                    ksort($attributes);
+                    $item->setAttributes($attributes);
                 }
             }
-            ksort($attributes);
-            $item->setAttributes($attributes);
         }
         ksort($itemTypes);
         $this->_itemTypes = $itemTypes;

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -61,7 +61,7 @@ class Mage_Adminhtml_Block_Checkout_Agreement_Edit_Form extends Mage_Adminhtml_B
 
         $fieldset   = $form->addFieldset('base_fieldset', array(
             'legend'    => Mage::helper('checkout')->__('Terms and Conditions Information'),
-			'class'     => 'fieldset-wide',
+            'class'     => 'fieldset-wide',
         ));
 
         if ($model->getId()) {
@@ -117,8 +117,8 @@ class Mage_Adminhtml_Block_Checkout_Agreement_Edit_Form extends Mage_Adminhtml_B
 
         $fieldset->addField('checkbox_text', 'editor', array(
             'name'      => 'checkbox_text',
-            'label'     => Mage::helper('checkout')->__('Checkbox text'),
-            'title'     => Mage::helper('checkout')->__('Checkbox text'),
+            'label'     => Mage::helper('checkout')->__('Checkbox Text'),
+            'title'     => Mage::helper('checkout')->__('Checkbox Text'),
             'rows'      => '5',
             'cols'      => '30',
             'wysiwyg'   => false,

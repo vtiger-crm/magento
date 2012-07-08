@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -114,23 +114,28 @@ abstract class Mage_Catalog_Block_Product_View_Options_Abstract extends Mage_Cor
         if ($value['pricing_value'] == 0) {
             return '';
         }
+
+        $taxHelper = Mage::helper('tax');
+        $store = $this->getProduct()->getStore();
+
         $sign = '+';
         if ($value['pricing_value'] < 0) {
             $sign = '-';
             $value['pricing_value'] = 0 - $value['pricing_value'];
         }
+
         $priceStr = $sign;
         $_priceInclTax = $this->getPrice($value['pricing_value'], true);
         $_priceExclTax = $this->getPrice($value['pricing_value']);
-        if (Mage::helper('tax')->displayPriceIncludingTax()) {
-            $priceStr .= $this->helper('core')->currency($_priceInclTax, true, $flag);
-        } elseif (Mage::helper('tax')->displayPriceExcludingTax()) {
-            $priceStr .= $this->helper('core')->currency($_priceExclTax, true, $flag);
-        } elseif (Mage::helper('tax')->displayBothPrices()) {
-            $priceStr .= $this->helper('core')->currency($_priceExclTax, true, $flag);
+        if ($taxHelper->displayPriceIncludingTax()) {
+            $priceStr .= $this->helper('core')->currencyByStore($_priceInclTax, $store, true, $flag);
+        } elseif ($taxHelper->displayPriceExcludingTax()) {
+            $priceStr .= $this->helper('core')->currencyByStore($_priceExclTax, $store, true, $flag);
+        } elseif ($taxHelper->displayBothPrices()) {
+            $priceStr .= $this->helper('core')->currencyByStore($_priceExclTax, $store, true, $flag);
             if ($_priceInclTax != $_priceExclTax) {
                 $priceStr .= ' ('.$sign.$this->helper('core')
-                    ->currency($_priceInclTax, true, $flag).' '.$this->__('Incl. Tax').')';
+                    ->currencyByStore($_priceInclTax, $store, true, $flag).' '.$this->__('Incl. Tax').')';
             }
         }
 
@@ -156,5 +161,17 @@ abstract class Mage_Catalog_Block_Product_View_Options_Abstract extends Mage_Cor
             $price = Mage::helper('tax')->getPrice($this->getProduct(), $price);
         }
         return $price;
+    }
+
+    /**
+     * Returns price converted to current currency rate
+     *
+     * @param float $price
+     * @return float
+     */
+    public function getCurrencyPrice($price)
+    {
+        $store = $this->getProduct()->getStore();
+        return $this->helper('core')->currencyByStore($price, $store, false);
     }
 }

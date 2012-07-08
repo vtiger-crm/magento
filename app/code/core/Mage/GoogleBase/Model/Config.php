@@ -18,15 +18,16 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleBase
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleBase
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Google Base Config model
  *
+ * @deprecated after 1.5.1.0
  * @category   Mage
  * @package    Mage_GoogleBase
  * @author     Magento Core Team <core@magentocommerce.com>
@@ -38,7 +39,7 @@ class Mage_GoogleBase_Model_Config extends Varien_Object
      *
      *  @param    string $key Var path key
      *  @param    int $storeId Store View Id
-     *  @return	  mixed
+     *  @return   mixed
      */
     public function getConfigData($key, $storeId = null)
     {
@@ -68,7 +69,7 @@ class Mage_GoogleBase_Model_Config extends Varien_Object
      */
     public function getAccountPassword($storeId = null)
     {
-        return $this->getConfigData('password', $storeId);
+        return Mage::helper('core')->decrypt($this->getConfigData('password', $storeId));
     }
 
     /**

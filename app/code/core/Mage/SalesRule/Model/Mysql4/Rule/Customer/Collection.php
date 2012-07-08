@@ -18,18 +18,21 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_SalesRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
-class Mage_SalesRule_Model_Mysql4_Rule_Customer_Collection extends Mage_Core_Model_Mysql4_Collection_Abstract 
+/**
+ * SalesRule Mysql4 Rule Customer Collection
+ *
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
+class Mage_SalesRule_Model_Mysql4_Rule_Customer_Collection
+    extends Mage_SalesRule_Model_Resource_Rule_Customer_Collection
 {
-    protected function _construct()
-    {
-        parent::_construct();
-        $this->_init('salesrule/rule_customer');
-    }
 }

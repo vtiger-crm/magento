@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 // very long update :)
@@ -56,8 +56,11 @@ $installer->addAttribute('creditmemo', 'base_to_order_rate', array('type'=>'deci
  */
 
 $orderEntityType = $installer->getEntityType('order');
+$orderEntityType['entity_table'] = 'sales_order';
 $invoiceEntityType = $installer->getEntityType('invoice');
+$invoiceEntityType['entity_table'] = 'sales_order_entity';
 $creditmemoEntityType = $installer->getEntityType('creditmemo');
+$creditmemoEntityType['entity_table'] = 'sales_order_entity';
 
 $entityTypes = array($orderEntityType['entity_type_id'] => $orderEntityType,
     $invoiceEntityType['entity_type_id'] => $invoiceEntityType,

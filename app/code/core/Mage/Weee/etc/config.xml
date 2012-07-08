@@ -19,28 +19,27 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Weee
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Weee
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Weee>
-            <version>0.13</version>
+            <version>1.6.0.0</version>
         </Mage_Weee>
     </modules>
-
     <global>
         <models>
             <weee>
                 <class>Mage_Weee_Model</class>
-                <resourceModel>weee_mysql4</resourceModel>
+                <resourceModel>weee_resource</resourceModel>
             </weee>
-
-            <weee_mysql4>
-                <class>Mage_Weee_Model_Mysql4</class>
+            <weee_resource>
+                <class>Mage_Weee_Model_Resource</class>
+                <deprecatedNode>weee_mysql4</deprecatedNode>
                 <entities>
                     <tax>
                         <table>weee_tax</table>
@@ -49,54 +48,22 @@
                         <table>weee_discount</table>
                     </discount>
                 </entities>
-            </weee_mysql4>
+            </weee_resource>
         </models>
-
         <resources>
             <weee_setup>
                 <setup>
                     <module>Mage_Weee</module>
-                    <class>Mage_Weee_Model_Mysql4_Setup</class>
+                    <class>Mage_Weee_Model_Resource_Setup</class>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </weee_setup>
-            <weee_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </weee_write>
-            <weee_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </weee_read>
         </resources>
-
         <blocks>
-            <weee><class>Mage_Weee_Block</class></weee>
+            <weee>
+                <class>Mage_Weee_Block</class>
+            </weee>
         </blocks>
-
         <events>
-            <adminhtml_catalog_product_edit_prepare_form>
-                <observers>
-                    <weee>
-                        <type>singleton</type>
-                        <class>weee/observer</class>
-                        <method>setWeeeRendererInForm</method>
-                    </weee>
-                </observers>
-            </adminhtml_catalog_product_edit_prepare_form>
-            <adminhtml_catalog_product_form_prepare_excluded_field_list>
-                <observers>
-                    <weee>
-                        <type>singleton</type>
-                        <class>weee/observer</class>
-                        <method>updateExcludedFieldList</method>
-                    </weee>
-                </observers>
-            </adminhtml_catalog_product_form_prepare_excluded_field_list>
             <catalogindex_prepare_price_select>
                 <observers>
                     <weee>
@@ -106,16 +73,6 @@
                     </weee>
                 </observers>
             </catalogindex_prepare_price_select>
-
-            <adminhtml_product_attribute_types>
-                <observers>
-                    <weee>
-                        <type>model</type>
-                        <class>weee/observer</class>
-                        <method>addWeeeTaxAttributeType</method>
-                    </weee>
-                </observers>
-            </adminhtml_product_attribute_types>
             <catalog_entity_attribute_save_before>
                 <observers>
                     <weee>
@@ -125,31 +82,17 @@
                     </weee>
                 </observers>
             </catalog_entity_attribute_save_before>
-
-            <adminhtml_catalog_product_edit_element_types>
-                <observers>
-                    <weee>
-                        <type>singleton</type>
-                        <class>weee/observer</class>
-                        <method>updateElementTypes</method>
-                    </weee>
-                </observers>
-            </adminhtml_catalog_product_edit_element_types>
-
             <catalogrule_after_apply>
                 <observers>
                     <weee>
-                        <type>singleton</type>
                         <class>weee/observer</class>
                         <method>updateDiscountPercents</method>
                     </weee>
                 </observers>
             </catalogrule_after_apply>
-
             <catalog_product_view_config>
                 <observers>
                     <weee>
-                        <type>singleton</type>
                         <class>weee/observer</class>
                         <method>updateCofigurableProductOptions</method>
                     </weee>
@@ -158,7 +101,6 @@
             <bundle_product_view_config>
                 <observers>
                     <weee>
-                        <type>singleton</type>
                         <class>weee/observer</class>
                         <method>updateBundleProductOptions</method>
                     </weee>
@@ -195,7 +137,6 @@
                     <to_order_item>*</to_order_item>
                 </base_weee_tax_row_disposition>
             </sales_convert_quote_item>
-
             <sales_convert_order_item>
                 <weee_tax_applied>
                     <to_cm_item>*</to_cm_item>
@@ -235,16 +176,21 @@
                 </base_weee_tax_row_disposition>
             </sales_convert_order_item>
         </fieldsets>
-
         <sales>
             <quote>
                 <totals>
                     <weee>
                         <class>weee/total_quote_weee</class>
-                        <after>subtotal,shipping,tax</after>
-                        <before>grand_total</before>
+                        <after>subtotal,tax_subtotal</after>
+                        <before>tax,discount</before>
                     </weee>
                 </totals>
+                <nominal_totals>
+                    <nominal_weee>
+                        <class>weee/total_quote_nominal_weee</class>
+                        <sort_order>600</sort_order>
+                    </nominal_weee>
+                </nominal_totals>
             </quote>
             <order_invoice>
                 <totals>
@@ -264,10 +210,56 @@
                     </weee>
                 </totals>
             </order_creditmemo>
+            <old_fields_map>
+                <order_item>
+                    <base_weee_tax_applied_row_amount>base_weee_tax_applied_row_amnt</base_weee_tax_applied_row_amount>
+                </order_item>
+                <invoice_item>
+                    <base_weee_tax_applied_row_amount>base_weee_tax_applied_row_amnt</base_weee_tax_applied_row_amount>
+                </invoice_item>
+                <creditmemo_item>
+                    <base_weee_tax_applied_row_amount>base_weee_tax_applied_row_amnt</base_weee_tax_applied_row_amount>
+                </creditmemo_item>
+            </old_fields_map>
         </sales>
     </global>
-
-
+    <adminhtml>
+        <events>
+            <adminhtml_catalog_product_edit_prepare_form>
+                <observers>
+                    <weee>
+                        <class>weee/observer</class>
+                        <method>setWeeeRendererInForm</method>
+                    </weee>
+                </observers>
+            </adminhtml_catalog_product_edit_prepare_form>
+            <adminhtml_catalog_product_form_prepare_excluded_field_list>
+                <observers>
+                    <weee>
+                        <class>weee/observer</class>
+                        <method>updateExcludedFieldList</method>
+                    </weee>
+                </observers>
+            </adminhtml_catalog_product_form_prepare_excluded_field_list>
+            <adminhtml_product_attribute_types>
+                <observers>
+                    <weee>
+                        <type>model</type>
+                        <class>weee/observer</class>
+                        <method>addWeeeTaxAttributeType</method>
+                    </weee>
+                </observers>
+            </adminhtml_product_attribute_types>
+            <adminhtml_catalog_product_edit_element_types>
+                <observers>
+                    <weee>
+                        <class>weee/observer</class>
+                        <method>updateElementTypes</method>
+                    </weee>
+                </observers>
+            </adminhtml_catalog_product_edit_element_types>
+        </events>
+    </adminhtml>
     <default>
         <sales>
             <totals_sort>
@@ -286,15 +278,21 @@
                 <include_in_subtotal>0</include_in_subtotal>
             </weee>
         </tax>
+        <general>
+            <validator_data>
+                <input_types>
+                    <weee>weee</weee>
+                </input_types>
+            </validator_data>
+        </general>
     </default>
-
     <frontend>
         <layout>
-             <updates>
-                  <weee>
-                        <file>weee.xml</file>
-                  </weee>
-             </updates>
+            <updates>
+                <weee>
+                    <file>weee.xml</file>
+                </weee>
+            </updates>
         </layout>
     </frontend>
 </config>

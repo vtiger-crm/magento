@@ -18,21 +18,49 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Config data model
  *
- * @category   Mage
- * @package    Mage_Core
+ * @method Mage_Core_Model_Resource_Config_Data _getResource()
+ * @method Mage_Core_Model_Resource_Config_Data getResource()
+ * @method string getScope()
+ * @method Mage_Core_Model_Config_Data setScope(string $value)
+ * @method int getScopeId()
+ * @method Mage_Core_Model_Config_Data setScopeId(int $value)
+ * @method string getPath()
+ * @method Mage_Core_Model_Config_Data setPath(string $value)
+ * @method string getValue()
+ * @method Mage_Core_Model_Config_Data setValue(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Core
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Core_Model_Config_Data extends Mage_Core_Model_Abstract
 {
+    const ENTITY = 'core_config_data';
+    /**
+     * Prefix of model events names
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'core_config_data';
+
+    /**
+     * Parameter name in event
+     *
+     * In observe method you can use $observer->getEvent()->getObject() in this case
+     *
+     * @var string
+     */
+    protected $_eventObject = 'config_data';
 
     /**
      * Varien model constructor
@@ -70,12 +98,25 @@ class Mage_Core_Model_Config_Data extends Mage_Core_Model_Abstract
         $storeCode   = $this->getStoreCode();
         $websiteCode = $this->getWebsiteCode();
         $path        = $this->getPath();
-        if ($websiteCode) {
-            return Mage::app()->getWebsite($websiteCode)->getConfig($path);
-        }
+
         if ($storeCode) {
             return Mage::app()->getStore($storeCode)->getConfig($path);
         }
+        if ($websiteCode) {
+            return Mage::app()->getWebsite($websiteCode)->getConfig($path);
+        }
         return (string) Mage::getConfig()->getNode('default/' . $path);
+    }
+    
+
+     /**
+     * Get value by key for new user data from <section>/groups/<group>/fields/<field>
+     * 
+     * @return string
+     */
+    public function getFieldsetDataValue($key)
+    {
+        $data = $this->_getData('fieldset_data');
+        return (is_array($data) && isset($data[$key])) ? $data[$key] : null;
     }
 }

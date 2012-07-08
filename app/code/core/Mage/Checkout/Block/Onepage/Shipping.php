@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,6 +31,16 @@
  */
 class Mage_Checkout_Block_Onepage_Shipping extends Mage_Checkout_Block_Onepage_Abstract
 {
+    /**
+     * Sales Qoute Shipping Address instance
+     *
+     * @var Mage_Sales_Model_Quote_Address
+     */
+    protected $_address = null;
+
+    /**
+     * Initialize shipping address step
+     */
     protected function _construct()
     {
         $this->getCheckout()->setStepData('shipping', array(
@@ -41,18 +51,32 @@ class Mage_Checkout_Block_Onepage_Shipping extends Mage_Checkout_Block_Onepage_A
         parent::_construct();
     }
 
+    /**
+     * Return checkout method
+     *
+     * @return string
+     */
     public function getMethod()
     {
         return $this->getQuote()->getCheckoutMethod();
     }
 
+    /**
+     * Return Sales Quote Address model (shipping address)
+     *
+     * @return Mage_Sales_Model_Quote_Address
+     */
     public function getAddress()
     {
-        if (!$this->isCustomerLoggedIn()) {
-            return $this->getQuote()->getShippingAddress();
-        } else {
-            return Mage::getModel('sales/quote_address');
+        if (is_null($this->_address)) {
+            if ($this->isCustomerLoggedIn()) {
+                $this->_address = $this->getQuote()->getShippingAddress();
+            } else {
+                $this->_address = Mage::getModel('sales/quote_address');
+            }
         }
+
+        return $this->_address;
     }
 
     /**

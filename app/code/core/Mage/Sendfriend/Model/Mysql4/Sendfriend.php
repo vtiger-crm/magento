@@ -18,36 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sendfriend
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sendfriend
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Mage_Sendfriend_Model_Mysql4_Sendfriend extends Mage_Core_Model_Mysql4_Abstract
+
+/**
+ * SendFriend Log Resource Model
+ *
+ * @category    Mage
+ * @package     Mage_Sendfriend
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
+class Mage_Sendfriend_Model_Mysql4_Sendfriend extends Mage_Sendfriend_Model_Resource_Sendfriend
 {
-    protected function _construct()
-    {
-        $this->_init('sendfriend/sendfriend', 'log_id');
-    }
-
-    public function getSendCount($model, $ip, $startTime)
-    {
-        $select = $this->_getReadAdapter()->select()
-            ->from(array('main_table' => $this->getTable('sendfriend')), new Zend_Db_Expr('count(*)'))
-            ->where('main_table.ip = ?',  $ip)
-            ->where('main_table.time >= ?', $startTime);
-
-        $data = $this->_getReadAdapter()->fetchRow($select);
-
-        return $data['count(*)'];
-    }
-
-	public function deleteLogsBefore($time)
-	{
-        $deleted = $this->_getWriteAdapter()
-            ->delete($this->getTable('sendfriend'), $this->_getWriteAdapter()->quoteInto('time < ?', $time));
-
-        return $this;
-	}
 }

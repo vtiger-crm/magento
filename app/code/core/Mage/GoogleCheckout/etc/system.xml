@@ -19,10 +19,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleAnalytics
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleCheckout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -43,7 +43,7 @@
                     <sort_order>20</sort_order>
                     <show_in_default>1</show_in_default>
                     <show_in_website>1</show_in_website>
-                    <show_in_store>0</show_in_store>
+                    <show_in_store>1</show_in_store>
                     <fields>
                         <active translate="label">
                             <label>Enable</label>
@@ -54,6 +54,14 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </active>
+                        <title translate="label">
+                            <label>Title</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>11</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </title>
                         <sandbox translate="label">
                             <label>Sandbox</label>
                             <frontend_type>select</frontend_type>
@@ -119,7 +127,7 @@
                             <show_in_store>0</show_in_store>
                         </locale>
                         <order_status translate="label">
-                            <label>New order status</label>
+                            <label>New Order Status</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_order_status_new</source_model>
                             <sort_order>60</sort_order>
@@ -136,7 +144,7 @@
                             <show_in_store>0</show_in_store>
                         </continue_shopping_url>
                         <hide_cart_contents translate="label comment">
-                            <label>Hide Cart Contents During Checkout</label>
+                            <label>Hide Cart Contents</label>
                             <comment>If enabled, cart contents will be hidden after clicking on the Google Checkout button in the shopping cart, and restored if "Edit Cart" link was activated.</comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
@@ -196,8 +204,9 @@
                     <show_in_website>1</show_in_website>
                     <show_in_store>0</show_in_store>
                     <fields>
-                        <active translate="label">
+                        <active translate="label comment">
                             <label>Enable Carrier Calculated</label>
+                            <comment><![CDATA[<strong style="color:red">Warning!</strong> This option disables the merchant calculated shipping. With this option, Google API ignores any attempt to affect shipping prices.]]></comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
                             <sort_order>10</sort_order>
@@ -213,6 +222,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </methods>
                         <address_category translate="label">
                             <label>Delivery Address Category</label>
@@ -224,7 +234,7 @@
                             <show_in_store>0</show_in_store>
                         </address_category>
                         <default_price translate="label">
-                            <label>Default price for methods</label>
+                            <label>Default Price for Methods</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>30</sort_order>
                             <show_in_default>1</show_in_default>
@@ -333,10 +343,11 @@
                             <frontend_type>select</frontend_type>
                             <sort_order>24</sort_order>
                             <source_model>adminhtml/system_config_source_shipping_allspecificcountries</source_model>
-							<frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
+                            <frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </sallowspecific_1>
                         <specificcountry_1 translate="label">
                             <label>Rate 1 Ship to Specific Countries</label>
@@ -346,6 +357,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </specificcountry_1>
 
 
@@ -371,10 +383,11 @@
                             <frontend_type>select</frontend_type>
                             <sort_order>34</sort_order>
                             <source_model>adminhtml/system_config_source_shipping_allspecificcountries</source_model>
-							<frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
+                            <frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </sallowspecific_2>
                         <specificcountry_2 translate="label">
                             <label>Rate 2 Ship to Specific Countries</label>
@@ -384,6 +397,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </specificcountry_2>
 
 
@@ -408,10 +422,11 @@
                             <frontend_type>select</frontend_type>
                             <sort_order>44</sort_order>
                             <source_model>adminhtml/system_config_source_shipping_allspecificcountries</source_model>
-							<frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
+                            <frontend_model>googlecheckout/adminhtml_shipping_applicable_countries</frontend_model>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </sallowspecific_3>
                         <specificcountry_3 translate="label">
                             <label>Rate 3 Ship to Specific Countries</label>
@@ -421,6 +436,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                         </specificcountry_3>
                     </fields>
                 </checkout_shipping_flatrate>
@@ -442,7 +458,7 @@
                             <show_in_store>0</show_in_store>
                         </active>
                         <schedule translate="label">
-                            <label>Delivery schedule</label>
+                            <label>Delivery Schedule</label>
                             <frontend_type>select</frontend_type>
                             <source_model>googlecheckout/source_shipping_virtual_schedule</source_model>
                             <sort_order>2</sort_order>

@@ -18,13 +18,107 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_Sales_Model_Resource_Order_Invoice _getResource()
+ * @method Mage_Sales_Model_Resource_Order_Invoice getResource()
+ * @method int getStoreId()
+ * @method Mage_Sales_Model_Order_Invoice setStoreId(int $value)
+ * @method float getBaseGrandTotal()
+ * @method Mage_Sales_Model_Order_Invoice setBaseGrandTotal(float $value)
+ * @method float getShippingTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setShippingTaxAmount(float $value)
+ * @method float getTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setTaxAmount(float $value)
+ * @method float getBaseTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseTaxAmount(float $value)
+ * @method float getStoreToOrderRate()
+ * @method Mage_Sales_Model_Order_Invoice setStoreToOrderRate(float $value)
+ * @method float getBaseShippingTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseShippingTaxAmount(float $value)
+ * @method float getBaseDiscountAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseDiscountAmount(float $value)
+ * @method float getBaseToOrderRate()
+ * @method Mage_Sales_Model_Order_Invoice setBaseToOrderRate(float $value)
+ * @method float getGrandTotal()
+ * @method Mage_Sales_Model_Order_Invoice setGrandTotal(float $value)
+ * @method float getShippingAmount()
+ * @method Mage_Sales_Model_Order_Invoice setShippingAmount(float $value)
+ * @method float getSubtotalInclTax()
+ * @method Mage_Sales_Model_Order_Invoice setSubtotalInclTax(float $value)
+ * @method float getBaseSubtotalInclTax()
+ * @method Mage_Sales_Model_Order_Invoice setBaseSubtotalInclTax(float $value)
+ * @method float getStoreToBaseRate()
+ * @method Mage_Sales_Model_Order_Invoice setStoreToBaseRate(float $value)
+ * @method float getBaseShippingAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseShippingAmount(float $value)
+ * @method float getTotalQty()
+ * @method Mage_Sales_Model_Order_Invoice setTotalQty(float $value)
+ * @method float getBaseToGlobalRate()
+ * @method Mage_Sales_Model_Order_Invoice setBaseToGlobalRate(float $value)
+ * @method float getSubtotal()
+ * @method Mage_Sales_Model_Order_Invoice setSubtotal(float $value)
+ * @method float getBaseSubtotal()
+ * @method Mage_Sales_Model_Order_Invoice setBaseSubtotal(float $value)
+ * @method float getDiscountAmount()
+ * @method Mage_Sales_Model_Order_Invoice setDiscountAmount(float $value)
+ * @method int getBillingAddressId()
+ * @method Mage_Sales_Model_Order_Invoice setBillingAddressId(int $value)
+ * @method int getIsUsedForRefund()
+ * @method Mage_Sales_Model_Order_Invoice setIsUsedForRefund(int $value)
+ * @method int getOrderId()
+ * @method Mage_Sales_Model_Order_Invoice setOrderId(int $value)
+ * @method int getEmailSent()
+ * @method Mage_Sales_Model_Order_Invoice setEmailSent(int $value)
+ * @method int getCanVoidFlag()
+ * @method Mage_Sales_Model_Order_Invoice setCanVoidFlag(int $value)
+ * @method int getState()
+ * @method Mage_Sales_Model_Order_Invoice setState(int $value)
+ * @method int getShippingAddressId()
+ * @method Mage_Sales_Model_Order_Invoice setShippingAddressId(int $value)
+ * @method string getCybersourceToken()
+ * @method Mage_Sales_Model_Order_Invoice setCybersourceToken(string $value)
+ * @method string getStoreCurrencyCode()
+ * @method Mage_Sales_Model_Order_Invoice setStoreCurrencyCode(string $value)
+ * @method string getTransactionId()
+ * @method Mage_Sales_Model_Order_Invoice setTransactionId(string $value)
+ * @method string getOrderCurrencyCode()
+ * @method Mage_Sales_Model_Order_Invoice setOrderCurrencyCode(string $value)
+ * @method string getBaseCurrencyCode()
+ * @method Mage_Sales_Model_Order_Invoice setBaseCurrencyCode(string $value)
+ * @method string getGlobalCurrencyCode()
+ * @method Mage_Sales_Model_Order_Invoice setGlobalCurrencyCode(string $value)
+ * @method string getIncrementId()
+ * @method Mage_Sales_Model_Order_Invoice setIncrementId(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Sales_Model_Order_Invoice setCreatedAt(string $value)
+ * @method string getUpdatedAt()
+ * @method Mage_Sales_Model_Order_Invoice setUpdatedAt(string $value)
+ * @method float getHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setHiddenTaxAmount(float $value)
+ * @method float getBaseHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseHiddenTaxAmount(float $value)
+ * @method float getShippingHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setShippingHiddenTaxAmount(float $value)
+ * @method float getBaseShippingHiddenTaxAmount()
+ * @method Mage_Sales_Model_Order_Invoice setBaseShippingHiddenTaxAmount(float $value)
+ * @method float getShippingInclTax()
+ * @method Mage_Sales_Model_Order_Invoice setShippingInclTax(float $value)
+ * @method float getBaseShippingInclTax()
+ * @method Mage_Sales_Model_Order_Invoice setBaseShippingInclTax(float $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
 {
     /**
@@ -52,6 +146,14 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     const XML_PATH_UPDATE_EMAIL_COPY_METHOD     = 'sales_email/invoice_comment/copy_method';
     const XML_PATH_UPDATE_EMAIL_ENABLED         = 'sales_email/invoice_comment/enabled';
 
+    const REPORT_DATE_TYPE_ORDER_CREATED        = 'order_created';
+    const REPORT_DATE_TYPE_INVOICE_CREATED      = 'invoice_created';
+
+    /*
+     * Identifier for order history item
+     */
+    const HISTORY_ENTITY_NAME = 'invoice';
+
     protected static $_states;
 
     protected $_items;
@@ -62,6 +164,12 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
 
     protected $_eventPrefix = 'sales_order_invoice';
     protected $_eventObject = 'invoice';
+
+    /**
+     * Whether the pay() was called
+     * @var bool
+     */
+    protected $_wasPayCalled = false;
 
     public function __destruct()
     {
@@ -76,6 +184,17 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     protected function _construct()
     {
         $this->_init('sales/order_invoice');
+    }
+
+    /**
+     * Init mapping array of short fields to its full names
+     *
+     * @return Mage_Sales_Model_Order_Invoice
+     */
+    protected function _initOldFieldsMap()
+    {
+        $this->_oldFieldsMap = Mage::helper('sales')->getOldFieldMap('order_invoice');
+        return $this;
     }
 
     /**
@@ -141,7 +260,17 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         if (!$this->_order instanceof Mage_Sales_Model_Order) {
             $this->_order = Mage::getModel('sales/order')->load($this->getOrderId());
         }
-        return $this->_order;
+        return $this->_order->setHistoryEntityName(self::HISTORY_ENTITY_NAME);
+    }
+
+    /**
+     * Retrieve the increment_id of the order
+     *
+     * @return string
+     */
+    public function getOrderIncrementId()
+    {
+        return Mage::getModel('sales/order')->getResource()->getIncrementId($this->getOrderId());
     }
 
     /**
@@ -181,12 +310,9 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
      */
     public function canCapture()
     {
-        if ($this->getState() != self::STATE_CANCELED &&
-            $this->getState() != self::STATE_PAID &&
-            $this->getOrder()->getPayment()->canCapture()) {
-            return true;
-        }
-        return false;
+        return $this->getState() != self::STATE_CANCELED
+            && $this->getState() != self::STATE_PAID
+            && $this->getOrder()->getPayment()->canCapture();
     }
 
     /**
@@ -217,13 +343,29 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     }
 
     /**
-     * Check invice cancel action availability
+     * Check invoice cancel action availability
      *
      * @return bool
      */
     public function canCancel()
     {
         return $this->getState() == self::STATE_OPEN;
+    }
+
+    /**
+     * Check invoice refund action availability
+     *
+     * @return bool
+     */
+    public function canRefund()
+    {
+        if ($this->getState() != self::STATE_PAID) {
+            return false;
+        }
+        if (abs($this->getBaseGrandTotal() - $this->getBaseTotalRefunded()) < .0001) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -234,7 +376,9 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     public function capture()
     {
         $this->getOrder()->getPayment()->capture($this);
-        $this->pay();
+        if ($this->getIsPaid()) {
+            $this->pay();
+        }
         return $this;
     }
 
@@ -245,6 +389,11 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
      */
     public function pay()
     {
+        if ($this->_wasPayCalled) {
+            return $this;
+        }
+        $this->_wasPayCalled = true;
+
         $invoiceState = self::STATE_PAID;
         if ($this->getOrder()->getPayment()->hasForcedState()) {
             $invoiceState = $this->getOrder()->getPayment()->getForcedState();
@@ -261,6 +410,15 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         );
         Mage::dispatchEvent('sales_order_invoice_pay', array($this->_eventObject=>$this));
         return $this;
+    }
+
+    /**
+     * Whether pay() method was called (whether order and payment totals were updated)
+     * @return bool
+     */
+    public function wasPayCalled()
+    {
+        return $this->_wasPayCalled;
     }
 
     /**
@@ -282,7 +440,8 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
      */
     public function cancel()
     {
-        $this->getOrder()->getPayment()->cancelInvoice($this);
+        $order = $this->getOrder();
+        $order->getPayment()->cancelInvoice($this);
         foreach ($this->getAllItems() as $item) {
             $item->cancel();
         }
@@ -290,20 +449,32 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         /**
          * Unregister order totals only for invoices in state PAID
          */
-        if ($this->getState() == self::STATE_PAID) {
-            $this->getOrder()->setTotalPaid(
-                $this->getOrder()->getTotalPaid()-$this->getGrandTotal()
-            );
-            $this->getOrder()->setBaseTotalPaid(
-                $this->getOrder()->getBaseTotalPaid()-$this->getBaseGrandTotal()
-            );
+        $order->setTotalInvoiced($order->getTotalInvoiced() - $this->getGrandTotal());
+        $order->setBaseTotalInvoiced($order->getBaseTotalInvoiced() - $this->getBaseGrandTotal());
 
-            $this->getOrder()->setTotalInvoiced(
-                $this->getOrder()->getTotalInvoiced()-$this->getGrandTotal()
-            );
-            $this->getOrder()->setBaseTotalInvoiced(
-                $this->getOrder()->getBaseTotalInvoiced()-$this->getBaseGrandTotal()
-            );
+        $order->setSubtotalInvoiced($order->getSubtotalInvoiced() - $this->getSubtotal());
+        $order->setBaseSubtotalInvoiced($order->getBaseSubtotalInvoiced() - $this->getBaseSubtotal());
+
+        $order->setTaxInvoiced($order->getTaxInvoiced() - $this->getTaxAmount());
+        $order->setBaseTaxInvoiced($order->getBaseTaxInvoiced() - $this->getBaseTaxAmount());
+
+        $order->setHiddenTaxInvoiced($order->getHiddenTaxInvoiced() - $this->getHiddenTaxAmount());
+        $order->setBaseHiddenTaxInvoiced($order->getBaseHiddenTaxInvoiced() - $this->getBaseHiddenTaxAmount());
+
+        $order->setShippingTaxInvoiced($order->getShippingTaxInvoiced() - $this->getShippingTaxAmount());
+        $order->setBaseShippingTaxInvoiced($order->getBaseShippingTaxInvoiced() - $this->getBaseShippingTaxAmount());
+
+        $order->setShippingInvoiced($order->getShippingInvoiced() - $this->getShippingAmount());
+        $order->setBaseShippingInvoiced($order->getBaseShippingInvoiced() - $this->getBaseShippingAmount());
+
+        $order->setDiscountInvoiced($order->getDiscountInvoiced() - $this->getDiscountAmount());
+        $order->setBaseDiscountInvoiced($order->getBaseDiscountInvoiced() - $this->getBaseDiscountAmount());
+        $order->setBaseTotalInvoicedCost($order->getBaseTotalInvoicedCost() - $this->getBaseCost());
+
+
+        if ($this->getState() == self::STATE_PAID) {
+            $this->getOrder()->setTotalPaid($this->getOrder()->getTotalPaid()-$this->getGrandTotal());
+            $this->getOrder()->setBaseTotalPaid($this->getOrder()->getBaseTotalPaid()-$this->getBaseGrandTotal());
         }
         $this->setState(self::STATE_CANCELED);
         $this->getOrder()->setState(Mage_Sales_Model_Order::STATE_PROCESSING, true);
@@ -324,11 +495,15 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         return $this;
     }
 
+    /**
+     * Get invoice items collection
+     *
+     * @return Mage_Sales_Model_Mysql4_Order_Invoice_Item_Collection
+     */
     public function getItemsCollection()
     {
         if (empty($this->_items)) {
             $this->_items = Mage::getResourceModel('sales/order_invoice_item_collection')
-                ->addAttributeToSelect('*')
                 ->setInvoiceFilter($this->getId());
 
             if ($this->getId()) {
@@ -421,9 +596,7 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     public function register()
     {
         if ($this->getId()) {
-            Mage::throwException(
-                Mage::helper('sales')->__('Can not register existing invoice')
-            );
+            Mage::throwException(Mage::helper('sales')->__('Cannot register existing invoice'));
         }
 
         foreach ($this->getAllItems() as $item) {
@@ -435,8 +608,10 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
             }
         }
 
+        $order = $this->getOrder();
+        $captureCase = $this->getRequestedCaptureCase();
         if ($this->canCapture()) {
-            if ($captureCase = $this->getRequestedCaptureCase()) {
+            if ($captureCase) {
                 if ($captureCase == self::CAPTURE_ONLINE) {
                     $this->capture();
                 }
@@ -445,50 +620,42 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
                     $this->pay();
                 }
             }
+        } elseif(!$order->getPayment()->getMethodInstance()->isGateway() || $captureCase == self::CAPTURE_OFFLINE) {
+            if (!$order->getPayment()->getIsTransactionPending()) {
+                $this->setCanVoidFlag(false);
+                $this->pay();
+            }
         }
-        elseif(!$this->getOrder()->getPayment()->getMethodInstance()->isGateway()) {
-            $this->pay();
-        }
 
-        $this->getOrder()->setTotalInvoiced(
-            $this->getOrder()->getTotalInvoiced()+$this->getGrandTotal()
-        );
-        $this->getOrder()->setBaseTotalInvoiced(
-            $this->getOrder()->getBaseTotalInvoiced()+$this->getBaseGrandTotal()
-        );
+        $order->setTotalInvoiced($order->getTotalInvoiced() + $this->getGrandTotal());
+        $order->setBaseTotalInvoiced($order->getBaseTotalInvoiced() + $this->getBaseGrandTotal());
 
-        $this->getOrder()->setSubtotalInvoiced(
-            $this->getOrder()->getSubtotalInvoiced()+$this->getSubtotal()
-        );
-        $this->getOrder()->setBaseSubtotalInvoiced(
-            $this->getOrder()->getBaseSubtotalInvoiced()+$this->getBaseSubtotal()
-        );
+        $order->setSubtotalInvoiced($order->getSubtotalInvoiced() + $this->getSubtotal());
+        $order->setBaseSubtotalInvoiced($order->getBaseSubtotalInvoiced() + $this->getBaseSubtotal());
 
-        $this->getOrder()->setTaxInvoiced(
-            $this->getOrder()->getTaxInvoiced()+$this->getTaxAmount()
-        );
-        $this->getOrder()->setBaseTaxInvoiced(
-            $this->getOrder()->getBaseTaxInvoiced()+$this->getBaseTaxAmount()
-        );
+        $order->setTaxInvoiced($order->getTaxInvoiced() + $this->getTaxAmount());
+        $order->setBaseTaxInvoiced($order->getBaseTaxInvoiced() + $this->getBaseTaxAmount());
 
-        $this->getOrder()->setShippingInvoiced(
-            $this->getOrder()->getShippingInvoiced()+$this->getShippingAmount()
-        );
-        $this->getOrder()->setBaseShippingInvoiced(
-            $this->getOrder()->getBaseShippingInvoiced()+$this->getBaseShippingAmount()
-        );
+        $order->setHiddenTaxInvoiced($order->getHiddenTaxInvoiced() + $this->getHiddenTaxAmount());
+        $order->setBaseHiddenTaxInvoiced($order->getBaseHiddenTaxInvoiced() + $this->getBaseHiddenTaxAmount());
 
-        $this->getOrder()->setDiscountInvoiced(
-            $this->getOrder()->getDiscountInvoiced()+$this->getDiscountAmount()
-        );
-        $this->getOrder()->setBaseDiscountInvoiced(
-            $this->getOrder()->getBaseDiscountInvoiced()+$this->getBaseDiscountAmount()
-        );
+        $order->setShippingTaxInvoiced($order->getShippingTaxInvoiced() + $this->getShippingTaxAmount());
+        $order->setBaseShippingTaxInvoiced($order->getBaseShippingTaxInvoiced() + $this->getBaseShippingTaxAmount());
+
+
+        $order->setShippingInvoiced($order->getShippingInvoiced() + $this->getShippingAmount());
+        $order->setBaseShippingInvoiced($order->getBaseShippingInvoiced() + $this->getBaseShippingAmount());
+
+        $order->setDiscountInvoiced($order->getDiscountInvoiced() + $this->getDiscountAmount());
+        $order->setBaseDiscountInvoiced($order->getBaseDiscountInvoiced() + $this->getBaseDiscountAmount());
+        $order->setBaseTotalInvoicedCost($order->getBaseTotalInvoicedCost() + $this->getBaseCost());
 
         $state = $this->getState();
         if (is_null($state)) {
             $this->setState(self::STATE_OPEN);
         }
+
+        Mage::dispatchEvent('sales_order_invoice_register', array($this->_eventObject=>$this, 'order' => $order));
         return $this;
     }
 
@@ -507,12 +674,22 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         return true;
     }
 
-    public function addComment($comment, $notify=false)
+    /**
+     * Adds comment to invoice with additional possibility to send it to customer via email
+     * and show it in customer account
+     *
+     * @param bool $notify
+     * @param bool $visibleOnFront
+     *
+     * @return Mage_Sales_Model_Order_Invoice
+     */
+    public function addComment($comment, $notify=false, $visibleOnFront=false)
     {
         if (!($comment instanceof Mage_Sales_Model_Order_Invoice_Comment)) {
             $comment = Mage::getModel('sales/order_invoice_comment')
                 ->setComment($comment)
-                ->setIsCustomerNotified($notify);
+                ->setIsCustomerNotified($notify)
+                ->setIsVisibleOnFront($visibleOnFront);
         }
         $comment->setInvoice($this)
             ->setStoreId($this->getStoreId())
@@ -520,6 +697,7 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
         if (!$comment->getId()) {
             $this->getCommentsCollection()->addItem($comment);
         }
+        $this->_hasDataChanges = true;
         return $this;
     }
 
@@ -527,9 +705,14 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     {
         if (is_null($this->_comments) || $reload) {
             $this->_comments = Mage::getResourceModel('sales/order_invoice_comment_collection')
-                ->addAttributeToSelect('*')
                 ->setInvoiceFilter($this->getId())
                 ->setCreatedAtOrder();
+            /**
+             * When invoice created with adding comment, comments collection
+             * must be loaded before we added this comment.
+             */
+            $this->_comments->load();
+
             if ($this->getId()) {
                 foreach ($this->_comments as $comment) {
                     $comment->setInvoice($this);
@@ -540,172 +723,163 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     }
 
     /**
-     * Sending email with Invoice data
+     * Send email with invoice data
      *
+     * @param boolean $notifyCustomer
+     * @param string $comment
      * @return Mage_Sales_Model_Order_Invoice
      */
-    public function sendEmail($notifyCustomer=true, $comment='')
+    public function sendEmail($notifyCustomer = true, $comment = '')
     {
-        if (!Mage::helper('sales')->canSendNewInvoiceEmail($this->getOrder()->getStore()->getId())) {
+        $order = $this->getOrder();
+        $storeId = $order->getStore()->getId();
+
+        if (!Mage::helper('sales')->canSendNewInvoiceEmail($storeId)) {
             return $this;
         }
-
-        $currentDesign = Mage::getDesign()->setAllGetOld(array(
-            'package' => Mage::getStoreConfig('design/package/name', $this->getStoreId()),
-            'store'   => $this->getStoreId()
-        ));
-
-        $translate = Mage::getSingleton('core/translate');
-        /* @var $translate Mage_Core_Model_Translate */
-        $translate->setTranslateInline(false);
-
-        $order  = $this->getOrder();
+        // Get the destination email addresses to send copies to
         $copyTo = $this->_getEmails(self::XML_PATH_EMAIL_COPY_TO);
-        $copyMethod = Mage::getStoreConfig(self::XML_PATH_EMAIL_COPY_METHOD, $this->getStoreId());
-
+        $copyMethod = Mage::getStoreConfig(self::XML_PATH_EMAIL_COPY_METHOD, $storeId);
+        // Check if at least one recepient is found
         if (!$notifyCustomer && !$copyTo) {
             return $this;
         }
-        $paymentBlock   = Mage::helper('payment')->getInfoBlock($order->getPayment())
-            ->setIsSecureMode(true);
 
-        $mailTemplate = Mage::getModel('core/email_template');
+        // Start store emulation process
+        $appEmulation = Mage::getSingleton('core/app_emulation');
+        $initialEnvironmentInfo = $appEmulation->startEnvironmentEmulation($storeId);
 
+        try {
+            // Retrieve specified view block from appropriate design package (depends on emulated store)
+            $paymentBlock = Mage::helper('payment')->getInfoBlock($order->getPayment())
+                ->setIsSecureMode(true);
+            $paymentBlock->getMethod()->setStore($storeId);
+            $paymentBlockHtml = $paymentBlock->toHtml();
+        } catch (Exception $exception) {
+            // Stop store emulation process
+            $appEmulation->stopEnvironmentEmulation($initialEnvironmentInfo);
+            throw $exception;
+        }
+
+        // Stop store emulation process
+        $appEmulation->stopEnvironmentEmulation($initialEnvironmentInfo);
+
+        // Retrieve corresponding email template id and customer name
         if ($order->getCustomerIsGuest()) {
-            $template = Mage::getStoreConfig(self::XML_PATH_EMAIL_GUEST_TEMPLATE, $order->getStoreId());
+            $templateId = Mage::getStoreConfig(self::XML_PATH_EMAIL_GUEST_TEMPLATE, $storeId);
             $customerName = $order->getBillingAddress()->getName();
         } else {
-            $template = Mage::getStoreConfig(self::XML_PATH_EMAIL_TEMPLATE, $order->getStoreId());
+            $templateId = Mage::getStoreConfig(self::XML_PATH_EMAIL_TEMPLATE, $storeId);
             $customerName = $order->getCustomerName();
         }
 
+        $mailer = Mage::getModel('core/email_template_mailer');
         if ($notifyCustomer) {
-            $sendTo[] = array(
-                'name'  => $customerName,
-                'email' => $order->getCustomerEmail()
-            );
+            $emailInfo = Mage::getModel('core/email_info');
+            $emailInfo->addTo($order->getCustomerEmail(), $customerName);
             if ($copyTo && $copyMethod == 'bcc') {
+                // Add bcc to customer email
                 foreach ($copyTo as $email) {
-                    $mailTemplate->addBcc($email);
+                    $emailInfo->addBcc($email);
                 }
             }
-
+            $mailer->addEmailInfo($emailInfo);
         }
 
+        // Email copies are sent as separated emails if their copy method is 'copy' or a customer should not be notified
         if ($copyTo && ($copyMethod == 'copy' || !$notifyCustomer)) {
             foreach ($copyTo as $email) {
-                $sendTo[] = array(
-                    'name'  => null,
-                    'email' => $email
-                );
+                $emailInfo = Mage::getModel('core/email_info');
+                $emailInfo->addTo($email);
+                $mailer->addEmailInfo($emailInfo);
             }
         }
 
-        foreach ($sendTo as $recipient) {
-            $mailTemplate->setDesignConfig(array('area'=>'frontend', 'store'=>$order->getStoreId()))
-                ->sendTransactional(
-                    $template,
-                    Mage::getStoreConfig(self::XML_PATH_EMAIL_IDENTITY, $order->getStoreId()),
-                    $recipient['email'],
-                    $recipient['name'],
-                    array(
-                        'order'       => $order,
-                        'invoice'     => $this,
-                        'comment'     => $comment,
-                        'billing'     => $order->getBillingAddress(),
-                        'payment_html'=> $paymentBlock->toHtml(),
-                    )
-                );
-        }
-
-        $translate->setTranslateInline(true);
-
-        Mage::getDesign()->setAllGetOld($currentDesign);
+        // Set all required params and send emails
+        $mailer->setSender(Mage::getStoreConfig(self::XML_PATH_EMAIL_IDENTITY, $storeId));
+        $mailer->setStoreId($storeId);
+        $mailer->setTemplateId($templateId);
+        $mailer->setTemplateParams(array(
+                'order'        => $order,
+                'invoice'      => $this,
+                'comment'      => $comment,
+                'billing'      => $order->getBillingAddress(),
+                'payment_html' => $paymentBlockHtml
+            )
+        );
+        $mailer->send();
+        $this->setEmailSent(true);
+        $this->_getResource()->saveAttribute($this, 'email_sent');
 
         return $this;
     }
 
     /**
-     * Sending email with invoice update information
+     * Send email with invoice update information
      *
+     * @param boolean $notifyCustomer
+     * @param string $comment
      * @return Mage_Sales_Model_Order_Invoice
      */
-    public function sendUpdateEmail($notifyCustomer=true, $comment='')
+    public function sendUpdateEmail($notifyCustomer = true, $comment = '')
     {
-        if (!Mage::helper('sales')->canSendInvoiceCommentEmail($this->getOrder()->getStore()->getId())) {
+        $order = $this->getOrder();
+        $storeId = $order->getStore()->getId();
+
+        if (!Mage::helper('sales')->canSendInvoiceCommentEmail($storeId)) {
             return $this;
         }
-
-        $currentDesign = Mage::getDesign()->setAllGetOld(array(
-            'package' => Mage::getStoreConfig('design/package/name', $this->getStoreId()),
-        ));
-
-        $translate = Mage::getSingleton('core/translate');
-        /* @var $translate Mage_Core_Model_Translate */
-        $translate->setTranslateInline(false);
-
-        $order  = $this->getOrder();
-
+        // Get the destination email addresses to send copies to
         $copyTo = $this->_getEmails(self::XML_PATH_UPDATE_EMAIL_COPY_TO);
-        $copyMethod = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_COPY_METHOD, $this->getStoreId());
-
+        $copyMethod = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_COPY_METHOD, $storeId);
+        // Check if at least one recepient is found
         if (!$notifyCustomer && !$copyTo) {
             return $this;
         }
 
-        $sendTo = array();
-
-        $mailTemplate = Mage::getModel('core/email_template');
-
+        // Retrieve corresponding email template id and customer name
         if ($order->getCustomerIsGuest()) {
-            $template = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_GUEST_TEMPLATE, $order->getStoreId());
+            $templateId = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_GUEST_TEMPLATE, $storeId);
             $customerName = $order->getBillingAddress()->getName();
         } else {
-            $template = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_TEMPLATE, $order->getStoreId());
+            $templateId = Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_TEMPLATE, $storeId);
             $customerName = $order->getCustomerName();
         }
 
+        $mailer = Mage::getModel('core/email_template_mailer');
         if ($notifyCustomer) {
-            $sendTo[] = array(
-                'name'  => $customerName,
-                'email' => $order->getCustomerEmail()
-            );
+            $emailInfo = Mage::getModel('core/email_info');
+            $emailInfo->addTo($order->getCustomerEmail(), $customerName);
             if ($copyTo && $copyMethod == 'bcc') {
+                // Add bcc to customer email
                 foreach ($copyTo as $email) {
-                    $mailTemplate->addBcc($email);
+                    $emailInfo->addBcc($email);
                 }
             }
-
+            $mailer->addEmailInfo($emailInfo);
         }
 
+        // Email copies are sent as separated emails if their copy method is 'copy' or a customer should not be notified
         if ($copyTo && ($copyMethod == 'copy' || !$notifyCustomer)) {
             foreach ($copyTo as $email) {
-                $sendTo[] = array(
-                    'name'  => null,
-                    'email' => $email
-                );
+                $emailInfo = Mage::getModel('core/email_info');
+                $emailInfo->addTo($email);
+                $mailer->addEmailInfo($emailInfo);
             }
         }
 
-        foreach ($sendTo as $recipient) {
-            $mailTemplate->setDesignConfig(array('area'=>'frontend', 'store'=>$order->getStoreId()))
-                ->sendTransactional(
-                    $template,
-                    Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_IDENTITY, $order->getStoreId()),
-                    $recipient['email'],
-                    $recipient['name'],
-                    array(
-                        'order'  => $order,
-                        'billing'=> $order->getBillingAddress(),
-                        'invoice'=> $this,
-                        'comment'=> $comment
-                    )
-                );
-        }
-
-        $translate->setTranslateInline(true);
-
-        Mage::getDesign()->setAllGetOld($currentDesign);
+        // Set all required params and send emails
+        $mailer->setSender(Mage::getStoreConfig(self::XML_PATH_UPDATE_EMAIL_IDENTITY, $storeId));
+        $mailer->setStoreId($storeId);
+        $mailer->setTemplateId($templateId);
+        $mailer->setTemplateParams(array(
+                'order'        => $order,
+                'invoice'      => $this,
+                'comment'      => $comment,
+                'billing'      => $order->getBillingAddress()
+            )
+        );
+        $mailer->send();
 
         return $this;
     }
@@ -723,5 +897,66 @@ class Mage_Sales_Model_Order_Invoice extends Mage_Sales_Model_Abstract
     {
         $this->_protectFromNonAdmin();
         return parent::_beforeDelete();
+    }
+
+    /**
+     * Reset invoice object
+     *
+     * @return Mage_Sales_Model_Order_Invoice
+     */
+    public function reset()
+    {
+        $this->unsetData();
+        $this->_origData = null;
+        $this->_items = null;
+        $this->_comments = null;
+        $this->_order = null;
+        $this->_saveBeforeDestruct = false;
+        $this->_wasPayCalled = false;
+        return $this;
+    }
+
+    /**
+     * Before object save manipulations
+     *
+     * @return Mage_Sales_Model_Order_Shipment
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+
+        if (!$this->getOrderId() && $this->getOrder()) {
+            $this->setOrderId($this->getOrder()->getId());
+            $this->setBillingAddressId($this->getOrder()->getBillingAddress()->getId());
+        }
+
+        return $this;
+    }
+
+    /**
+     * After object save manipulation
+     *
+     * @return Mage_Sales_Model_Order_Shipment
+     */
+    protected function _afterSave()
+    {
+
+        if (null !== $this->_items) {
+            /**
+             * Save invoice items
+             */
+            foreach ($this->_items as $item) {
+                $item->setOrderItem($item->getOrderItem());
+                $item->save();
+            }
+        }
+
+        if (null !== $this->_comments) {
+            foreach($this->_comments as $comment) {
+                $comment->save();
+            }
+        }
+
+        return parent::_afterSave();
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -32,7 +32,7 @@
  *
  * @category   Mage
  * @package    Mage_Core
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
 abstract class Mage_Core_Controller_Varien_Action
 {
@@ -88,6 +88,45 @@ abstract class Mage_Core_Controller_Varien_Action
      * @var array
      */
     protected $_cookieCheckActions = array();
+
+    /**
+     * Currently used area
+     *
+     * @var string
+     */
+    protected $_currentArea;
+
+    /**
+     * Namespace for session.
+     * Should be defined for proper working session.
+     *
+     * @var string
+     */
+    protected $_sessionNamespace;
+
+    /**
+     * Whether layout is loaded
+     *
+     * @see self::loadLayout()
+     * @var bool
+     */
+    protected $_isLayoutLoaded = false;
+
+    /**
+     * Title parts to be rendered in the page head title
+     *
+     * @see self::_title()
+     * @var array
+     */
+    protected $_titles = array();
+
+    /**
+     * Whether the default title should be removed
+     *
+     * @see self::_title()
+     * @var bool
+     */
+    protected $_removeDefaultTitle = false;
 
     /**
      * Constructor
@@ -229,6 +268,7 @@ abstract class Mage_Core_Controller_Varien_Action
             return $this;
         }
         $this->generateLayoutBlocks();
+        $this->_isLayoutLoaded = true;
 
         return $this;
     }
@@ -242,7 +282,9 @@ abstract class Mage_Core_Controller_Varien_Action
 
         // load theme handle
         $package = Mage::getSingleton('core/design_package');
-        $update->addHandle('THEME_'.$package->getArea().'_'.$package->getPackageName().'_'.$package->getTheme('layout'));
+        $update->addHandle(
+            'THEME_'.$package->getArea().'_'.$package->getPackageName().'_'.$package->getTheme('layout')
+        );
 
         // load action handle
         $update->addHandle(strtolower($this->getFullActionName()));
@@ -331,6 +373,8 @@ abstract class Mage_Core_Controller_Varien_Action
             return;
         }
 
+        $this->_renderTitles();
+
         Varien_Profiler::start("$_profilerKey::layout_render");
 
 
@@ -345,7 +389,7 @@ abstract class Mage_Core_Controller_Varien_Action
         $this->getLayout()->setDirectOutput(false);
 
         $output = $this->getLayout()->getOutput();
-
+        Mage::getSingleton('core/translate_inline')->processResponseBody($output);
         $this->getResponse()->appendBody($output);
         Varien_Profiler::stop("$_profilerKey::layout_render");
 
@@ -427,22 +471,29 @@ abstract class Mage_Core_Controller_Varien_Action
             }
         }
 
+        // Prohibit disabled store actions
+        if (Mage::isInstalled() && !Mage::app()->getStore()->getIsActive()) {
+            Mage::app()->throwStoreException();
+        }
+
         if ($this->_rewrite()) {
             return;
         }
 
         if (!$this->getFlag('', self::FLAG_NO_START_SESSION)) {
-            $namespace   = $this->getLayout()->getArea();
             $checkCookie = in_array($this->getRequest()->getActionName(), $this->_cookieCheckActions);
-            if ($checkCookie && !Mage::getSingleton('core/cookie')->get($namespace)) {
+            $checkCookie = $checkCookie && !$this->getRequest()->getParam('nocookie', false);
+            $cookies = Mage::getSingleton('core/cookie')->get();
+            if ($checkCookie && empty($cookies)) {
                 $this->setFlag('', self::FLAG_NO_COOKIES_REDIRECT, true);
             }
-            Mage::getSingleton('core/session', array('name' => $namespace))->start();
+            Mage::getSingleton('core/session', array('name' => $this->_sessionNamespace))->start();
         }
 
         Mage::app()->loadArea($this->getLayout()->getArea());
 
-        if ($this->getFlag('', self::FLAG_NO_COOKIES_REDIRECT) && Mage::getStoreConfig('web/browser_capabilities/cookies')) {
+        if ($this->getFlag('', self::FLAG_NO_COOKIES_REDIRECT)
+            && Mage::getStoreConfig('web/browser_capabilities/cookies')) {
             $this->_forward('noCookies', 'index', 'core');
             return;
         }
@@ -528,9 +579,19 @@ abstract class Mage_Core_Controller_Varien_Action
         $this->getRequest()->setDispatched(true);
     }
 
+    /**
+     * Throw control to different action (control and module if was specified).
+     *
+     * @param string $action
+     * @param string|null $controller
+     * @param string|null $module
+     * @param string|null $params
+     */
     protected function _forward($action, $controller = null, $module = null, array $params = null)
     {
         $request = $this->getRequest();
+
+        $request->initForward();
 
         if (!is_null($params)) {
             $request->setParams($params);
@@ -549,20 +610,43 @@ abstract class Mage_Core_Controller_Varien_Action
             ->setDispatched(false);
     }
 
+    /**
+     * Inits layout messages by message storage(s), loading and adding messages to layout messages block
+     *
+     * @param string|array $messagesStorage
+     * @return Mage_Core_Controller_Varien_Action
+     */
     protected function _initLayoutMessages($messagesStorage)
     {
-        if ($storage = Mage::getSingleton($messagesStorage)) {
-            $this->getLayout()->getMessagesBlock()->addMessages($storage->getMessages(true));
-            $this->getLayout()->getMessagesBlock()->setEscapeMessageFlag(
-                $storage->getEscapeMessages(true)
-            );
+        if (!is_array($messagesStorage)) {
+            $messagesStorage = array($messagesStorage);
         }
-        else {
-            Mage::throwException(
-                 Mage::helper('core')->__('Invalid messages storage "%s" for layout messages initialization', (string)$messagesStorage)
-            );
+        foreach ($messagesStorage as $storageName) {
+            $storage = Mage::getSingleton($storageName);
+            if ($storage) {
+                $block = $this->getLayout()->getMessagesBlock();
+                $block->addMessages($storage->getMessages(true));
+                $block->setEscapeMessageFlag($storage->getEscapeMessages(true));
+                $block->addStorageType($storageName);
+            }
+            else {
+                Mage::throwException(
+                     Mage::helper('core')->__('Invalid messages storage "%s" for layout messages initialization', (string) $storageName)
+                );
+            }
         }
         return $this;
+    }
+
+    /**
+     * Inits layout messages by message storage(s), loading and adding messages to layout messages block
+     *
+     * @param string|array $messagesStorage
+     * @return Mage_Core_Controller_Varien_Action
+     */
+    public function initLayoutMessages($messagesStorage)
+    {
+        return $this->_initLayoutMessages($messagesStorage);
     }
 
     /**
@@ -578,7 +662,7 @@ abstract class Mage_Core_Controller_Varien_Action
     }
 
     /**
-     * Set redirect into responce
+     * Set redirect into response
      *
      * @param   string $path
      * @param   array $arguments
@@ -661,6 +745,8 @@ abstract class Mage_Core_Controller_Varien_Action
             $refererUrl = Mage::helper('core')->urlDecode($url);
         }
 
+        $refererUrl = Mage::helper('core')->escapeUrl($refererUrl);
+
         if (!$this->_isUrlInternal($refererUrl)) {
             $refererUrl = Mage::app()->getStore()->getBaseUrl();
         }
@@ -680,7 +766,8 @@ abstract class Mage_Core_Controller_Varien_Action
              * Url must start from base secure or base unsecure url
              */
             if ((strpos($url, Mage::app()->getStore()->getBaseUrl()) === 0)
-                || (strpos($url, Mage::app()->getStore()->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK, true)) === 0)) {
+                || (strpos($url, Mage::app()->getStore()->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK, true)) === 0)
+            ) {
                 return true;
             }
         }
@@ -776,5 +863,190 @@ abstract class Mage_Core_Controller_Varien_Action
             return false;
         }
         return true;
+    }
+
+    /**
+     * Add an extra title to the end or one from the end, or remove all
+     *
+     * Usage examples:
+     * $this->_title('foo')->_title('bar');
+     * => bar / foo / <default title>
+     *
+     * $this->_title()->_title('foo')->_title('bar');
+     * => bar / foo
+     *
+     * $this->_title('foo')->_title(false)->_title('bar');
+     * bar / <default title>
+     *
+     * @see self::_renderTitles()
+     * @param string|false|-1|null $text
+     * @return Mage_Core_Controller_Varien_Action
+     */
+    protected function _title($text = null, $resetIfExists = true)
+    {
+        if (is_string($text)) {
+            $this->_titles[] = $text;
+        } elseif (-1 === $text) {
+            if (empty($this->_titles)) {
+                $this->_removeDefaultTitle = true;
+            } else {
+                array_pop($this->_titles);
+            }
+        } elseif (empty($this->_titles) || $resetIfExists) {
+            if (false === $text) {
+                $this->_removeDefaultTitle = false;
+                $this->_titles = array();
+            } elseif (null === $text) {
+                $this->_removeDefaultTitle = true;
+                $this->_titles = array();
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Prepare titles in the 'head' layout block
+     * Supposed to work only in actions where layout is rendered
+     * Falls back to the default logic if there are no titles eventually
+     *
+     * @see self::loadLayout()
+     * @see self::renderLayout()
+     */
+    protected function _renderTitles()
+    {
+        if ($this->_isLayoutLoaded && $this->_titles) {
+            $titleBlock = $this->getLayout()->getBlock('head');
+            if ($titleBlock) {
+                if (!$this->_removeDefaultTitle) {
+                    $title = trim($titleBlock->getTitle());
+                    if ($title) {
+                        array_unshift($this->_titles, $title);
+                    }
+                }
+                $titleBlock->setTitle(implode(' / ', array_reverse($this->_titles)));
+            }
+        }
+    }
+
+    /**
+     * Convert dates in array from localized to internal format
+     *
+     * @param   array $array
+     * @param   array $dateFields
+     * @return  array
+     */
+    protected function _filterDates($array, $dateFields)
+    {
+        if (empty($dateFields)) {
+            return $array;
+        }
+        $filterInput = new Zend_Filter_LocalizedToNormalized(array(
+            'date_format' => Mage::app()->getLocale()->getDateFormat(Mage_Core_Model_Locale::FORMAT_TYPE_SHORT)
+        ));
+        $filterInternal = new Zend_Filter_NormalizedToLocalized(array(
+            'date_format' => Varien_Date::DATE_INTERNAL_FORMAT
+        ));
+
+        foreach ($dateFields as $dateField) {
+            if (array_key_exists($dateField, $array) && !empty($dateField)) {
+                $array[$dateField] = $filterInput->filter($array[$dateField]);
+                $array[$dateField] = $filterInternal->filter($array[$dateField]);
+            }
+        }
+        return $array;
+    }
+
+    /**
+     * Convert dates with time in array from localized to internal format
+     *
+     * @param   array $array
+     * @param   array $dateFields
+     * @return  array
+     */
+    protected function _filterDateTime($array, $dateFields)
+    {
+        if (empty($dateFields)) {
+            return $array;
+        }
+        $filterInput = new Zend_Filter_LocalizedToNormalized(array(
+            'date_format' => Mage::app()->getLocale()->getDateTimeFormat(Mage_Core_Model_Locale::FORMAT_TYPE_SHORT)
+        ));
+        $filterInternal = new Zend_Filter_NormalizedToLocalized(array(
+            'date_format' => Varien_Date::DATETIME_INTERNAL_FORMAT
+        ));
+
+        foreach ($dateFields as $dateField) {
+            if (array_key_exists($dateField, $array) && !empty($dateField)) {
+                $array[$dateField] = $filterInput->filter($array[$dateField]);
+                $array[$dateField] = $filterInternal->filter($array[$dateField]);
+            }
+        }
+        return $array;
+    }
+
+    /**
+     * Declare headers and content file in responce for file download
+     *
+     * @param string $fileName
+     * @param string|array $content set to null to avoid starting output, $contentLength should be set explicitly in
+     *                              that case
+     * @param string $contentType
+     * @param int $contentLength    explicit content length, if strlen($content) isn't applicable
+     * @return Mage_Core_Controller_Varien_Action
+     */
+    protected function _prepareDownloadResponse(
+        $fileName,
+        $content,
+        $contentType = 'application/octet-stream',
+        $contentLength = null)
+    {
+        $session = Mage::getSingleton('admin/session');
+        if ($session->isFirstPageAfterLogin()) {
+            $this->_redirect($session->getUser()->getStartupPageUrl());
+            return $this;
+        }
+
+        $isFile = false;
+        $file   = null;
+        if (is_array($content)) {
+            if (!isset($content['type']) || !isset($content['value'])) {
+                return $this;
+            }
+            if ($content['type'] == 'filename') {
+                $isFile         = true;
+                $file           = $content['value'];
+                $contentLength  = filesize($file);
+            }
+        }
+
+        $this->getResponse()
+            ->setHttpResponseCode(200)
+            ->setHeader('Pragma', 'public', true)
+            ->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0', true)
+            ->setHeader('Content-type', $contentType, true)
+            ->setHeader('Content-Length', is_null($contentLength) ? strlen($content) : $contentLength)
+            ->setHeader('Content-Disposition', 'attachment; filename="'.$fileName.'"')
+            ->setHeader('Last-Modified', date('r'));
+
+        if (!is_null($content)) {
+            if ($isFile) {
+                $this->getResponse()->clearBody();
+                $this->getResponse()->sendHeaders();
+
+                $ioAdapter = new Varien_Io_File();
+                $ioAdapter->open(array('path' => $ioAdapter->dirname($file)));
+                $ioAdapter->streamOpen($file, 'r');
+                while ($buffer = $ioAdapter->streamRead()) {
+                    print $buffer;
+                }
+                $ioAdapter->streamClose();
+                if (!empty($content['rm'])) {
+                    $ioAdapter->rm($file);
+                }
+            } else {
+                $this->getResponse()->setBody($content);
+            }
+        }
+        return $this;
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -47,18 +47,19 @@ class Mage_Adminhtml_Block_Review_Main extends Mage_Adminhtml_Block_Widget_Grid_
         if ($customerId) {
             $customer = Mage::getModel('customer/customer')->load($customerId);
             $customerName = $customer->getFirstname() . ' ' . $customer->getLastname();
+            $customerName = $this->escapeHtml($customerName);
         }
 
         if( Mage::registry('usePendingFilter') === true ) {
             if ($customerName) {
-                $this->_headerText = Mage::helper('review')->__('Pending reviews of customer `%s`', $customerName);
+                $this->_headerText = Mage::helper('review')->__('Pending Reviews of Customer `%s`', $customerName);
             } else {
-                $this->_headerText = Mage::helper('review')->__('Pending reviews');
+                $this->_headerText = Mage::helper('review')->__('Pending Reviews');
             }
             $this->_removeButton('add');
         } else {
             if ($customerName) {
-                $this->_headerText = Mage::helper('review')->__('All reviews of customer `%s`', $customerName);
+                $this->_headerText = Mage::helper('review')->__('All Reviews of Customer `%s`', $customerName);
             } else {
                 $this->_headerText = Mage::helper('review')->__('All Reviews');
             }

@@ -18,35 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
-class Mage_Core_Model_Mysql4_Design_Package_Collection extends Varien_Object
+/**
+ * Design package collection
+ *
+ * @category    Mage
+ * @package     Mage_Core
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
+class Mage_Core_Model_Mysql4_Design_Package_Collection extends Mage_Core_Model_Resource_Design_Package_Collection
 {
-    public function load()
-    {
-        $packages = $this->getData('packages');
-        if (is_null($packages)) {
-            $packages = Mage::getModel('core/design_package')->getPackageList();
-            $this->setData('packages', $packages);
-        }
-
-        return $this;
-    }
-
-    public function toOptionArray()
-    {
-        $options = array();
-        $packages = $this->getData('packages');
-        foreach ($packages as $package) {
-            $options[] = array('value'=>$package, 'label'=>$package);
-        }
-        array_unshift($options, array('value'=>'', 'label'=>''));
-
-        return $options;
-    }
 }

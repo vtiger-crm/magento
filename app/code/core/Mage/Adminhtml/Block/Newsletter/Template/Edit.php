@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -42,16 +42,6 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
     protected $_editMode = false;
 
     /**
-     * Define Edit template
-     *
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->setTemplate('newsletter/template/edit.phtml');
-    }
-
-    /**
      * Retrieve template object
      *
      * @return Mage_Newsletter_Model_Template
@@ -68,6 +58,11 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
      */
     protected function _prepareLayout()
     {
+        // Load Wysiwyg on demand and Prepare layout
+        if (Mage::getSingleton('cms/wysiwyg_config')->isEnabled() && ($block = $this->getLayout()->getBlock('head'))) {
+            $block->setCanLoadTinyMce(true);
+        }
+
         $this->setChild('back_button',
             $this->getLayout()->createBlock('adminhtml/widget_button')
                 ->setData(array(
@@ -98,20 +93,10 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
         $this->setChild('to_html_button',
             $this->getLayout()->createBlock('adminhtml/widget_button')
                 ->setData(array(
-                    'label'     => Mage::helper('newsletter')->__('Return Html Version'),
+                    'label'     => Mage::helper('newsletter')->__('Return HTML Version'),
                     'onclick'   => 'templateControl.unStripTags();',
                     'id'        => 'convert_button_back',
                     'style'     => 'display:none',
-                    'class'     => 'task'
-                ))
-        );
-
-        $this->setChild('toggle_button',
-            $this->getLayout()->createBlock('adminhtml/widget_button')
-                ->setData(array(
-                    'label'     => Mage::helper('newsletter')->__('Toggle Editor'),
-                    'onclick'   => 'templateControl.toggleEditor();',
-                    'id'        => 'toggle_button',
                     'class'     => 'task'
                 ))
         );
@@ -163,16 +148,6 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
     public function getBackButtonHtml()
     {
         return $this->getChildHtml('back_button');
-    }
-
-    /**
-     * Retrieve Toggle Button HTML
-     *
-     * @return string
-     */
-    public function getToggleButtonHtml()
-    {
-        return $this->getChildHtml('toggle_button');
     }
 
     /**
@@ -351,5 +326,25 @@ class Mage_Adminhtml_Block_Newsletter_Template_Edit extends Mage_Adminhtml_Block
     public function getSaveAsFlag()
     {
         return $this->getRequest()->getParam('_save_as_flag') ? '1' : '';
+    }
+
+    /**
+     * Getter for single store mode check
+     *
+     * @return boolean
+     */
+    protected function isSingleStoreMode()
+    {
+        return Mage::app()->isSingleStoreMode();
+    }
+
+    /**
+     * Getter for id of current store (the only one in single-store mode and current in multi-stores mode)
+     *
+     * @return boolean
+     */
+    protected function getStoreId()
+    {
+        return Mage::app()->getStore(true)->getId();
     }
 }

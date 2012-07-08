@@ -19,45 +19,37 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Payment
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Payment
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Payment>
-            <version>0.7.0</version>
+            <version>1.6.0.0</version>
         </Mage_Payment>
     </modules>
-
     <global>
         <models>
             <payment>
                 <class>Mage_Payment_Model</class>
             </payment>
         </models>
-
         <resources>
             <payment_setup>
                 <setup>
                     <module>Mage_Payment</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </payment_setup>
         </resources>
-
         <blocks>
             <payment>
                 <class>Mage_Payment_Block</class>
             </payment>
         </blocks>
-
         <payment>
-
             <cc>
                 <types>
                     <AE>
@@ -72,7 +64,7 @@
                     </VI>
                     <MC>
                         <code>MC</code>
-                        <name>Master Card</name>
+                        <name>MasterCard</name>
                         <order>20</order>
                     </MC>
                     <DI>
@@ -80,6 +72,21 @@
                         <name>Discover</name>
                         <order>30</order>
                     </DI>
+                    <SM>
+                        <code>SM</code>
+                        <name>Maestro/Switch</name>
+                        <order>40</order>
+                    </SM>
+                    <SO>
+                        <code>SO</code>
+                        <name>Solo</name>
+                        <order>45</order>
+                    </SO>
+                    <JCB>
+                        <code>JCB</code>
+                        <name>JCB</name>
+                        <order>50</order>
+                    </JCB>
                     <OT>
                         <code>OT</code>
                         <name>Other</name>
@@ -87,22 +94,21 @@
                     </OT>
                 </types>
             </cc>
+            <groups>
+                <offline>Offline Payment Methods</offline>
+            </groups>
         </payment>
-
         <events>
             <sales_order_save_before>
                 <observers>
                     <payment_sales_order_save_before>
-                        <type>singleton</type>
                         <class>payment/observer</class>
                         <method>salesOrderBeforeSave</method>
                     </payment_sales_order_save_before>
                 </observers>
             </sales_order_save_before>
         </events>
-
     </global>
-
     <frontend>
         <translate>
             <modules>
@@ -113,6 +119,23 @@
                 </Mage_Payment>
             </modules>
         </translate>
+        <events>
+            <catalog_product_type_prepare_cart_options>
+                <observers>
+                    <payment_recurring_profile_prepare_options>
+                        <class>payment/observer</class>
+                        <method>prepareProductRecurringProfileOptions</method>
+                    </payment_recurring_profile_prepare_options>
+                </observers>
+            </catalog_product_type_prepare_cart_options>
+        </events>
+        <layout>
+            <updates>
+                <payment module="Mage_Payment">
+                    <file>payment.xml</file>
+                </payment>
+            </updates>
+        </layout>
     </frontend>
     <adminhtml>
         <translate>
@@ -124,27 +147,7 @@
                 </Mage_Payment>
             </modules>
         </translate>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <config>
-                                    <children>
-                                        <payment translate="title" module="payment">
-                                            <title>Payment Methods Section</title>
-                                        </payment>
-                                    </children>
-                                </config>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
-   </adminhtml>
-
+    </adminhtml>
     <default>
         <payment>
             <ccsave>
@@ -154,37 +157,33 @@
                 <order_status>pending</order_status>
                 <title>Credit Card (saved)</title>
                 <allowspecific>0</allowspecific>
+                <group>offline</group>
             </ccsave>
-
             <checkmo>
                 <active>1</active>
                 <model>payment/method_checkmo</model>
                 <order_status>pending</order_status>
                 <title>Check / Money order</title>
                 <allowspecific>0</allowspecific>
+                <group>offline</group>
             </checkmo>
-
             <free>
                 <active>1</active>
                 <model>payment/method_free</model>
                 <order_status>pending</order_status>
                 <title>No Payment Information Required</title>
                 <allowspecific>0</allowspecific>
-<!--
-                <min_order_total>0</min_order_total>
-                <max_order_total>0</max_order_total>
--->
                 <sort_order>1</sort_order>
+                <group>offline</group>
             </free>
-
             <purchaseorder>
                 <active>0</active>
                 <model>payment/method_purchaseorder</model>
                 <order_status>pending</order_status>
                 <title>Purchase Order</title>
                 <allowspecific>0</allowspecific>
+                <group>offline</group>
             </purchaseorder>
-
-         </payment>
+        </payment>
     </default>
 </config>

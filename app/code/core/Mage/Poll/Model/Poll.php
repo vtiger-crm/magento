@@ -18,15 +18,35 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Poll
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Poll
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Poll model
  *
+ * @method Mage_Poll_Model_Resource_Poll _getResource()
+ * @method Mage_Poll_Model_Resource_Poll getResource()
+ * @method string getPollTitle()
+ * @method Mage_Poll_Model_Poll setPollTitle(string $value)
+ * @method Mage_Poll_Model_Poll setVotesCount(int $value)
+ * @method int getStoreId()
+ * @method Mage_Poll_Model_Poll setStoreId(int $value)
+ * @method string getDatePosted()
+ * @method Mage_Poll_Model_Poll setDatePosted(string $value)
+ * @method string getDateClosed()
+ * @method Mage_Poll_Model_Poll setDateClosed(string $value)
+ * @method int getActive()
+ * @method Mage_Poll_Model_Poll setActive(int $value)
+ * @method int getClosed()
+ * @method Mage_Poll_Model_Poll setClosed(int $value)
+ * @method int getAnswersDisplay()
+ * @method Mage_Poll_Model_Poll setAnswersDisplay(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Poll
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 
@@ -136,6 +156,16 @@ class Mage_Poll_Model_Poll extends Mage_Core_Model_Abstract
     }
 
     /**
+     * Get all ids for not closed polls
+     *
+     * @return array
+     */
+    public function getAllIds()
+    {
+        return $this->_getResource()->getAllIds($this);
+    }
+
+    /**
      * Add vote to poll
      *
      * @return unknown
@@ -163,7 +193,7 @@ class Mage_Poll_Model_Poll extends Mage_Core_Model_Abstract
             $answerId = $answer;
         }
         elseif ($answer instanceof Mage_Poll_Model_Poll_Answer) {
-        	$answerId = $answer->getId();
+            $answerId = $answer->getId();
         }
 
         if ($answerId) {
@@ -184,13 +214,13 @@ class Mage_Poll_Model_Poll extends Mage_Core_Model_Abstract
         $idsArray = array();
 
         foreach ($this->getCookie()->get() as $cookieName => $cookieValue) {
-        	$pattern = '#^' . preg_quote($this->_pollCookieDefaultName, '#') . '(\d+)$#';
-        	$match   = array();
-        	if (preg_match($pattern, $cookieName, $match)) {
-        	    if ($match[1] != Mage::getSingleton('core/session')->getJustVotedPoll()) {
-        	        $idsArray[$match[1]] = $match[1];
-        	    }
-        	}
+            $pattern = '#^' . preg_quote($this->_pollCookieDefaultName, '#') . '(\d+)$#';
+            $match   = array();
+            if (preg_match($pattern, $cookieName, $match)) {
+                if ($match[1] != Mage::getSingleton('core/session')->getJustVotedPoll()) {
+                    $idsArray[$match[1]] = $match[1];
+                }
+            }
         }
 
         // load from db for this ip

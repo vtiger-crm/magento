@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Checkout
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -33,7 +33,6 @@
  */
 class Mage_Checkout_Block_Links extends Mage_Core_Block_Template
 {
-
     /**
      * Add shopping cart link to parent block
      *
@@ -41,17 +40,19 @@ class Mage_Checkout_Block_Links extends Mage_Core_Block_Template
      */
     public function addCartLink()
     {
-        if ($parentBlock = $this->getParentBlock()) {
-            $count = $this->helper('checkout/cart')->getSummaryCount();
-
-            if( $count == 1 ) {
+        $parentBlock = $this->getParentBlock();
+        if ($parentBlock && Mage::helper('core')->isModuleOutputEnabled('Mage_Checkout')) {
+            $count = $this->getSummaryQty() ? $this->getSummaryQty()
+                : $this->helper('checkout/cart')->getSummaryCount();
+            if ($count == 1) {
                 $text = $this->__('My Cart (%s item)', $count);
-            } elseif( $count > 0 ) {
+            } elseif ($count > 0) {
                 $text = $this->__('My Cart (%s items)', $count);
             } else {
                 $text = $this->__('My Cart');
             }
 
+            $parentBlock->removeLinkByUrl($this->getUrl('checkout/cart'));
             $parentBlock->addLink($text, 'checkout/cart', $text, true, array(), 50, null, 'class="top-link-cart"');
         }
         return $this;
@@ -67,11 +68,12 @@ class Mage_Checkout_Block_Links extends Mage_Core_Block_Template
         if (!$this->helper('checkout')->canOnepageCheckout()) {
             return $this;
         }
-        if ($parentBlock = $this->getParentBlock()) {
+
+        $parentBlock = $this->getParentBlock();
+        if ($parentBlock && Mage::helper('core')->isModuleOutputEnabled('Mage_Checkout')) {
             $text = $this->__('Checkout');
             $parentBlock->addLink($text, 'checkout', $text, true, array(), 60, null, 'class="top-link-checkout"');
         }
         return $this;
     }
-
 }

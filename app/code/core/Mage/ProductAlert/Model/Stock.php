@@ -18,18 +18,35 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_ProductAlert
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_ProductAlert
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * ProductAlert for back in stock model
  *
- * @category   Mage
- * @package    Mage_ProductAlert
+ * @method Mage_ProductAlert_Model_Resource_Stock _getResource()
+ * @method Mage_ProductAlert_Model_Resource_Stock getResource()
+ * @method int getCustomerId()
+ * @method Mage_ProductAlert_Model_Stock setCustomerId(int $value)
+ * @method int getProductId()
+ * @method Mage_ProductAlert_Model_Stock setProductId(int $value)
+ * @method int getWebsiteId()
+ * @method Mage_ProductAlert_Model_Stock setWebsiteId(int $value)
+ * @method string getAddDate()
+ * @method Mage_ProductAlert_Model_Stock setAddDate(string $value)
+ * @method string getSendDate()
+ * @method Mage_ProductAlert_Model_Stock setSendDate(string $value)
+ * @method int getSendCount()
+ * @method Mage_ProductAlert_Model_Stock setSendCount(int $value)
+ * @method int getStatus()
+ * @method Mage_ProductAlert_Model_Stock setStatus(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_ProductAlert
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_ProductAlert_Model_Stock extends Mage_Core_Model_Abstract

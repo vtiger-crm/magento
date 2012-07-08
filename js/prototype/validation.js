@@ -97,21 +97,25 @@ Validation.prototype = {
         }, options || {});
         if(this.options.onSubmit) Event.observe(this.form,'submit',this.onSubmit.bind(this),false);
         if(this.options.immediate) {
-            Form.getElements(this.form).each(function(input) { // Thanks Mike!                
+            Form.getElements(this.form).each(function(input) { // Thanks Mike!
                 if (input.tagName.toLowerCase() == 'select') {
                     Event.observe(input, 'blur', this.onChange.bindAsEventListener(this));
                 }
-                Event.observe(input, 'change', this.onChange.bindAsEventListener(this));
+                if (input.type.toLowerCase() == 'radio' || input.type.toLowerCase() == 'checkbox') {
+                    Event.observe(input, 'click', this.onChange.bindAsEventListener(this));
+                } else {
+                    Event.observe(input, 'change', this.onChange.bindAsEventListener(this));
+                }
             }, this);
         }
     },
     onChange : function (ev) {
         Validation.isOnChange = true;
         Validation.validate(Event.element(ev),{
-                useTitle : this.options.useTitles, 
+                useTitle : this.options.useTitles,
                 onElementValidate : this.options.onElementValidate
         });
-        Validation.isOnChange = false; 
+        Validation.isOnChange = false;
     },
     onSubmit :  function(ev){
         if(!this.validate()) Event.stop(ev);
@@ -122,19 +126,27 @@ Validation.prototype = {
         var callback = this.options.onElementValidate;
         try {
             if(this.options.stopOnFirst) {
-                result = Form.getElements(this.form).all(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); });
+                result = Form.getElements(this.form).all(function(elm) {
+                    if (elm.hasClassName('local-validation') && !this.isElementInForm(elm, this.form)) {
+                        return true;
+                    }
+                    return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback});
+                }, this);
             } else {
-                result = Form.getElements(this.form).collect(function(elm) { return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback}); }).all();
+                result = Form.getElements(this.form).collect(function(elm) {
+                    if (elm.hasClassName('local-validation') && !this.isElementInForm(elm, this.form)) {
+                        return true;
+                    }
+                    return Validation.validate(elm,{useTitle : useTitles, onElementValidate : callback});
+                }, this).all();
             }
         } catch (e) {
-
         }
         if(!result && this.options.focusOnError) {
             try{
                 Form.getElements(this.form).findAll(function(elm){return $(elm).hasClassName('validation-failed')}).first().focus()
             }
             catch(e){
-
             }
         }
         this.options.onFormValidate(result, this.form);
@@ -142,6 +154,13 @@ Validation.prototype = {
     },
     reset : function() {
         Form.getElements(this.form).each(Validation.reset);
+    },
+    isElementInForm : function(elm, form) {
+        var domForm = elm.up('form');
+        if (domForm == form) {
+            return true;
+        }
+        return false;
     }
 }
 
@@ -191,7 +210,10 @@ Object.extend(Validation, {
         }
         else{
             elm.advices.each(function(pair){
-                this.hideAdvice(elm, pair.value);
+                if (!advice || pair.value.id != advice.id) {
+                    // hide non-current advice after delay
+                    this.hideAdvice(elm, pair.value);
+                }
             }.bind(this));
         }
         elm.advices.set(adviceName, advice);
@@ -214,7 +236,9 @@ Object.extend(Validation, {
         }
     },
     hideAdvice : function(elm, advice){
-        if(advice != null) advice.hide();
+        if (advice != null) {
+            new Effect.Fade(advice, {duration : 1, afterFinishInternal : function() {advice.hide();}});
+        }
     },
     updateCallback : function(elm, status) {
         if (typeof elm.callbackFunction != 'undefined') {
@@ -244,7 +268,7 @@ Object.extend(Validation, {
         if (elm.type == 'radio' || elm.type == 'checkbox') {
             return elm.hasClassName('change-container-classname');
         }
-        
+
         return true;
     },
     test : function(name, elm, useTitle) {
@@ -264,8 +288,8 @@ Object.extend(Validation, {
             if (!elm.advaiceContainer) {
                 elm.removeClassName('validation-passed');
                 elm.addClassName('validation-failed');
-            } 
-            
+            }
+
            if (Validation.defaultOptions.addClassNameToContainer && Validation.defaultOptions.containerClassName != '') {
                 var container = elm.up(Validation.defaultOptions.containerClassName);
                 if (container && this.allowContainerClassName(elm)) {
@@ -284,7 +308,7 @@ Object.extend(Validation, {
             if (Validation.defaultOptions.addClassNameToContainer && Validation.defaultOptions.containerClassName != '') {
                 var container = elm.up(Validation.defaultOptions.containerClassName);
                 if (container && !container.down('.validation-failed') && this.allowContainerClassName(elm)) {
-                    if (!Validation.get('IsEmpty').test(elm.value) || !this.isVisible(elm)) { 
+                    if (!Validation.get('IsEmpty').test(elm.value) || !this.isVisible(elm)) {
                         container.addClassName('validation-passed');
                     } else {
                         container.removeClassName('validation-passed');
@@ -397,8 +421,21 @@ Validation.addAllThese([
     ['validate-number', 'Please enter a valid number in this field.', function(v) {
                 return Validation.get('IsEmpty').test(v) || (!isNaN(parseNumber(v)) && !/^\s+$/.test(parseNumber(v)));
             }],
-    ['validate-digits', 'Please use numbers only in this field. please avoid spaces or other characters such as dots or commas.', function(v) {
+    ['validate-digits', 'Please use numbers only in this field. Please avoid spaces or other characters such as dots or commas.', function(v) {
                 return Validation.get('IsEmpty').test(v) ||  !/[^\d]/.test(v);
+            }],
+    ['validate-digits-range', 'The value is not within the specified range.', function(v, elm) {
+                var result = Validation.get('IsEmpty').test(v) ||  !/[^\d]/.test(v);
+                var reRange = new RegExp(/^digits-range-[0-9]+-[0-9]+$/);
+                $w(elm.className).each(function(name, index) {
+                    if (name.match(reRange) && result) {
+                        var min = parseInt(name.split('-')[2], 10);
+                        var max = parseInt(name.split('-')[3], 10);
+                        var val = parseInt(v, 10);
+                        result = (v >= min) && (v <= max);
+                    }
+                });
+                return result;
             }],
     ['validate-alpha', 'Please use letters only (a-z or A-Z) in this field.', function (v) {
                 return Validation.get('IsEmpty').test(v) ||  /^[a-zA-Z]+$/.test(v)
@@ -428,10 +465,10 @@ Validation.addAllThese([
     ['validate-email', 'Please enter a valid email address. For example johndoe@domain.com.', function (v) {
                 //return Validation.get('IsEmpty').test(v) || /\w{1,}[@][\w\-]{1,}([.]([\w\-]{1,})){1,3}$/.test(v)
                 //return Validation.get('IsEmpty').test(v) || /^[\!\#$%\*/?|\^\{\}`~&\'\+\-=_a-z0-9][\!\#$%\*/?|\^\{\}`~&\'\+\-=_a-z0-9\.]{1,30}[\!\#$%\*/?|\^\{\}`~&\'\+\-=_a-z0-9]@([a-z0-9_-]{1,30}\.){1,5}[a-z]{2,4}$/i.test(v)
-                return Validation.get('IsEmpty').test(v) || /^[a-z0-9,!\#\$%&'\*\+/=\?\^_`\{\|}~-]+(\.[a-z0-9,!#\$%&'\*\+/=\?\^_`\{\|}~-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*\.([a-z]{2,})/i.test(v)
+                return Validation.get('IsEmpty').test(v) || /^([a-z0-9,!\#\$%&'\*\+\/=\?\^_`\{\|\}~-]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z0-9,!\#\$%&'\*\+\/=\?\^_`\{\|\}~-]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*@([a-z0-9-]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z0-9-]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*\.(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]){2,})$/i.test(v)
             }],
-    ['validate-emailSender', 'Please use only letters (a-z or A-Z), numbers (0-9) , underscore(_) or spaces in this field.', function (v) {
-                return Validation.get('IsEmpty').test(v) ||  /^[a-zA-Z0-9_\s]+$/.test(v)
+    ['validate-emailSender', 'Please use only visible characters and spaces.', function (v) {
+                return Validation.get('IsEmpty').test(v) ||  /^[\S ]+$/.test(v)
                     }],
     ['validate-password', 'Please enter 6 or more characters. Leading or trailing spaces will be ignored.', function(v) {
                 var pass=v.strip(); /*strip leading and trailing spaces*/
@@ -448,25 +485,34 @@ Validation.addAllThese([
                 return !(pass.length < 7);
             }],
     ['validate-cpassword', 'Please make sure your passwords match.', function(v) {
-                if ($('password')) {
-                    var pass = $('password');
-                }
-                else {
-                    var pass = $$('.validate-password').length ? $$('.validate-password')[0] : $$('.validate-admin-password')[0];
-                }
                 var conf = $('confirmation') ? $('confirmation') : $$('.validate-cpassword')[0];
+                var pass = false;
+                if ($('password')) {
+                    pass = $('password');
+                }
+                var passwordElements = $$('.validate-password');
+                for (var i = 0; i < passwordElements.size(); i++) {
+                    var passwordElement = passwordElements[i];
+                    if (passwordElement.up('form').id == conf.up('form').id) {
+                        pass = passwordElement;
+                    }
+                }
+                if ($$('.validate-admin-password').size()) {
+                    pass = $$('.validate-admin-password')[0];
+                }
                 return (pass.value == conf.value);
             }],
-    ['validate-url', 'Please enter a valid URL. http:// is required', function (v) {
-                return Validation.get('IsEmpty').test(v) || /^(http|https|ftp):\/\/(([A-Z0-9][A-Z0-9_-]*)(\.[A-Z0-9][A-Z0-9_-]*)+)(:(\d+))?\/?/i.test(v)
+    ['validate-url', 'Please enter a valid URL. Protocol is required (http://, https:// or ftp://)', function (v) {
+                v = (v || '').replace(/^\s+/, '').replace(/\s+$/, '');
+                return Validation.get('IsEmpty').test(v) || /^(http|https|ftp):\/\/(([A-Z0-9]([A-Z0-9_-]*[A-Z0-9]|))(\.[A-Z0-9]([A-Z0-9_-]*[A-Z0-9]|))*)(:(\d+))?(\/[A-Z0-9~](([A-Z0-9_~-]|\.)*[A-Z0-9~]|))*\/?$/i.test(v)
             }],
     ['validate-clean-url', 'Please enter a valid URL. For example http://www.example.com or www.example.com', function (v) {
                 return Validation.get('IsEmpty').test(v) || /^(http|https|ftp):\/\/(([A-Z0-9][A-Z0-9_-]*)(\.[A-Z0-9][A-Z0-9_-]*)+.(com|org|net|dk|at|us|tv|info|uk|co.uk|biz|se)$)(:(\d+))?\/?/i.test(v) || /^(www)((\.[A-Z0-9][A-Z0-9_-]*)+.(com|org|net|dk|at|us|tv|info|uk|co.uk|biz|se)$)(:(\d+))?\/?/i.test(v)
             }],
-    ['validate-identifier', 'Please enter a valid Identifier. For example example-page, example-page.html or anotherlevel/example-page', function (v) {
-                return Validation.get('IsEmpty').test(v) || /^[A-Z0-9][A-Z0-9_\/-]+(\.[A-Z0-9_-]+)*$/i.test(v)
+    ['validate-identifier', 'Please enter a valid URL Key. For example "example-page", "example-page.html" or "anotherlevel/example-page".', function (v) {
+                return Validation.get('IsEmpty').test(v) || /^[a-z0-9][a-z0-9_\/-]+(\.[a-z0-9_-]+)?$/.test(v)
             }],
-    ['validate-xml-identifier', 'Please enter a valid XML-identifier. For example something_1, block5, id-4', function (v) {
+    ['validate-xml-identifier', 'Please enter a valid XML-identifier. For example something_1, block5, id-4.', function (v) {
                 return Validation.get('IsEmpty').test(v) || /^[A-Z][A-Z0-9_\/-]*$/i.test(v)
             }],
     ['validate-ssn', 'Please enter a valid social security number. For example 123-45-6789.', function(v) {
@@ -504,13 +550,13 @@ Validation.addAllThese([
             }],
     ['validate-one-required-by-name', 'Please select one of the options.', function (v,elm) {
                 var inputs = $$('input[name="' + elm.name.replace(/([\\"])/g, '\\$1') + '"]');
-                
+
                 var error = 1;
                 for(var i=0;i<inputs.length;i++) {
                     if((inputs[i].type == 'checkbox' || inputs[i].type == 'radio') && inputs[i].checked == true) {
                         error = 0;
                     }
-                    
+
                     if(Validation.isOnChange && (inputs[i].type == 'checkbox' || inputs[i].type == 'radio')) {
                         Validation.reset(inputs[i]);
                     }
@@ -560,7 +606,7 @@ Validation.addAllThese([
                 }
                 return validateCreditCard(v);
             }],
-    ['validate-cc-type', 'Credit card number doesn\'t match credit card type', function(v, elm) {
+    ['validate-cc-type', 'Credit card number does not match credit card type.', function(v, elm) {
                 // remove credit card number delimiters such as "-" and space
                 elm.value = removeDelimiters(elm.value);
                 v         = removeDelimiters(v);
@@ -593,14 +639,14 @@ Validation.addAllThese([
                 if(ccMatchedType != ccType) {
                     return false;
                 }
-                
+
                 if (ccTypeContainer.hasClassName('validation-failed') && Validation.isOnChange) {
                     Validation.validate(ccTypeContainer);
                 }
 
                 return true;
             }],
-     ['validate-cc-type-select', 'Card type doesn\'t match credit card number', function(v, elm) {
+     ['validate-cc-type-select', 'Card type does not match credit card number.', function(v, elm) {
                 var ccNumberContainer = $(elm.id.substr(0,elm.id.indexOf('_cc_type')) + '_cc_number');
                 if (Validation.isOnChange && Validation.get('IsEmpty').test(ccNumberContainer.value)) {
                     return true;
@@ -610,9 +656,9 @@ Validation.addAllThese([
                 }
                 return Validation.get('validate-cc-type').test(ccNumberContainer.value, ccNumberContainer);
             }],
-     ['validate-cc-exp', 'Incorrect credit card expiration date', function(v, elm) {
+     ['validate-cc-exp', 'Incorrect credit card expiration date.', function(v, elm) {
                 var ccExpMonth   = v;
-                var ccExpYear    = $('ccsave_expiration_yr').value;
+                var ccExpYear    = $(elm.id.substr(0,elm.id.indexOf('_expiration')) + '_expiration_yr').value;
                 var currentTime  = new Date();
                 var currentMonth = currentTime.getMonth() + 1;
                 var currentYear  = currentTime.getFullYear();
@@ -647,53 +693,80 @@ Validation.addAllThese([
                 }
                 return true;
             }],
-     ['validate-css-length', 'Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%', function (v) {
+     ['validate-css-length', 'Please input a valid CSS-length. For example 100px or 77pt or 20em or .5ex or 50%.', function (v) {
                 if (v != '' && v) {
                     return /^[0-9\.]+(px|pt|em|ex|%)?$/.test(v) && (!(/\..*\./.test(v))) && !(/\.$/.test(v));
                 }
                 return true;
             }],
-     ['validate-length', 'Maximum length exceeded.', function (v, elm) {
-                var re = new RegExp(/^maximum-length-[0-9]+$/);
+     ['validate-length', 'Text length does not satisfy specified text range.', function (v, elm) {
+                var reMax = new RegExp(/^maximum-length-[0-9]+$/);
+                var reMin = new RegExp(/^minimum-length-[0-9]+$/);
                 var result = true;
                 $w(elm.className).each(function(name, index) {
-                        if (name.match(re) && result) {
-                           var length = name.split('-')[2];
-                           result = (v.length <= length);
-                        }
-                    });
+                    if (name.match(reMax) && result) {
+                       var length = name.split('-')[2];
+                       result = (v.length <= length);
+                    }
+                    if (name.match(reMin) && result && !Validation.get('IsEmpty').test(v)) {
+                        var length = name.split('-')[2];
+                        result = (v.length >= length);
+                    }
+                });
                 return result;
-            }]
+            }],
+     ['validate-percents', 'Please enter a number lower than 100.', {max:100}],
+     ['required-file', 'Please select a file', function(v, elm) {
+         var result = !Validation.get('IsEmpty').test(v);
+         if (result === false) {
+             ovId = elm.id + '_value';
+             if ($(ovId)) {
+                 result = !Validation.get('IsEmpty').test($(ovId).value);
+             }
+         }
+         return result;
+     }],
+     ['validate-cc-ukss', 'Please enter issue number or start date for switch/solo card type.', function(v,elm) {
+         var endposition;
+
+         if (elm.id.match(/(.)+_cc_issue$/)) {
+             endposition = elm.id.indexOf('_cc_issue');
+         } else if (elm.id.match(/(.)+_start_month$/)) {
+             endposition = elm.id.indexOf('_start_month');
+         } else {
+             endposition = elm.id.indexOf('_start_year');
+         }
+
+         var prefix = elm.id.substr(0,endposition);
+
+         var ccTypeContainer = $(prefix + '_cc_type');
+
+         if (!ccTypeContainer) {
+               return true;
+         }
+         var ccType = ccTypeContainer.value;
+
+         if(['SS','SM','SO'].indexOf(ccType) == -1){
+             return true;
+         }
+
+         $(prefix + '_cc_issue').advaiceContainer
+           = $(prefix + '_start_month').advaiceContainer
+           = $(prefix + '_start_year').advaiceContainer
+           = $(prefix + '_cc_type_ss_div').down('ul li.adv-container');
+
+         var ccIssue   =  $(prefix + '_cc_issue').value;
+         var ccSMonth  =  $(prefix + '_start_month').value;
+         var ccSYear   =  $(prefix + '_start_year').value;
+
+         var ccStartDatePresent = (ccSMonth && ccSYear) ? true : false;
+
+         if (!ccStartDatePresent && !ccIssue){
+             return false;
+         }
+         return true;
+     }]
 ]);
-
-
-// Credit Card Validation Javascript
-// copyright 12th May 2003, by Stephen Chapman, Felgall Pty Ltd
-
-// You have permission to copy and use this javascript provided that
-// the content of the script is not changed in any way.
-
-function validateCreditCard(s) {
-    // remove non-numerics
-    var v = "0123456789";
-    var w = "";
-    for (i=0; i < s.length; i++) {
-        x = s.charAt(i);
-        if (v.indexOf(x,0) != -1)
-        w += x;
-    }
-    // validate number
-    j = w.length / 2;
-    k = Math.floor(j);
-    m = Math.ceil(j) - k;
-    c = 0;
-    for (i=0; i<k; i++) {
-        a = w.charAt(i*2+m) * 2;
-        c += a > 9 ? Math.floor(a/10 + a%10) : a;
-    }
-    for (i=0; i<k+m; i++) c += w.charAt(i*2+1-m) * 1;
-    return (c%10 == 0);
-}
 
 function removeDelimiters (v) {
     v = v.replace(/\s/g, '');
@@ -733,10 +806,13 @@ function parseNumber(v)
  *     function validateCreditCard wich you can find above in this file
  */
 Validation.creditCartTypes = $H({
+//    'SS': [new RegExp('^((6759[0-9]{12})|(5018|5020|5038|6304|6759|6761|6763[0-9]{12,19})|(49[013][1356][0-9]{12})|(6333[0-9]{12})|(6334[0-4]\d{11})|(633110[0-9]{10})|(564182[0-9]{10}))([0-9]{2,3})?$'), new RegExp('^([0-9]{3}|[0-9]{4})?$'), true],
+    'SO': [new RegExp('^(6334[5-9]([0-9]{11}|[0-9]{13,14}))|(6767([0-9]{12}|[0-9]{14,15}))$'), new RegExp('^([0-9]{3}|[0-9]{4})?$'), true],
+    'SM': [new RegExp('(^(5[0678])[0-9]{11,18}$)|(^(6[^05])[0-9]{11,18}$)|(^(601)[^1][0-9]{9,16}$)|(^(6011)[0-9]{9,11}$)|(^(6011)[0-9]{13,16}$)|(^(65)[0-9]{11,13}$)|(^(65)[0-9]{15,18}$)|(^(49030)[2-9]([0-9]{10}$|[0-9]{12,13}$))|(^(49033)[5-9]([0-9]{10}$|[0-9]{12,13}$))|(^(49110)[1-2]([0-9]{10}$|[0-9]{12,13}$))|(^(49117)[4-9]([0-9]{10}$|[0-9]{12,13}$))|(^(49118)[0-2]([0-9]{10}$|[0-9]{12,13}$))|(^(4936)([0-9]{12}$|[0-9]{14,15}$))'), new RegExp('^([0-9]{3}|[0-9]{4})?$'), true],
     'VI': [new RegExp('^4[0-9]{12}([0-9]{3})?$'), new RegExp('^[0-9]{3}$'), true],
     'MC': [new RegExp('^5[1-5][0-9]{14}$'), new RegExp('^[0-9]{3}$'), true],
     'AE': [new RegExp('^3[47][0-9]{13}$'), new RegExp('^[0-9]{4}$'), true],
     'DI': [new RegExp('^6011[0-9]{12}$'), new RegExp('^[0-9]{3}$'), true],
-    'SS': [new RegExp('^((6759[0-9]{12})|(49[013][1356][0-9]{13})|(633[34][0-9]{12})|(633110[0-9]{10})|(564182[0-9]{10}))([0-9]{2,3})?$'), new RegExp('^([0-9]{3}|[0-9]{4})?$'), true],
+    'JCB': [new RegExp('^(3[0-9]{15}|(2131|1800)[0-9]{11})$'), new RegExp('^[0-9]{4}$'), true],
     'OT': [false, new RegExp('^([0-9]{3}|[0-9]{4})?$'), false]
 });

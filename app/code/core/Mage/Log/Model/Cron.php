@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Log
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Log
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -37,6 +37,7 @@ class Mage_Log_Model_Cron extends Mage_Core_Model_Abstract
     const XML_PATH_EMAIL_LOG_CLEAN_TEMPLATE     = 'system/log/error_email_template';
     const XML_PATH_EMAIL_LOG_CLEAN_IDENTITY     = 'system/log/error_email_identity';
     const XML_PATH_EMAIL_LOG_CLEAN_RECIPIENT    = 'system/log/error_email';
+    const XML_PATH_LOG_CLEAN_ENABLED            = 'system/log/enabled';
 
     /**
      * Error messages
@@ -86,6 +87,10 @@ class Mage_Log_Model_Cron extends Mage_Core_Model_Abstract
      */
     public function logClean()
     {
+        if (!Mage::getStoreConfigFlag(self::XML_PATH_LOG_CLEAN_ENABLED)) {
+            return $this;
+        }
+
         $this->_errors = array();
 
         try {

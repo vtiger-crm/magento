@@ -15,9 +15,9 @@
  *
  * @category   Zend
  * @package    Zend_OpenId
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: OpenId.php 13218 2008-12-14 11:11:56Z thomas $
+ * @version    $Id: OpenId.php 22653 2010-07-22 18:41:39Z mabe $
  */
 
 /**
@@ -35,7 +35,7 @@
  *
  * @category   Zend
  * @package    Zend_OpenId
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_OpenId
@@ -585,7 +585,7 @@ class Zend_OpenId
         } else if (extension_loaded('bcmath')) {
             $cmp = bccomp($bn, 0);
             if ($cmp == 0) {
-                return (chr(0));
+                return "\0";
             } else if ($cmp < 0) {
                 #require_once "Zend/OpenId/Exception.php";
                 throw new Zend_OpenId_Exception(
@@ -598,7 +598,7 @@ class Zend_OpenId
                 $bn = bcdiv($bn, 256);
             }
             if (ord($bin[0]) > 127) {
-                $bin = chr(0) . $bin;
+                $bin = "\0" . $bin;
             }
             return $bin;
         }
@@ -627,14 +627,14 @@ class Zend_OpenId
                     'p' => $p,
                     'g' => $g
                 );
-            if (!is_null($priv_key)) {
+            if ($priv_key !== null) {
                 $dh_details['priv_key'] = $priv_key;
             }
             return openssl_pkey_new(array('dh'=>$dh_details));
         } else {
             $bn_p        = self::binToBigNum($p);
             $bn_g        = self::binToBigNum($g);
-            if (is_null($priv_key)) {
+            if ($priv_key === null) {
                 $priv_key    = self::randomBytes(Zend_OpenId::strlen($p));
             }
             $bn_priv_key = self::binToBigNum($priv_key);
@@ -693,7 +693,7 @@ class Zend_OpenId
         if (function_exists('openssl_dh_compute_key')) {
             $ret = openssl_dh_compute_key($pub_key, $dh);
             if (ord($ret[0]) > 127) {
-                $ret = chr(0) . $ret;
+                $ret = "\0" . $ret;
             }
             return $ret;
         } else if (extension_loaded('gmp')) {
@@ -729,7 +729,7 @@ class Zend_OpenId
     static public function btwoc($str)
     {
         if (ord($str[0]) > 127) {
-            return chr(0) . $str;
+            return "\0" . $str;
         }
         return $str;
     }

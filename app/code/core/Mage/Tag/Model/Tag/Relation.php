@@ -18,23 +18,48 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Tag
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Tag
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Tag relation model
  *
- * @category   Mage
- * @package    Mage_Tag
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Tag_Model_Resource_Tag_Relation _getResource()
+ * @method Mage_Tag_Model_Resource_Tag_Relation getResource()
+ * @method int getTagId()
+ * @method Mage_Tag_Model_Tag_Relation setTagId(int $value)
+ * @method int getCustomerId()
+ * @method Mage_Tag_Model_Tag_Relation setCustomerId(int $value)
+ * @method int getProductId()
+ * @method Mage_Tag_Model_Tag_Relation setProductId(int $value)
+ * @method int getStoreId()
+ * @method Mage_Tag_Model_Tag_Relation setStoreId(int $value)
+ * @method int getActive()
+ * @method Mage_Tag_Model_Tag_Relation setActive(int $value)
+ * @method string getCreatedAt()
+ * @method Mage_Tag_Model_Tag_Relation setCreatedAt(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Tag
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Tag_Model_Tag_Relation extends Mage_Core_Model_Abstract
 {
-    const STATUS_ACTIVE = 1;
+    /**
+     * Relation statuses
+     */
+    const STATUS_ACTIVE     = 1;
+    const STATUS_NOT_ACTIVE = 0;
+
+    /**
+     * Entity code.
+     * Can be used as part of method name for entity processing
+     */
+    const ENTITY = 'tag_relation';
 
     /**
      * Initialize resource model
@@ -53,6 +78,20 @@ class Mage_Tag_Model_Tag_Relation extends Mage_Core_Model_Abstract
     protected function _getResource()
     {
         return parent::_getResource();
+    }
+
+    /**
+     * Init indexing process after tag data commit
+     *
+     * @return Mage_Tag_Model_Tag_Relation
+     */
+    public function afterCommitCallback()
+    {
+        parent::afterCommitCallback();
+        Mage::getSingleton('index/indexer')->processEntityAction(
+            $this, self::ENTITY, Mage_Index_Model_Event::TYPE_SAVE
+        );
+        return $this;
     }
 
     /**
@@ -92,6 +131,19 @@ class Mage_Tag_Model_Tag_Relation extends Mage_Core_Model_Abstract
     }
 
     /**
+     * Retrieve list of related tag ids for products specified in current object
+     *
+     * @return array
+     */
+    public function getRelatedTagIds()
+    {
+        if (is_null($this->getData('related_tag_ids'))) {
+            $this->setRelatedTagIds($this->_getResource()->getRelatedTagIds($this));
+        }
+        return $this->getData('related_tag_ids');
+    }
+
+    /**
      * Deactivate tag relations (using current settings)
      *
      * @return Mage_Tag_Model_Tag_Relation
@@ -99,6 +151,23 @@ class Mage_Tag_Model_Tag_Relation extends Mage_Core_Model_Abstract
     public function deactivate()
     {
         $this->_getResource()->deactivate($this->getTagId(),  $this->getCustomerId());
+        return $this;
+    }
+
+    /**
+     * Add TAG to PRODUCT relations
+     *
+     * @param Mage_Tag_Model_Tag $model
+     * @param array $productIds
+     * @return Mage_Tag_Model_Tag_Relation
+     */
+    public function addRelations(Mage_Tag_Model_Tag $model, $productIds = array())
+    {
+        $this->setAddedProductIds($productIds);
+        $this->setTagId($model->getTagId());
+        $this->setCustomerId(null);
+        $this->setStoreId($model->getStore());
+        $this->_getResource()->addRelations($this);
         return $this;
     }
 }

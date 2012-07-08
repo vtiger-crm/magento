@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Magento
  *
@@ -19,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -32,7 +31,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
     const MULTI_DELIMITER = ' , ';
 
     /**
-     * Product model
+     * Customer model
      *
      * @var Mage_Customer_Model_Customer
      */
@@ -199,7 +198,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
      *
      * @return array
      */
-    public function getCustomerGoups()
+    public function getCustomerGroups()
     {
         if (is_null($this->_customerGroups)) {
             $this->_customerGroups = array();
@@ -213,7 +212,15 @@ class Mage_Customer_Model_Convert_Adapter_Customer
         return $this->_customerGroups;
     }
 
-
+    /**
+     * Alias at getCustomerGroups()
+     *
+     * @return array
+     */
+    public function getCustomerGoups()
+    {
+        return $this->getCustomerGroups();
+    }
 
     public function __construct()
     {
@@ -263,7 +270,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
 
     public function load()
     {
-        $addressType = $this->getVar('filter/addressType');
+        $addressType = $this->getVar('filter/adressType'); //error in key filter addressType
         if ($addressType=='both') {
            $addressType = array('default_billing','default_shipping');
         }
@@ -362,20 +369,20 @@ class Mage_Customer_Model_Convert_Adapter_Customer
         if ($collections instanceof Mage_Customer_Model_Entity_Customer_Collection) {
             $collections = array($collections->getEntity()->getStoreId()=>$collections);
         } elseif (!is_array($collections)) {
-            $this->addException(Mage::helper('customer')->__('No product collections found'), Mage_Dataflow_Model_Convert_Exception::FATAL);
+            $this->addException(Mage::helper('customer')->__('No customer collections found'), Mage_Dataflow_Model_Convert_Exception::FATAL);
         }
 
         foreach ($collections as $storeId=>$collection) {
-            $this->addException(Mage::helper('customer')->__('Records for "'.$stores[$storeId].'" store found'));
+            $this->addException(Mage::helper('customer')->__('Records for %s store found.', $stores[$storeId]));
 
             if (!$collection instanceof Mage_Customer_Model_Entity_Customer_Collection) {
-                $this->addException(Mage::helper('customer')->__('Customer collection expected'), Mage_Dataflow_Model_Convert_Exception::FATAL);
+                $this->addException(Mage::helper('customer')->__('Customer collection expected.'), Mage_Dataflow_Model_Convert_Exception::FATAL);
             }
             try {
                 $i = 0;
                 foreach ($collection->getIterator() as $model) {
                     $new = false;
-                    // if product is new, create default values first
+                    // if customer is new, create default values first
                     if (!$model->getId()) {
                         $new = true;
                         $model->save();
@@ -391,10 +398,10 @@ class Mage_Customer_Model_Convert_Adapter_Customer
                     }
                     $i++;
                 }
-                $this->addException(Mage::helper('customer')->__("Saved ".$i." record(s)"));
+                $this->addException(Mage::helper('customer')->__("Saved %d record(s)", $i));
             } catch (Exception $e) {
                 if (!$e instanceof Mage_Dataflow_Model_Convert_Exception) {
-                    $this->addException(Mage::helper('customer')->__('Problem saving the collection, aborting. Error: %s', $e->getMessage()),
+                    $this->addException(Mage::helper('customer')->__('An error occurred while saving the collection, aborting. Error: %s', $e->getMessage()),
                         Mage_Dataflow_Model_Convert_Exception::FATAL);
                 }
             }
@@ -412,41 +419,40 @@ class Mage_Customer_Model_Convert_Adapter_Customer
     {
         $customer = $this->getCustomerModel();
         $customer->setId(null);
-        $customer->setImportMode(true);
 
         if (empty($importData['website'])) {
-            $message = Mage::helper('customer')->__('Skip import row, required field "%s" not defined', 'website');
+            $message = Mage::helper('customer')->__('Skipping import row, required field "%s" is not defined.', 'website');
             Mage::throwException($message);
         }
 
         $website = $this->getWebsiteByCode($importData['website']);
 
         if ($website === false) {
-            $message = Mage::helper('customer')->__('Skip import row, website "%s" field not exists', $importData['website']);
+            $message = Mage::helper('customer')->__('Skipping import row, website "%s" field does not exist.', $importData['website']);
             Mage::throwException($message);
         }
         if (empty($importData['email'])) {
-            $message = Mage::helper('customer')->__('Skip import row, required field "%s" not defined', 'email');
+            $message = Mage::helper('customer')->__('Skipping import row, required field "%s" is not defined.', 'email');
             Mage::throwException($message);
         }
 
         $customer->setWebsiteId($website->getId())
             ->loadByEmail($importData['email']);
         if (!$customer->getId()) {
-            $customerGroups = $this->getCustomerGoups();
+            $customerGroups = $this->getCustomerGroups();
             /**
              * Check customer group
              */
-            if (empty($importData['group_id']) || !isset($customerGroups[$importData['group_id']])) {
-                $value = isset($importData['group_id']) ? $importData['group_id'] : '';
-                $message = Mage::helper('catalog')->__('Skip import row, is not valid value "%s" for field "%s"', $value, 'group_id');
+            if (empty($importData['group']) || !isset($customerGroups[$importData['group']])) {
+                $value = isset($importData['group']) ? $importData['group'] : '';
+                $message = Mage::helper('catalog')->__('Skipping import row, the value "%s" is not valid for the "%s" field.', $value, 'group');
                 Mage::throwException($message);
             }
-            $customer->setGroupId($customerGroups[$importData['group_id']]);
+            $customer->setGroupId($customerGroups[$importData['group']]);
 
             foreach ($this->_requiredFields as $field) {
                 if (!isset($importData[$field])) {
-                    $message = Mage::helper('catalog')->__('Skip import row, required field "%s" for new customer not defined', $field);
+                    $message = Mage::helper('catalog')->__('Skip import row, required field "%s" for the new customer is not defined.', $field);
                     Mage::throwException($message);
                 }
             }
@@ -464,13 +470,13 @@ class Mage_Customer_Model_Convert_Adapter_Customer
                 $customer->setPasswordHash($customer->hashPassword($customer->generatePassword(8)));
             }
         }
-        elseif (!empty($importData['group_id'])) {
-            $customerGroups = $this->getCustomerGoups();
+        elseif (!empty($importData['group'])) {
+            $customerGroups = $this->getCustomerGroups();
             /**
              * Check customer group
              */
-            if (isset($customerGroups[$importData['group_id']])) {
-                $customer->setGroupId($customerGroups[$importData['group_id']]);
+            if (isset($customerGroups[$importData['group']])) {
+                $customer->setGroupId($customerGroups[$importData['group']]);
             }
         }
 
@@ -497,7 +503,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
             $setValue = $value;
 
             if ($attribute->getFrontendInput() == 'multiselect') {
-                $value = split(self::MULTI_DELIMITER, $value);
+                $value = explode(self::MULTI_DELIMITER, $value);
                 $isArray = true;
                 $setValue = array();
             }
@@ -681,6 +687,7 @@ class Mage_Customer_Model_Convert_Adapter_Customer
             }
         }
 
+        $customer->setImportMode(true);
         $customer->save();
         $saveCustomer = false;
 

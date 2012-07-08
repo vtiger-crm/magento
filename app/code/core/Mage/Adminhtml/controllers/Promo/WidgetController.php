@@ -18,35 +18,61 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 class Mage_Adminhtml_Promo_WidgetController extends Mage_Adminhtml_Controller_Action
 {
+    /**
+     * Prepare block for chooser
+     *
+     * @return void
+     */
     public function chooserAction()
     {
-        $block = false;
-        switch ($this->getRequest()->getParam('attribute')) {
+        $request = $this->getRequest();
+
+        switch ($request->getParam('attribute')) {
             case 'sku':
                 $block = $this->getLayout()->createBlock(
                     'adminhtml/promo_widget_chooser_sku', 'promo_widget_chooser_sku',
-                    array('js_form_object' => $this->getRequest()->getParam('form'),
+                    array('js_form_object' => $request->getParam('form'),
                 ));
                 break;
 
             case 'category_ids':
+                $ids = $request->getParam('selected', array());
+                if (is_array($ids)) {
+                    foreach ($ids as $key => &$id) {
+                        $id = (int) $id;
+                        if ($id <= 0) {
+                            unset($ids[$key]);
+                        }
+                    }
+
+                    $ids = array_unique($ids);
+                } else {
+                    $ids = array();
+                }
+
+
                 $block = $this->getLayout()->createBlock(
                         'adminhtml/catalog_category_checkboxes_tree', 'promo_widget_chooser_category_ids',
-                        array('js_form_object' => $this->getRequest()->getParam('form'))
+                        array('js_form_object' => $request->getParam('form'))
                     )
-                    ->setCategoryIds($this->getRequest()->getParam('selected', array()))
+                    ->setCategoryIds($ids)
                 ;
                 break;
+
+            default:
+                $block = false;
+                break;
         }
+
         if ($block) {
             $this->getResponse()->setBody($block->toHtml());
         }
@@ -54,7 +80,7 @@ class Mage_Adminhtml_Promo_WidgetController extends Mage_Adminhtml_Controller_Ac
 
     protected function _isAllowed()
     {
-	    return Mage::getSingleton('admin/session')->isAllowed('promo/catalog');
+        return Mage::getSingleton('admin/session')->isAllowed('promo/catalog');
     }
 
     /**
@@ -83,10 +109,9 @@ class Mage_Adminhtml_Promo_WidgetController extends Mage_Adminhtml_Controller_Ac
     protected function _initCategory()
     {
         $categoryId = (int) $this->getRequest()->getParam('id',false);
-
         $storeId    = (int) $this->getRequest()->getParam('store');
 
-        $category = Mage::getModel('catalog/category');
+        $category   = Mage::getModel('catalog/category');
         $category->setStoreId($storeId);
 
         if ($categoryId) {
@@ -102,6 +127,7 @@ class Mage_Adminhtml_Promo_WidgetController extends Mage_Adminhtml_Controller_Ac
 
         Mage::register('category', $category);
         Mage::register('current_category', $category);
+
         return $category;
     }
 }

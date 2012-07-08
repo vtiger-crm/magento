@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogSearch
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogSearch
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -87,7 +87,7 @@ class Mage_CatalogSearch_Model_Fulltext_Observer
     {
         $attribute = $observer->getEvent()->getAttribute();
         /* @var $attribute Mage_Eav_Model_Entity_Attribute */
-        $entityType = Mage::getSingleton('eav/config')->getEntityType('catalog_product');
+        $entityType = Mage::getSingleton('eav/config')->getEntityType(Mage_Catalog_Model_Product::ENTITY);
         /* @var $entityType Mage_Eav_Model_Entity_Type */
 
         if ($attribute->getEntityTypeId() != $entityType->getId()) {
@@ -112,7 +112,7 @@ class Mage_CatalogSearch_Model_Fulltext_Observer
         if ($showNotice) {
             $url = Mage::getSingleton('adminhtml/url')->getUrl('adminhtml/system_cache');
             Mage::getSingleton('adminhtml/session')->addNotice(
-                Mage::helper('catalogsearch')->__('Attribute setting change related with Search Index. Please run <a href="%s">Rebuild Search Index</a> process', $url)
+                Mage::helper('catalogsearch')->__('Attribute setting change related with Search Index. Please run <a href="%s">Rebuild Search Index</a> process.', $url)
             );
         }
 

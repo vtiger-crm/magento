@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <form id="edit_form" method="post" action="<?php echo $this->getSaveUrl() ?>">
@@ -38,7 +38,7 @@
             </div>
             <fieldset>
                 <div><?php echo $this->getPaymentHtml() ?></div>
-                <div><?php echo Mage::helper('sales')->__('Order was placed using %s', $_order->getOrderCurrencyCode()) ?></div>
+                <div><?php echo Mage::helper('sales')->__('The order was placed using %s', $_order->getOrderCurrencyCode()) ?></div>
             </fieldset>
         </div>
     </div>
@@ -77,6 +77,38 @@
         </div>
     </div>
     <div id="ship_items_container">
-		    <?php echo $this->getItemsHtml() ?>
+            <?php echo $this->getItemsHtml() ?>
     </div>
 </form>
+<?php echo $this->getChildHtml('shipment_packaging') ?>
+<script type="text/javascript">
+//<![CDATA[
+    document.observe("dom:loaded", function() {
+        setTimeout(function(){
+            packaging.setConfirmPackagingCallback(function(){
+                packaging.setParamsCreateLabelRequest($('edit_form').serialize(true));
+                packaging.sendCreateLabelRequest();
+            });
+            packaging.setLabelCreatedCallback(function(response){
+                setLocation("<?php echo $this->getUrl(
+                    '*/sales_order/view',
+                    array('order_id' => $this->getShipment()->getOrderId())
+                ); ?>");
+            });
+            packaging.setCancelCallback(function() {
+                packaging.cleanPackages();
+                $('create_shipping_label').checked = false;
+                toggleCreateLabelCheckbox();
+            });
+            packaging.setItemQtyCallback(function(itemId){
+                var item = $$('[name="shipment[items]['+itemId+']"]')[0];
+                if (item && !isNaN(item.value)) {
+                    return item.value;
+                }
+            });
+        }, 500);
+    });
+
+    editForm = new varienForm('edit_form');
+//]]>
+</script>

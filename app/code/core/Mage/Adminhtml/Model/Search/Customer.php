@@ -18,15 +18,26 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-
+/**
+ * Search Customer Model
+ *
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Adminhtml_Model_Search_Customer extends Varien_Object
 {
+    /**
+     * Load search results
+     *
+     * @return Mage_Adminhtml_Model_Search_Customer
+     */
     public function load()
     {
         $arr = array();
@@ -39,9 +50,9 @@ class Mage_Adminhtml_Model_Search_Customer extends Varien_Object
             ->addNameToSelect()
             ->joinAttribute('company', 'customer_address/company', 'default_billing', null, 'left')
             ->addAttributeToFilter(array(
-                array('attribute'=>'firstname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'lastname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'company', 'like'=>$this->getQuery().'%'),
+                array('attribute'=>'firstname', 'like' => $this->getQuery().'%'),
+                array('attribute'=>'lastname', 'like'  => $this->getQuery().'%'),
+                array('attribute'=>'company', 'like'   => $this->getQuery().'%'),
             ))
             ->setPage(1, 10)
             ->load();
@@ -49,10 +60,10 @@ class Mage_Adminhtml_Model_Search_Customer extends Varien_Object
         foreach ($collection->getItems() as $customer) {
             $arr[] = array(
                 'id'            => 'customer/1/'.$customer->getId(),
-                'type'          => 'Customer',
+                'type'          => Mage::helper('adminhtml')->__('Customer'),
                 'name'          => $customer->getName(),
                 'description'   => $customer->getCompany(),
-                'url'           => Mage::helper('adminhtml')->getUrl('*/customer/edit', array('id'=>$customer->getId())),
+                'url' => Mage::helper('adminhtml')->getUrl('*/customer/edit', array('id'=>$customer->getId())),
             );
         }
 

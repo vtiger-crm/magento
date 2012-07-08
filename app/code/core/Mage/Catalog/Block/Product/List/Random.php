@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -41,7 +41,7 @@ class Mage_Catalog_Block_Product_List_Random extends Mage_Catalog_Block_Product_
             Mage::getModel('catalog/layer')->prepareProductCollection($collection);
             $collection->getSelect()->order('rand()');
             $collection->addStoreFilter();
-            $numProducts = $this->getNumProducts() ? $this->getNumProducts() : 3;
+            $numProducts = $this->getNumProducts() ? $this->getNumProducts() : 0;
             $collection->setPage(1, $numProducts);
 
             $this->_productCollection = $collection;

@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Bundle
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -43,45 +43,7 @@ class Mage_Bundle_Block_Checkout_Cart_Item_Renderer extends Mage_Checkout_Block_
      */
     protected function _getBundleOptions($useCache = true)
     {
-        $options = array();
-
-        /**
-         * @var Mage_Bundle_Model_Product_Type
-         */
-        $typeInstance = $this->getProduct()->getTypeInstance(true);
-
-        // get bundle options
-        $optionsQuoteItemOption =  $this->getItem()->getOptionByCode('bundle_option_ids');
-        $bundleOptionsIds = unserialize($optionsQuoteItemOption->getValue());
-        if ($bundleOptionsIds) {
-            /**
-            * @var Mage_Bundle_Model_Mysql4_Option_Collection
-            */
-            $optionsCollection = $typeInstance->getOptionsByIds($bundleOptionsIds, $this->getProduct());
-
-            // get and add bundle selections collection
-            $selectionsQuoteItemOption = $this->getItem()->getOptionByCode('bundle_selection_ids');
-
-            $selectionsCollection = $typeInstance->getSelectionsByIds(
-                unserialize($selectionsQuoteItemOption->getValue()),
-                $this->getProduct()
-            );
-
-            $bundleOptions = $optionsCollection->appendSelections($selectionsCollection, true);
-            foreach ($bundleOptions as $bundleOption) {
-                if ($bundleOption->getSelections()) {
-                    $option = array('label' => $bundleOption->getTitle(), "value" => array());
-                    $bundleSelections = $bundleOption->getSelections();
-
-                    foreach ($bundleSelections as $bundleSelection) {
-                        $option['value'][] = $this->_getSelectionQty($bundleSelection->getSelectionId()).' x '. $this->htmlEscape($bundleSelection->getName()). ' ' .Mage::helper('core')->currency($this->_getSelectionFinalPrice($bundleSelection));
-                    }
-
-                    $options[] = $option;
-                }
-            }
-        }
-        return $options;
+        return Mage::helper('bundle/catalog_product_configuration')->getBundleOptions($this->getItem());
     }
 
     /**
@@ -92,12 +54,7 @@ class Mage_Bundle_Block_Checkout_Cart_Item_Renderer extends Mage_Checkout_Block_
      */
     protected function _getSelectionFinalPrice($selectionProduct)
     {
-        $bundleProduct = $this->getProduct();
-        return $bundleProduct->getPriceModel()->getSelectionFinalPrice(
-            $bundleProduct, $selectionProduct,
-            $this->getQty(),
-            $this->_getSelectionQty($selectionProduct->getSelectionId())
-        );
+        return Mage::helper('bundle/catalog_product_configuration')->getSelectionFinalPrice($this->getItem(), $selectionProduct);
     }
 
     /**
@@ -108,14 +65,42 @@ class Mage_Bundle_Block_Checkout_Cart_Item_Renderer extends Mage_Checkout_Block_
      */
     protected function _getSelectionQty($selectionId)
     {
-        if ($selectionQty = $this->getProduct()->getCustomOption('selection_qty_' . $selectionId)) {
-            return $selectionQty->getValue();
-        }
-        return 0;
+        return Mage::helper('bundle/catalog_product_configuration')->getSelectionQty($this->getProduct(), $selectionId);
     }
 
+    /**
+     * Overloaded method for getting list of bundle options
+     * Caches result in quote item, because it can be used in cart 'recent view' and on same page in cart checkout
+     *
+     * @return array
+     */
     public function getOptionList()
     {
-        return array_merge($this->_getBundleOptions(), parent::getOptionList());
+        return Mage::helper('bundle/catalog_product_configuration')->getOptions($this->getItem());
+    }
+
+    /**
+     * Return cart backorder messages
+     *
+     * @return array
+     */
+    public function getMessages()
+    {
+        $messages = $this->getData('messages');
+        if (is_null($messages)) {
+            $messages = array();
+        }
+        $options = $this->getItem()->getQtyOptions();
+
+        foreach ($options as $option) {
+            if ($option->getMessage()) {
+                $messages[] = array(
+                    'text' => $option->getMessage(),
+                    'type' => ($this->getItem()->getHasError()) ? 'error' : 'notice'
+                );
+            }
+        }
+
+        return $messages;
     }
 }

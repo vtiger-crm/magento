@@ -120,13 +120,29 @@ abstract class Varien_Data_Form_Element_Abstract extends Varien_Data_Form_Abstra
 
     public function getHtmlAttributes()
     {
-        return array('type', 'title', 'class', 'style', 'onclick', 'onchange', 'disabled', 'readonly');
+        return array('type', 'title', 'class', 'style', 'onclick', 'onchange', 'disabled', 'readonly', 'tabindex');
     }
 
     public function addClass($class)
     {
         $oldClass = $this->getClass();
         $this->setClass($oldClass.' '.$class);
+        return $this;
+    }
+
+    /**
+     * Remove CSS class
+     *
+     * @param string $class
+     * @return Varien_Data_Form_Element_Abstract
+     */
+    public function removeClass($class)
+    {
+        $classes = array_unique(explode(' ', $this->getClass()));
+        if (false !== ($key = array_search($class, $classes))) {
+            unset($classes[$key]);
+        }
+        $this->setClass(implode(' ', $classes));
         return $this;
     }
 
@@ -195,6 +211,9 @@ abstract class Varien_Data_Form_Element_Abstract extends Varien_Data_Form_Abstra
 
     public function getHtml()
     {
+        if ($this->getRequired()) {
+            $this->addClass('required-entry');
+        }
         if ($this->_renderer) {
             $html = $this->_renderer->render($this);
         }
@@ -226,18 +245,6 @@ abstract class Varien_Data_Form_Element_Abstract extends Varien_Data_Form_Abstra
         return parent::serialize($attributes, $valueSeparator, $fieldSeparator, $quote);
     }
 
-    public function setReadonly($readonly, $useDisabled = false)
-    {
-        if ($useDisabled) {
-            $this->setDisabled($readonly);
-            $this->setData('readonly_disabled', $readonly);
-        } else {
-            $this->setData('readonly', $readonly);
-        }
-
-        return $this;
-    }
-
     public function getReadonly()
     {
         if ($this->hasData('readonly_disabled')) {
@@ -247,4 +254,43 @@ abstract class Varien_Data_Form_Element_Abstract extends Varien_Data_Form_Abstra
         return $this->_getData('readonly');
     }
 
+    public function getHtmlContainerId()
+    {
+        if ($this->hasData('container_id')) {
+            return $this->getData('container_id');
+        } elseif ($idPrefix = $this->getForm()->getFieldContainerIdPrefix()) {
+            return $idPrefix . $this->getId();
+        }
+        return '';
+    }
+
+    /**
+     * Add specified values to element values
+     *
+     * @param string|int|array $values
+     * @param bool $overwrite
+     * @return Varien_Data_Form_Element_Abstract
+     */
+    public function addElementValues($values, $overwrite = false)
+    {
+        if (empty($values) || (is_string($values) && trim($values) == '')) {
+            return $this;
+        }
+        if (!is_array($values)) {
+            $values = Mage::helper('core')->escapeHtml(trim($values));
+            $values = array($values => $values);
+        }
+        $elementValues = $this->getValues();
+        if (!empty($elementValues)) {
+            foreach ($values as $key => $value) {
+                if ((isset($elementValues[$key]) && $overwrite) || !isset($elementValues[$key])) {
+                    $elementValues[$key] = Mage::helper('core')->escapeHtml($value);
+                }
+            }
+            $values = $elementValues;
+        }
+        $this->setValues($values);
+
+        return $this;
+    }
 }

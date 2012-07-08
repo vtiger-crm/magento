@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -45,9 +45,6 @@ class Mage_Adminhtml_Block_Sales_Order_View_Messages extends Mage_Adminhtml_Bloc
          * Check customer existing
          */
         $customer = Mage::getModel('customer/customer')->load($this->_getOrder()->getCustomerId());
-        if (!$customer->getId()) {
-            //$this->addNotice(Mage::helper('sales')->__(' The customer doesn\'t exist in the system anymore'));
-        }
 
         /**
          * Check Item products existing
@@ -57,17 +54,6 @@ class Mage_Adminhtml_Block_Sales_Order_View_Messages extends Mage_Adminhtml_Bloc
             $productIds[] = $item->getProductId();
         }
 
-//        $productCollection = Mage::getModel('catalog/product')->getCollection()
-//            ->addIdFilter($productIds)
-//            ->load();
-//
-//        foreach ($this->_getOrder()->getAllItems() as $item) {
-//            if (!$productCollection->getItemById($item->getProductId())) {
-//                /*$this->addNotice(
-//                    Mage::helper('sales')->__('The item %s (SKU %s) doesn\'t exist in the catalog anymore', $item->getName(), $item->getSku())
-//                );*/
-//            }
-//        }
         return parent::_prepareLayout();
     }
 

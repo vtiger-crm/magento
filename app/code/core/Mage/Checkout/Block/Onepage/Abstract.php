@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -113,12 +113,12 @@ abstract class Mage_Checkout_Block_Onepage_Abstract extends Mage_Core_Block_Temp
             $options = array();
             foreach ($this->getCustomer()->getAddresses() as $address) {
                 $options[] = array(
-                    'value'=>$address->getId(),
-                    'label'=>$address->format('oneline')
+                    'value' => $address->getId(),
+                    'label' => $address->format('oneline')
                 );
             }
 
-            $addressId = $this->getAddress()->getId();
+            $addressId = $this->getAddress()->getCustomerAddressId();
             if (empty($addressId)) {
                 if ($type=='billing') {
                     $address = $this->getCustomer()->getPrimaryBillingAddress();
@@ -149,7 +149,7 @@ abstract class Mage_Checkout_Block_Onepage_Abstract extends Mage_Core_Block_Temp
     {
         $countryId = $this->getAddress()->getCountryId();
         if (is_null($countryId)) {
-            $countryId = Mage::getStoreConfig('general/country/default');
+            $countryId = Mage::helper('core')->getDefaultCountry();
         }
         $select = $this->getLayout()->createBlock('core/html_select')
             ->setName($type.'[country_id]')

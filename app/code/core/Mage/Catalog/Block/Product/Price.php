@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -87,8 +87,29 @@ class Mage_Catalog_Block_Product_Price extends Mage_Core_Block_Template
 
                 if ($price['price']<$productPrice) {
                     $price['savePercent'] = ceil(100 - (( 100/$productPrice ) * $price['price'] ));
-                    $price['formated_price'] = Mage::app()->getStore()->formatPrice(Mage::app()->getStore()->convertPrice(Mage::helper('tax')->getPrice($product, $price['website_price'])));
-                    $price['formated_price_incl_tax'] = Mage::app()->getStore()->formatPrice(Mage::app()->getStore()->convertPrice(Mage::helper('tax')->getPrice($product, $price['website_price'], true)));
+
+                    $tierPrice = Mage::app()->getStore()->convertPrice(
+                        Mage::helper('tax')->getPrice($product, $price['website_price'])
+                    );
+                    $price['formated_price'] = Mage::app()->getStore()->formatPrice($tierPrice);
+                    $price['formated_price_incl_tax'] = Mage::app()->getStore()->formatPrice(
+                        Mage::app()->getStore()->convertPrice(
+                            Mage::helper('tax')->getPrice($product, $price['website_price'], true)
+                        )
+                    );
+
+                    if (Mage::helper('catalog')->canApplyMsrp($product)) {
+                        $oldPrice = $product->getFinalPrice();
+                        $product->setPriceCalculation(false);
+                        $product->setPrice($tierPrice);
+                        $product->setFinalPrice($tierPrice);
+
+                        $this->getLayout()->getBlock('product.info')->getPriceHtml($product);
+                        $product->setPriceCalculation(true);
+
+                        $price['real_price_html'] = $product->getRealPriceHtml();
+                        $product->setFinalPrice($oldPrice);
+                    }
 
                     $res[] = $price;
                 }
@@ -96,5 +117,42 @@ class Mage_Catalog_Block_Product_Price extends Mage_Core_Block_Template
         }
 
         return $res;
+    }
+
+    /**
+     * Retrieve url for direct adding product to cart
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @param array $additional
+     * @return string
+     */
+    public function getAddToCartUrl($product, $additional = array())
+    {
+        return $this->helper('checkout/cart')->getAddUrl($product, $additional);
+    }
+
+    /**
+     * Prevent displaying if the price is not available
+     *
+     * @return string
+     */
+    protected function _toHtml()
+    {
+        if (!$this->getProduct() || $this->getProduct()->getCanShowPrice() === false) {
+            return '';
+        }
+        return parent::_toHtml();
+    }
+
+    /**
+     * Get Product Price valid JS string
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @return string
+     */
+    public function getRealPriceJs($product)
+    {
+        $html = $this->hasRealPriceHtml() ? $this->getRealPriceHtml() : $product->getRealPriceHtml();
+        return Mage::helper('core')->jsonEncode($html);
     }
 }

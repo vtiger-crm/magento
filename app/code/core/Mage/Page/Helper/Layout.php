@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Page
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Page
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -91,6 +91,11 @@ class Mage_Page_Helper_Layout extends Mage_Core_Helper_Abstract
      */
     public function getCurrentPageLayout()
     {
+        if ($this->getLayout()->getBlock('root') &&
+            $this->getLayout()->getBlock('root')->getLayoutCode()) {
+            return $this->_getConfig()->getPageLayout($this->getLayout()->getBlock('root')->getLayoutCode());
+        }
+
         // All loaded handles
         $handles = $this->getLayout()->getUpdate()->getHandles();
         // Handles used in page layouts

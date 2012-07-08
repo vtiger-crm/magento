@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Eav
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Eav
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -104,7 +104,7 @@ class Mage_Eav_Model_Convert_Adapter_Entity
             if ($type == 'dateFromTo' || $type == 'datetimeFromTo') {
                 foreach ($filters as $k => $v) {
                     if (strpos($k, $key . '/') === 0) {
-                        $split = split('/', $k);
+                        $split = explode('/', $k);
                         $filters[$key][$split[1]] = $v;
                     }
                 }
@@ -146,6 +146,12 @@ class Mage_Eav_Model_Convert_Adapter_Entity
                         'like'      => '%'.$val.'%'
                     );
                     break;
+                case 'startsWith':
+                     $attr = array(
+                         'attribute' => $keyDB,
+                         'like'      => $val.'%'
+                     );
+                     break;
                 case 'fromTo':
                     $attr = array(
                         'attribute' => $keyDB,
@@ -164,8 +170,8 @@ class Mage_Eav_Model_Convert_Adapter_Entity
                 case 'datetimeFromTo':
                     $attr = array(
                         'attribute' => $keyDB,
-                        'from'      => $val['from'],
-                        'to'        => $val['to'],
+                        'from'      => isset($val['from']) ? $val['from'] : null,
+                        'to'        => isset($val['to']) ? $val['to'] : null,
                         'datetime'  => true
                     );
                     break;
@@ -212,12 +218,33 @@ class Mage_Eav_Model_Convert_Adapter_Entity
 
     }
 
+    /**
+     * Add join field
+     *
+     * @param array $joinField   Variable should be have view:
+     *     Example:
+     *         array(
+     *            'alias'     => 'alias_table',
+     *            'attribute' => 'table_name', //table name, must be used path of table like 'module/table_name'
+     *            'field'     => 'field_name', //selected field name (optional)
+     *            //bind main condition
+     *            //left field use for joined table
+     *            //and right field use for main table of collection
+     *            //NOTE: around '=' cannot be used ' ' (space) because on the exploding not use space trimming
+     *            'bind'      => 'self_item_id=other_id',
+     *            'cond'      => 'alias_table.entity_id = e.entity_id', //additional condition (optional)
+     *            'joinType'  => 'LEFT'
+     *         )
+     *     NOTE: Optional key must be have NULL at least
+     * @return void
+     */
     public function setJoinField($joinField)
     {
         if (is_array($joinField)) {
             $this->_joinField[] = $joinField;
         }
     }
+
     public function load()
     {
         if (!($entityType = $this->getVar('entity_type'))
@@ -299,13 +326,13 @@ class Mage_Eav_Model_Convert_Adapter_Entity
     {
         $collection = $this->getData();
         if ($collection instanceof Mage_Eav_Model_Entity_Collection_Abstract) {
-            $this->addException(Mage::helper('eav')->__('Entity collections expected'), Varien_Convert_Exception::FATAL);
+            $this->addException(Mage::helper('eav')->__('Entity collections expected.'), Varien_Convert_Exception::FATAL);
         }
 
         $this->addException($collection->getSize().' records found.');
 
         if (!$collection instanceof Mage_Eav_Model_Entity_Collection_Abstract) {
-            $this->addException(Mage::helper('eav')->__('Entity collection expected'), Varien_Convert_Exception::FATAL);
+            $this->addException(Mage::helper('eav')->__('Entity collection expected.'), Varien_Convert_Exception::FATAL);
         }
         try {
             $i = 0;
@@ -313,7 +340,7 @@ class Mage_Eav_Model_Convert_Adapter_Entity
                 $model->save();
                 $i++;
             }
-            $this->addException(Mage::helper('eav')->__("Saved ".$i." record(s)"));
+            $this->addException(Mage::helper('eav')->__("Saved %d record(s).", $i));
         }
         catch (Varien_Convert_Exception $e) {
             throw $e;

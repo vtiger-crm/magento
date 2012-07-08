@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Payment
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Payment
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,9 +42,9 @@ class Mage_Payment_Block_Form_Container extends Mage_Core_Block_Template
          * Create child blocks for payment methods forms
          */
         foreach ($this->getMethods() as $method) {
-        	$this->setChild(
-        	   'payment.method.'.$method->getCode(),
-        	   $this->helper('payment')->getMethodFormBlock($method)
+            $this->setChild(
+               'payment.method.'.$method->getCode(),
+               $this->helper('payment')->getMethodFormBlock($method)
             );
         }
 
@@ -113,13 +113,17 @@ class Mage_Payment_Block_Form_Container extends Mage_Core_Block_Template
     {
         $methods = $this->getData('methods');
         if (is_null($methods)) {
-            $store = $this->getQuote() ? $this->getQuote()->getStoreId() : null;
-            $methods = $this->helper('payment')->getStoreMethods($store, $this->getQuote());
+            $quote = $this->getQuote();
+            $store = $quote ? $quote->getStoreId() : null;
+            $methods = $this->helper('payment')->getStoreMethods($store, $quote);
+            $total = $quote->getBaseSubtotal();
             foreach ($methods as $key => $method) {
-                if ($this->_canUseMethod($method)) {
+                if ($this->_canUseMethod($method)
+                    && ($total != 0
+                        || $method->getCode() == 'free'
+                        || ($quote->hasRecurringItems() && $method->canManageRecurringProfiles()))) {
                     $this->_assignMethod($method);
-                }
-                else {
+                } else {
                     unset($methods[$key]);
                 }
             }

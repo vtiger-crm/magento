@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -49,22 +49,6 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
     protected $_productCollection;
 
     /**
-     * Default product amount per row in grid display mode
-     *
-     * @var int
-     */
-    protected $_defaultColumnCount = 3;
-
-    /**
-     * Product amount per row in grid display mode depending
-     * on custom page layout of category
-     *
-     * @var array
-     */
-    protected $_columnCountLayoutDepend = array();
-
-
-    /**
      * Retrieve loaded category collection
      *
      * @return Mage_Eav_Model_Entity_Collection_Abstract
@@ -72,7 +56,7 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
     protected function _getProductCollection()
     {
         if (is_null($this->_productCollection)) {
-            $layer = Mage::getSingleton('catalog/layer');
+            $layer = $this->getLayer();
             /* @var $layer Mage_Catalog_Model_Layer */
             if ($this->getShowRootCategory()) {
                 $this->setCategoryId(Mage::app()->getStore()->getRootCategoryId());
@@ -107,7 +91,22 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
                 $layer->setCurrentCategory($origCategory);
             }
         }
+
         return $this->_productCollection;
+    }
+
+    /**
+     * Get catalog layer model
+     *
+     * @return Mage_Catalog_Model_Layer
+     */
+    public function getLayer()
+    {
+        $layer = Mage::registry('current_layer');
+        if ($layer) {
+            return $layer;
+        }
+        return Mage::getSingleton('catalog/layer');
     }
 
     /**
@@ -136,10 +135,6 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
      */
     protected function _beforeToHtml()
     {
-        /*$toolbar = $this->getLayout()->createBlock('catalog/product_list_toolbar', microtime());
-        if ($toolbarTemplate = $this->getToolbarTemplate()) {
-            $toolbar->setTemplate($toolbarTemplate);
-        }*/
         $toolbar = $this->getToolbarBlock();
 
         // called prepare sortable parameters
@@ -152,20 +147,23 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
         if ($sort = $this->getSortBy()) {
             $toolbar->setDefaultOrder($sort);
         }
+        if ($dir = $this->getDefaultDirection()) {
+            $toolbar->setDefaultDirection($dir);
+        }
         if ($modes = $this->getModes()) {
             $toolbar->setModes($modes);
         }
 
-        // set collection to tollbar and apply sort
+        // set collection to toolbar and apply sort
         $toolbar->setCollection($collection);
 
         $this->setChild('toolbar', $toolbar);
         Mage::dispatchEvent('catalog_block_product_list_collection', array(
-            'collection'=>$this->_getProductCollection(),
+            'collection' => $this->_getProductCollection()
         ));
 
         $this->_getProductCollection()->load();
-        Mage::getModel('review/review')->appendSummary($this->_getProductCollection());
+
         return parent::_beforeToHtml();
     }
 
@@ -183,6 +181,16 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
         }
         $block = $this->getLayout()->createBlock($this->_defaultToolbarBlock, microtime());
         return $block;
+    }
+
+    /**
+     * Retrieve additional blocks html
+     *
+     * @return string
+     */
+    public function getAdditionalHtml()
+    {
+        return $this->getChildHtml('additional');
     }
 
     /**
@@ -244,82 +252,6 @@ class Mage_Catalog_Block_Product_List extends Mage_Catalog_Block_Product_Abstrac
             }
         }
 
-
         return $this;
-    }
-
-    /**
-     * Retrieve product amount per row in grid display mode
-     *
-     * @return int
-     */
-    public function getColumnCount()
-    {
-        if (!$this->_getData('column_count')) {
-            $pageLayout = $this->getPageLayout();
-            if ($pageLayout && $this->getColumnCountLayoutDepend($pageLayout->getCode())) {
-                $this->setData(
-                    'column_count',
-                    $this->getColumnCountLayoutDepend($pageLayout->getCode())
-                );
-            } else {
-                $this->setData('column_count', $this->_defaultColumnCount);
-            }
-        }
-
-        return (int) $this->_getData('column_count');
-    }
-
-    /**
-     * Add row size depends on page layout
-     *
-     * @param string $pageLayout
-     * @param int $rowSize
-     * @return Mage_Catalog_Block_Product_List
-     */
-    public function addColumnCountLayoutDepend($pageLayout, $columnCount)
-    {
-        $this->_columnCountLayoutDepend[$pageLayout] = $columnCount;
-        return $this;
-    }
-
-    /**
-     * Remove row size depends on page layout
-     *
-     * @param string $pageLayout
-     * @return Mage_Catalog_Block_Product_List
-     */
-    public function removeColumnCountLayoutDepend($pageLayout)
-    {
-        if (isset($this->_columnCountLayoutDepend[$pageLayout])) {
-            unset($this->_columnCountLayoutDepend[$pageLayout]);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Retrieve row size depends on page layout
-     *
-     * @param string $pageLayout
-     * @return int|boolean
-     */
-    public function getColumnCountLayoutDepend($pageLayout)
-    {
-        if (isset($this->_columnCountLayoutDepend[$pageLayout])) {
-            return $this->_columnCountLayoutDepend[$pageLayout];
-        }
-
-        return false;
-    }
-
-    /**
-     * Retrieve current page layout
-     *
-     * @return Varien_Object
-     */
-    public function getPageLayout()
-    {
-        return $this->helper('page/layout')->getCurrentPageLayout();
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <?php
@@ -38,6 +38,7 @@
 ?>
 
 <script type="text/javascript">
+//<![CDATA[
 var profileImportOnly = ['profile_number_of_records', 'profile_decimal_separator'];
 function showOption(select)
 {
@@ -143,10 +144,12 @@ function changeDirection()
 
 function updateRun(select)
 {
-    if ($(select).value=='interactive') {
-        $('file_list').show();
-    } else {
-        $('file_list').hide();
+    if ($('file_list') != null){
+        if ($(select).value=='interactive') {
+            $('file_list').show();
+        } else {
+            $('file_list').hide();
+        }
     }
 }
 
@@ -155,6 +158,7 @@ Event.observe(window, 'load', function(){
         updateRun('profile_data_transfer');
     }
 });
+//]]>
 </script>
 
 <div id="profile-generator" class="entry-edit profile-generator">
@@ -274,7 +278,7 @@ Event.observe(window, 'load', function(){
                 <span class="with-tip">
                     <input class="input-text" id="file_path" name="gui_data[file][path]" value="<?php echo $this->getValue('gui_data/file/path') ?>"/>
                     <small class="file_type_file">
-                        <?php echo $this->__('(Absolute path or Relative to Magento install root, ex. var/export)') ?>
+                        <?php echo $this->__('(For Type "Local Server" need to use relative path to Magento install var/export or var/import, e.g. var/export, var/import, var/export/some/dir, var/import/some/dir)') ?>
                     </small>
                 </span>
             </span>
@@ -289,7 +293,14 @@ Event.observe(window, 'load', function(){
                 </span>
                 <span class="field-row">
                     <label for="file_password"><?php echo $this->__("Password") ?></label>
-                    <input class="input-text" id="io_password" name="gui_data[file][password]" value="<?php echo $this->getValue('gui_data/file/password') ?>"/>
+                    <input class="input-text" type="password" id="io_password" name="gui_data[file][password]" value="<?php echo $this->getValue('gui_data/file/password') ?>"/>
+                </span>
+                <span class="field-row">
+                    <label for="file_mode"><?php echo $this->__("File mode") ?></label>
+                    <select id="file_mode" name="gui_data[file][file_mode]" onchange="showOption(this)" class="option-control">
+                        <option value="<?php echo FTP_BINARY ?>" <?php echo $this->getSelected('gui_data/file/file_mode', FTP_BINARY) ?>><?php echo $this->__('BINARY') ?></option>
+                        <option value="<?php echo FTP_ASCII ?>" <?php echo $this->getSelected('gui_data/file/file_mode', FTP_ASCII) ?>><?php echo $this->__('ASCII') ?></option>
+                    </select>
                 </span>
                 <span class="field-row">
                     <label for="file_passive"><?php echo $this->__("Passive mode") ?></label>
@@ -371,7 +382,10 @@ Event.observe(window, 'load', function(){
                 <div id="map_template_<?php echo $_entityType ?>" style="display:none">
                     <span class="field-row">
                         <?php echo $this->__("In Database:") ?> <select name="gui_data[map][<?php echo $_entityType ?>][db][]" onchange="setMapFileField(this)">
-                            <?php foreach ($this->getAttributes($_entityType) as $_value=>$_label): ?>
+                            <?php
+                                $fieldMappingInDatabase = $this->getAttributes($_entityType);
+                                asort($fieldMappingInDatabase);
+                                foreach ($fieldMappingInDatabase as $_value=>$_label): ?>
                                 <option value="<?php echo $_value ?>"><?php echo $_label ?></option>
                             <?php endforeach ?>
                         </select>
@@ -542,6 +556,7 @@ Event.observe(window, 'load', function(){
 </div>
 
 <script type="text/javascript">
+//<![CDATA[
     $$('.option-control').each(showOption);
     changeEntityType();
 
@@ -596,5 +611,5 @@ Event.observe(window, 'load', function(){
             Element.hide($('__fieldmapping'));
         }
     }
-
+//]]>
 </script>

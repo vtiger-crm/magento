@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 $installer = $this;
@@ -36,7 +36,7 @@ $installer->addAttribute('catalog_product', 'options_container', array(
     'type'              => 'varchar',
     'backend'           => '',
     'frontend'          => '',
-    'label'             => 'Display product options in',
+    'label'             => 'Display Product Options In',
     'input'             => 'select',
     'class'             => '',
     'source'            => 'catalog/entity_product_attribute_design_options_container',
@@ -59,7 +59,8 @@ $newAttributeId = $installer->getAttributeId('catalog_product', 'options_contain
 $installer->run("
 INSERT INTO {$this->getTable('catalog_product_entity_varchar')}
     (entity_id, entity_type_id, attribute_id, value)
-    SELECT entity_id, entity_type_id, {$newAttributeId}, '{$defaultValue}' FROM {$this->getTable('catalog_product_entity')}
+    SELECT entity_id, entity_type_id, {$newAttributeId}, '{$defaultValue}'
+    FROM {$this->getTable('catalog_product_entity')}
 ");
 
 $installer->endSetup();

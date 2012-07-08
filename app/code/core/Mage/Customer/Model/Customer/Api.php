@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -36,6 +36,24 @@ class Mage_Customer_Model_Customer_Api extends Mage_Customer_Model_Api_Resource
     protected $_mapAttributes = array(
         'customer_id' => 'entity_id'
     );
+    /**
+     * Prepare data to insert/update.
+     * Creating array for stdClass Object
+     *
+     * @param stdClass $data
+     * @return array
+     */
+    protected function _prepareData($data)
+    {
+       foreach ($this->_mapAttributes as $attributeAlias=>$attributeCode) {
+            if(isset($data[$attributeAlias]))
+            {
+                $data[$attributeCode] = $data[$attributeAlias];
+                unset($data[$attributeAlias]);
+            }
+        }
+        return $data;
+    }
 
     /**
      * Create new customer
@@ -45,6 +63,7 @@ class Mage_Customer_Model_Customer_Api extends Mage_Customer_Model_Api_Resource
      */
     public function create($customerData)
     {
+        $customerData = $this->_prepareData($customerData);
         try {
             $customer = Mage::getModel('customer/customer')
                 ->setData($customerData)
@@ -142,6 +161,8 @@ class Mage_Customer_Model_Customer_Api extends Mage_Customer_Model_Api_Resource
      */
     public function update($customerId, $customerData)
     {
+        $customerData = $this->_prepareData($customerData);
+        
         $customer = Mage::getModel('customer/customer')->load($customerId);
 
         if (!$customer->getId()) {

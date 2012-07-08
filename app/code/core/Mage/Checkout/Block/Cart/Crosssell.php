@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -50,14 +50,16 @@ class Mage_Checkout_Block_Cart_Crosssell extends Mage_Catalog_Block_Product_Abst
         $items = $this->getData('items');
         if (is_null($items)) {
             $items = array();
-            if ($ninProductIds = $this->_getCartProductIds()) {
-                if ($lastAdded = (int) $this->_getLastAddedProductId()) {
+            $ninProductIds = $this->_getCartProductIds();
+            if ($ninProductIds) {
+                $lastAdded = (int) $this->_getLastAddedProductId();
+                if ($lastAdded) {
                     $collection = $this->_getCollection()
                         ->addProductFilter($lastAdded);
                     if (!empty($ninProductIds)) {
                         $collection->addExcludeProductFilter($ninProductIds);
                     }
-                    $collection->load();
+                    $collection->setPositionOrder()->load();
 
                     foreach ($collection as $item) {
                         $ninProductIds[] = $item->getId();
@@ -65,18 +67,20 @@ class Mage_Checkout_Block_Cart_Crosssell extends Mage_Catalog_Block_Product_Abst
                     }
                 }
 
-                if (count($items)<$this->_maxItemCount) {
+                if (count($items) < $this->_maxItemCount) {
+                    $filterProductIds = array_merge($this->_getCartProductIds(), $this->_getCartProductIdsRel());
                     $collection = $this->_getCollection()
-                        ->addProductFilter($this->_getCartProductIds())
+                        ->addProductFilter($filterProductIds)
                         ->addExcludeProductFilter($ninProductIds)
                         ->setPageSize($this->_maxItemCount-count($items))
                         ->setGroupBy()
-                        ->setRandomOrder()
+                        ->setPositionOrder()
                         ->load();
                     foreach ($collection as $item) {
                         $items[] = $item;
                     }
                 }
+                
             }
 
             $this->setData('items', $items);
@@ -112,6 +116,28 @@ class Mage_Checkout_Block_Cart_Crosssell extends Mage_Catalog_Block_Product_Abst
             $this->setData('_cart_product_ids', $ids);
         }
         return $ids;
+    }
+
+    /**
+     * Retrieve Array of product ids which have special relation with products in Cart
+     * For example simple product as part of Grouped product
+     *
+     * @return array
+     */
+    protected function _getCartProductIdsRel()
+    {
+        $productIds = array();
+        foreach ($this->getQuote()->getAllItems() as $quoteItem) {
+            $productTypeOpt = $quoteItem->getOptionByCode('product_type');
+            if ($productTypeOpt instanceof Mage_Sales_Model_Quote_Item_Option
+                && $productTypeOpt->getValue() == Mage_Catalog_Model_Product_Type_Grouped::TYPE_CODE
+                && $productTypeOpt->getProductId()
+            ) {
+                $productIds[] = $productTypeOpt->getProductId();
+            }
+        }
+
+        return $productIds;
     }
 
     /**

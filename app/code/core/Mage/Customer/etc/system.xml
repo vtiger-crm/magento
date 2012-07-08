@@ -19,10 +19,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -143,7 +143,7 @@
                         </email_confirmation_template>
                         <email_confirmed_template translate="label comment">
                             <label>Welcome Email</label>
-                            <comment>This Email will be sent instead of Default Welcome Email, after Account Confirmation.</comment>
+                            <comment>This email will be sent instead of default welcome email, after account confirmation.</comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_email_template</source_model>
                             <sort_order>7</sort_order>
@@ -151,6 +151,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </email_confirmed_template>
+                        <generate_human_friendly_id translate="label">
+                            <label>Generate Human-Friendly Customer ID</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>8</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </generate_human_friendly_id>
                     </fields>
                 </create_account>
                 <password translate="label">
@@ -161,24 +170,43 @@
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
                     <fields>
-                        <forgot_email_identity translate="label">
-                            <label>Forgot Email Sender</label>
-                            <frontend_type>select</frontend_type>
-                            <source_model>adminhtml/system_config_source_email_identity</source_model>
-                            <sort_order>1</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </forgot_email_identity>
                         <forgot_email_template translate="label">
                             <label>Forgot Email Template</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_email_template</source_model>
-                            <sort_order>1</sort_order>
+                            <sort_order>10</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </forgot_email_template>
+                        <remind_email_template translate="label">
+                            <label>Remind Email Template</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_email_template</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </remind_email_template>
+                        <forgot_email_identity translate="label">
+                            <label>Forgot and Remind Email Sender</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_email_identity</source_model>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </forgot_email_identity>
+                        <reset_link_expiration_period translate="label comment">
+                            <label>Recovery Link Expiration Period (days)</label>
+                            <comment>This value must be greater than 0.</comment>
+                            <frontend_type>text</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_customer_password_link_expirationperiod</backend_model>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </reset_link_expiration_period>
                     </fields>
                 </password>
                 <address translate="label">
@@ -189,25 +217,27 @@
                     <show_in_store>1</show_in_store>
                     <fields>
                         <street_lines translate="label comment">
-                            <label>Number of lines in a street address </label>
+                            <label>Number of Lines in a Street Address </label>
                             <sort_order>10</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
+                            <backend_model>adminhtml/system_config_backend_customer_address_street</backend_model>
                             <comment>Leave empty for default (2). Valid range: 1-4</comment>
                         </street_lines>
                         <prefix_show translate="label comment">
-                            <label>Show prefix</label>
+                            <label>Show Prefix</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_nooptreq</source_model>
                             <sort_order>20</sort_order>
+                            <backend_model>adminhtml/system_config_backend_customer_show_address</backend_model>
                             <comment>The title that goes before name (Mr., Mrs., etc.)</comment>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </prefix_show>
                         <prefix_options translate="label comment">
-                            <label>Prefix dropdown options</label>
+                            <label>Prefix Dropdown Options</label>
                             <sort_order>30</sort_order>
                             <comment><![CDATA[Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.]]></comment>
                             <show_in_default>1</show_in_default>
@@ -215,27 +245,29 @@
                             <show_in_store>0</show_in_store>
                         </prefix_options>
                         <middlename_show translate="label comment">
-                            <label>Show middle name (initial)</label>
+                            <label>Show Middle Name (initial)</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <comment>Always optional</comment>
+                            <comment>Always optional.</comment>
+                            <backend_model>adminhtml/system_config_backend_customer_show_address</backend_model>
                             <sort_order>40</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </middlename_show>
                         <suffix_show translate="label comment">
-                            <label>Show suffix</label>
+                            <label>Show Suffix</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_nooptreq</source_model>
                             <comment>The suffix that goes after name (Jr., Sr., etc.)</comment>
+                            <backend_model>adminhtml/system_config_backend_customer_show_address</backend_model>
                             <sort_order>50</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </suffix_show>
                         <suffix_options translate="label comment">
-                            <label>Suffix dropdown options</label>
+                            <label>Suffix Dropdown Options</label>
                             <sort_order>60</sort_order>
                             <comment><![CDATA[Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.]]></comment>
                             <show_in_default>1</show_in_default>
@@ -243,23 +275,35 @@
                             <show_in_store>0</show_in_store>
                         </suffix_options>
                         <dob_show translate="label">
-                            <label>Show date of birth</label>
+                            <label>Show Date of Birth</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_nooptreq</source_model>
                             <sort_order>70</sort_order>
+                            <backend_model>adminhtml/system_config_backend_customer_show_customer</backend_model>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </dob_show>
                         <taxvat_show translate="label">
-                            <label>Show Tax/VAT number</label>
+                            <label>Show Tax/VAT Number</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_nooptreq</source_model>
+                            <backend_model>adminhtml/system_config_backend_customer_show_customer</backend_model>
                             <sort_order>80</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </taxvat_show>
+                        <gender_show translate="label">
+                            <label>Show Gender</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_nooptreq</source_model>
+                            <backend_model>adminhtml/system_config_backend_customer_show_customer</backend_model>
+                            <sort_order>90</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </gender_show>
                     </fields>
                 </address>
                 <startup translate="label">
@@ -273,7 +317,7 @@
                             <label>Redirect Customer to Account Dashboard after Logging in</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <comment>Customer will stay on the current page if "No" is selected</comment>
+                            <comment>Customer will stay on the current page if "No" is selected.</comment>
                             <sort_order>1</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -281,6 +325,56 @@
                         </redirect_dashboard>
                     </fields>
                 </startup>
+                <address_templates translate="label">
+                    <label>Address Templates</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>100</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <text>
+                            <label>Text</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </text>
+                        <oneline>
+                            <label>Text One Line</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </oneline>
+                        <html>
+                            <label>HTML</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </html>
+                        <pdf>
+                            <label>PDF</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </pdf>
+                        <js_template>
+                            <label>JavaScript Template</label>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </js_template>
+                    </fields>
+                </address_templates>
             </groups>
         </customer>
     </sections>

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Api
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -173,8 +173,11 @@ class Mage_Api_Model_Wsdl_Config_Element extends Varien_Simplexml_Element
     {
         $children = array();
         $namespaces = $source->getNamespaces(true);
+
+        $isWsi = Mage::helper('api/data')->isComplianceWSI();
+
         foreach ($namespaces as $key => $value) {
-            if ($key == '' || $key == 'wsdl') {
+            if ($key == '' || (!$isWsi && $key == 'wsdl')) {
                 continue;
             }
             $children[$value] = $source->children($value);

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -46,6 +46,7 @@ class Mage_Sales_Model_Order_Pdf_Shipment extends Mage_Sales_Model_Order_Pdf_Abs
         foreach ($shipments as $shipment) {
             if ($shipment->getStoreId()) {
                 Mage::app()->getLocale()->emulate($shipment->getStoreId());
+                Mage::app()->setCurrentStore($shipment->getStoreId());
             }
             $page = $pdf->newPage(Zend_Pdf_Page::SIZE_A4);
             $pdf->pages[] = $page;
@@ -59,7 +60,7 @@ class Mage_Sales_Model_Order_Pdf_Shipment extends Mage_Sales_Model_Order_Pdf_Abs
             $this->insertAddress($page, $shipment->getStore());
 
             /* Add head */
-            $this->insertOrder($page, $order, Mage::getStoreConfigFlag(self::XML_PATH_SALES_PDF_SHIPMENT_PUT_ORDER_ID, $order->getStoreId()));
+            $this->insertOrder($page, $shipment, Mage::getStoreConfigFlag(self::XML_PATH_SALES_PDF_SHIPMENT_PUT_ORDER_ID, $order->getStoreId()));
 
             $page->setFillColor(new Zend_Pdf_Color_GrayScale(1));
             $this->_setFontRegular($page);
@@ -75,7 +76,7 @@ class Mage_Sales_Model_Order_Pdf_Shipment extends Mage_Sales_Model_Order_Pdf_Abs
             $page->drawRectangle(25, $this->y, 570, $this->y-15);
             $this->y -=10;
             $page->setFillColor(new Zend_Pdf_Color_RGB(0.4, 0.4, 0.4));
-            $page->drawText(Mage::helper('sales')->__('QTY'), 35, $this->y, 'UTF-8');
+            $page->drawText(Mage::helper('sales')->__('Qty'), 35, $this->y, 'UTF-8');
             $page->drawText(Mage::helper('sales')->__('Products'), 60, $this->y, 'UTF-8');
             $page->drawText(Mage::helper('sales')->__('SKU'), 470, $this->y, 'UTF-8');
 
@@ -128,7 +129,7 @@ class Mage_Sales_Model_Order_Pdf_Shipment extends Mage_Sales_Model_Order_Pdf_Abs
             $this->y -=10;
 
             $page->setFillColor(new Zend_Pdf_Color_RGB(0.4, 0.4, 0.4));
-            $page->drawText(Mage::helper('sales')->__('QTY'), 35, $this->y, 'UTF-8');
+            $page->drawText(Mage::helper('sales')->__('Qty'), 35, $this->y, 'UTF-8');
             $page->drawText(Mage::helper('sales')->__('Products'), 60, $this->y, 'UTF-8');
             $page->drawText(Mage::helper('sales')->__('SKU'), 470, $this->y, 'UTF-8');
 

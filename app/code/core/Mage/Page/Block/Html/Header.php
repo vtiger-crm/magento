@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Page
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Page
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -36,6 +36,16 @@ class Mage_Page_Block_Html_Header extends Mage_Core_Block_Template
     public function _construct()
     {
         $this->setTemplate('page/html/header.phtml');
+    }
+
+    /**
+     * Check if current url is url for home page
+     *
+     * @return true
+     */
+    public function getIsHomePage()
+    {
+        return $this->getUrl('') == $this->getUrl('*/*/*', array('_current'=>true, '_use_rewrite'=>true));
     }
 
     public function setLogo($logo_src, $logo_alt)
@@ -65,7 +75,7 @@ class Mage_Page_Block_Html_Header extends Mage_Core_Block_Template
     {
         if (empty($this->_data['welcome'])) {
             if (Mage::isInstalled() && Mage::getSingleton('customer/session')->isLoggedIn()) {
-                $this->_data['welcome'] = $this->__('Welcome, %s!', $this->htmlEscape(Mage::getSingleton('customer/session')->getCustomer()->getName()));
+                $this->_data['welcome'] = $this->__('Welcome, %s!', $this->escapeHtml(Mage::getSingleton('customer/session')->getCustomer()->getName()));
             } else {
                 $this->_data['welcome'] = Mage::getStoreConfig('design/header/welcome');
             }
@@ -73,5 +83,4 @@ class Mage_Page_Block_Html_Header extends Mage_Core_Block_Template
 
         return $this->_data['welcome'];
     }
-
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -129,6 +129,51 @@ abstract class Mage_Core_Helper_Abstract
     }
 
     /**
+     * Check whether or not the module output is enabled in Configuration
+     *
+     * @param string $moduleName Full module name
+     * @return boolean
+     */
+    public function isModuleOutputEnabled($moduleName = null)
+    {
+        if ($moduleName === null) {
+            $moduleName = $this->_getModuleName();
+        }
+
+        if (!$this->isModuleEnabled($moduleName)) {
+            return false;
+        }
+
+        if (Mage::getStoreConfigFlag('advanced/modules_disable_output/' . $moduleName)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check is module exists and enabled in global config.
+     *
+     * @param string $moduleName the full module name, example Mage_Core
+     * @return boolean
+     */
+    public function isModuleEnabled($moduleName = null)
+    {
+        if ($moduleName === null) {
+            $moduleName = $this->_getModuleName();
+        }
+
+        if (!Mage::getConfig()->getNode('modules/' . $moduleName)) {
+            return false;
+        }
+
+        $isActive = Mage::getConfig()->getNode('modules/' . $moduleName . '/active');
+        if (!$isActive || !in_array((string)$isActive, array('true', '1'))) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Translate
      *
      * @return string
@@ -142,18 +187,27 @@ abstract class Mage_Core_Helper_Abstract
     }
 
     /**
+     * @deprecated after 1.4.0.0-rc1
+     * @see self::escapeHtml()
+     */
+    public function htmlEscape($data, $allowedTags = null)
+    {
+        return $this->escapeHtml($data, $allowedTags);
+    }
+
+    /**
      * Escape html entities
      *
      * @param   mixed $data
      * @param   array $allowedTags
      * @return  mixed
      */
-    public function htmlEscape($data, $allowedTags = null)
+    public function escapeHtml($data, $allowedTags = null)
     {
         if (is_array($data)) {
             $result = array();
             foreach ($data as $item) {
-            	$result[] = $this->htmlEscape($item);
+                $result[] = $this->escapeHtml($item);
             }
         } else {
             // process single item
@@ -174,12 +228,35 @@ abstract class Mage_Core_Helper_Abstract
     }
 
     /**
+     * Wrapper for standart strip_tags() function with extra functionality for html entities
+     *
+     * @param string $data
+     * @param string $allowableTags
+     * @param bool $escape
+     * @return string
+     */
+    public function stripTags($data, $allowableTags = null, $escape = false)
+    {
+        $result = strip_tags($data, $allowableTags);
+        return $escape ? $this->escapeHtml($result, $allowableTags) : $result;
+    }
+
+    /**
+     * @deprecated after 1.4.0.0-rc1
+     * @see self::escapeHtml()
+     */
+    public function urlEscape($data)
+    {
+        return $this->escapeUrl($data);
+    }
+
+    /**
      * Escape html entities in url
      *
      * @param string $data
      * @return string
      */
-    public function urlEscape($data)
+    public function escapeUrl($data)
     {
         return htmlspecialchars($data);
     }

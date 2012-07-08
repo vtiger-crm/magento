@@ -18,22 +18,52 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Review
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Review
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Review model
  *
- * @category   Mage
- * @package    Mage_Review
+ * @method Mage_Review_Model_Resource_Review _getResource()
+ * @method Mage_Review_Model_Resource_Review getResource()
+ * @method string getCreatedAt()
+ * @method Mage_Review_Model_Review setCreatedAt(string $value)
+ * @method Mage_Review_Model_Review setEntityId(int $value)
+ * @method int getEntityPkValue()
+ * @method Mage_Review_Model_Review setEntityPkValue(int $value)
+ * @method int getStatusId()
+ * @method Mage_Review_Model_Review setStatusId(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Review
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Review_Model_Review extends Mage_Core_Model_Abstract
 {
+
+    /**
+     * Event prefix for observer
+     *
+     * @var string
+     */
+    protected $_eventPrefix = 'review';
+
+    /**
+     * @deprecated after 1.3.2.4
+     *
+     */
     const ENTITY_PRODUCT = 1;
+
+    /**
+     * Review entity codes
+     *
+     */
+    const ENTITY_PRODUCT_CODE   = 'product';
+    const ENTITY_CUSTOMER_CODE  = 'customer';
+    const ENTITY_CATEGORY_CODE  = 'category';
 
     const STATUS_APPROVED       = 1;
     const STATUS_PENDING        = 2;
@@ -110,6 +140,17 @@ class Mage_Review_Model_Review extends Mage_Core_Model_Abstract
     }
 
     /**
+     * Perform actions after object delete
+     *
+     * @return Mage_Core_Model_Abstract
+     */
+    protected function _afterDeleteCommit()
+    {
+        $this->getResource()->afterDeleteCommit($this);
+        return parent::_afterDeleteCommit();
+    }
+
+    /**
      * Append review summary to product collection
      *
      * @param Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Collection $collection
@@ -146,5 +187,42 @@ class Mage_Review_Model_Review extends Mage_Core_Model_Abstract
     {
         $this->_protectFromNonAdmin();
         return parent::_beforeDelete();
+    }
+
+    /**
+     * Check if current review approved or not
+     *
+     * @return bool
+     */
+    public function isApproved()
+    {
+        return $this->getStatusId() == self::STATUS_APPROVED;
+    }
+
+    /**
+     * Check if current review available on passed store
+     *
+     * @param int|Mage_Core_Model_Store $store
+     * @return bool
+     */
+    public function isAvailableOnStore($store = null)
+    {
+        $store = Mage::app()->getStore($store);
+        if ($store) {
+            return in_array($store->getId(), (array)$this->getStores());
+        }
+
+        return false;
+    }
+
+    /**
+     * Get review entity type id by code
+     *
+     * @param string $entityCode
+     * @return int|bool
+     */
+    public function getEntityIdByCode($entityCode)
+    {
+        return $this->getResource()->getEntityIdByCode($entityCode);
     }
 }

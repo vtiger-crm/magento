@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Payment
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Payment
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -49,7 +49,12 @@ class Mage_Payment_Model_Config
         $config = Mage::getStoreConfig('payment', $store);
         foreach ($config as $code => $methodConfig) {
             if (Mage::getStoreConfigFlag('payment/'.$code.'/active', $store)) {
-                $methods[$code] = $this->_getMethod($code, $methodConfig);
+                if (array_key_exists('model', $methodConfig)) {
+                    $methodModel = Mage::getModel($methodConfig['model']);
+                    if ($methodModel && $methodModel->getConfigData('active', $store)) {
+                        $methods[$code] = $this->_getMethod($code, $methodConfig);
+                    }
+                }
             }
         }
         return $methods;
@@ -66,7 +71,10 @@ class Mage_Payment_Model_Config
         $methods = array();
         $config = Mage::getStoreConfig('payment', $store);
         foreach ($config as $code => $methodConfig) {
-            $methods[$code] = $this->_getMethod($code, $methodConfig);
+            $data = $this->_getMethod($code, $methodConfig);
+            if (false !== $data) {
+                $methods[$code] = $data;
+            }
         }
         return $methods;
     }
@@ -76,7 +84,16 @@ class Mage_Payment_Model_Config
         if (isset(self::$_methods[$code])) {
             return self::$_methods[$code];
         }
+        if (empty($config['model'])) {
+            return false;
+        }
         $modelName = $config['model'];
+
+        $className = Mage::getConfig()->getModelClassName($modelName);
+        if (!mageFindClassFile($className)) {
+            return false;
+        }
+
         $method = Mage::getModel($modelName);
         $method->setId($code)->setStore($store);
         self::$_methods[$code] = $method;
@@ -96,7 +113,9 @@ class Mage_Payment_Model_Config
 
         $types = array();
         foreach ($_types as $data) {
-            $types[$data['code']] = $data['name'];
+            if (isset($data['code']) && isset($data['name'])) {
+                $types[$data['code']] = $data['name'];
+            }
         }
         return $types;
     }

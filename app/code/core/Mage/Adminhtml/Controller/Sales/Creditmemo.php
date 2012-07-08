@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -76,6 +76,29 @@ class Mage_Adminhtml_Controller_Sales_Creditmemo extends Mage_Adminhtml_Controll
         }
     }
 
+    /**
+     * Notify user
+     */
+    public function emailAction()
+    {
+        if ($creditmemoId = $this->getRequest()->getParam('creditmemo_id')) {
+            if ($creditmemo = Mage::getModel('sales/order_creditmemo')->load($creditmemoId)) {
+                $creditmemo->sendEmail();
+                $historyItem = Mage::getResourceModel('sales/order_status_history_collection')
+                    ->getUnnotifiedForInstance($creditmemo, Mage_Sales_Model_Order_Creditmemo::HISTORY_ENTITY_NAME);
+                if ($historyItem) {
+                    $historyItem->setIsCustomerNotified(1);
+                    $historyItem->save();
+                }
+
+                $this->_getSession()->addSuccess(Mage::helper('sales')->__('The message was sent.'));
+                $this->_redirect('*/sales_order_creditmemo/view', array(
+                    'creditmemo_id' => $creditmemoId
+                ));
+            }
+        }
+    }
+
     public function pdfcreditmemosAction(){
         $creditmemosIds = $this->getRequest()->getPost('creditmemo_ids');
         if (!empty($creditmemosIds)) {
@@ -90,7 +113,8 @@ class Mage_Adminhtml_Controller_Sales_Creditmemo extends Mage_Adminhtml_Controll
                 $pdf->pages = array_merge ($pdf->pages, $pages->pages);
             }
 
-            return $this->_prepareDownloadResponse('creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+            return $this->_prepareDownloadResponse('creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').
+                '.pdf', $pdf->render(), 'application/pdf');
         }
         $this->_redirect('*/*/');
     }
@@ -98,13 +122,11 @@ class Mage_Adminhtml_Controller_Sales_Creditmemo extends Mage_Adminhtml_Controll
     public function printAction()
     {
         /** @see Mage_Adminhtml_Sales_Order_InvoiceController */
-        if ($creditmemoId = $this->getRequest()->getParam('invoice_id')) { // invoice_id?!
+        if ($creditmemoId = $this->getRequest()->getParam('creditmemo_id')) {
             if ($creditmemo = Mage::getModel('sales/order_creditmemo')->load($creditmemoId)) {
-                if ($creditmemo->getStoreId()) {
-                    Mage::app()->setCurrentStore($creditmemo->getStoreId());
-                }
                 $pdf = Mage::getModel('sales/order_pdf_creditmemo')->getPdf(array($creditmemo));
-                $this->_prepareDownloadResponse('creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').'.pdf', $pdf->render(), 'application/pdf');
+                $this->_prepareDownloadResponse('creditmemo'.Mage::getSingleton('core/date')->date('Y-m-d_H-i-s').
+                    '.pdf', $pdf->render(), 'application/pdf');
             }
         }
         else {

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 /**
@@ -45,17 +45,17 @@
 function changeSubmitStatus(obj) {
     $('submitButton').disabled = !obj.checked;
     if(obj.checked){
-        $('submitButton').setStyle({'background':'#f18200','borderColor':''});
+        $('submitButton').setStyle({'background':'#f18200','borderColor':'','cursor':'pointer','color':'#C73615'});
     }
     else{
-        $('submitButton').setStyle({'background':'#bbb','borderColor':'#bbb'});
+        $('submitButton').setStyle({'background':'#bbb','borderColor':'#bbb','cursor':'default','color':'white'});
     }
 }
 //]]>
 </script>
     <p>
         <input type="checkbox" name="agree" value="1" id="agree" onclick="changeSubmitStatus(this)" class="checkbox" />
-        <label for="agree"><?php echo $this->__('I agree to the above terms and conditions') ?>.</label>
+        <label for="agree"><?php echo $this->__('I agree to the above terms and conditions.') ?></label>
     </p>
     <div class="button-set">
         <button class="form-button" type="submit" id="submitButton" disabled="disabled"><span><?php echo $this->__('Continue') ?></span></button>

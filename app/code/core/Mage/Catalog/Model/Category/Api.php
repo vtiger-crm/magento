@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -39,10 +39,11 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
     }
 
     /**
-     * Retrive level of categories for category/store view/website
+     * Retrieve level of categories for category/store view/website
      *
-     * @param string|int $website
-     * @param string|int $store
+     * @param string|int|null $website
+     * @param string|int|null $store
+     * @param int|null $categoryId
      * @return array
      */
     public function level($website = null, $store = null, $categoryId = null)
@@ -54,9 +55,20 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
         if (null !== $website) {
             try {
                 $website = Mage::app()->getWebsite($website);
-                foreach ($website->getStores() as $store) {
-                    /* @var $store Mage_Core_Model_Store */
-                    $ids[] = $store->getRootCategoryId();
+                if (null === $store) {
+                    if (null === $categoryId) {
+                        foreach ($website->getStores() as $store) {
+                            /* @var $store Mage_Core_Model_Store */
+                            $ids[] = $store->getRootCategoryId();
+                        }
+                    } else {
+                        $ids = $categoryId;
+                    }
+                } elseif (in_array($store, $website->getStoreIds())) {
+                    $storeId = Mage::app()->getStore($store)->getId();
+                    $ids = (null === $categoryId)? $store->getRootCategoryId() : $categoryId;
+                } else {
+                    $this->_fault('store_not_exists');
                 }
             } catch (Mage_Core_Exception $e) {
                 $this->_fault('website_not_exists', $e->getMessage());
@@ -81,7 +93,7 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
         }
         // load all root categories
         else {
-            $ids = Mage_Catalog_Model_Category::TREE_ROOT_ID;
+            $ids = (null === $categoryId)? Mage_Catalog_Model_Category::TREE_ROOT_ID : $categoryId;
         }
 
         $collection = Mage::getModel('catalog/category')->getCollection()
@@ -121,18 +133,15 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      */
     public function tree($parentId = null, $store = null)
     {
-        $tree = Mage::getResourceSingleton('catalog/category_tree')
-                ->load();
-
         if (is_null($parentId) && !is_null($store)) {
             $parentId = Mage::app()->getStore($this->_getStoreId($store))->getRootCategoryId();
         } elseif (is_null($parentId)) {
             $parentId = 1;
         }
 
+        /* @var $tree Mage_Catalog_Model_Resource_Eav_Mysql4_Category_Tree */
         $tree = Mage::getResourceSingleton('catalog/category_tree')
             ->load();
-        /* @var $tree Mage_Catalog_Model_Resource_Eav_Mysql4_Category_Tree */
 
         $root = $tree->getNodeById($parentId);
 
@@ -232,39 +241,57 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      *
      * @param int $parentId
      * @param array $categoryData
+     * @param int|null|string $store
      * @return int
      */
     public function create($parentId, $categoryData, $store = null)
     {
-        $parent_category = $this->_initCategory($parentId);
+        $parent_category = $this->_initCategory($parentId, $store);
+
+        /** @var $category Mage_Catalog_Model_Category */
         $category = Mage::getModel('catalog/category')
             ->setStoreId($this->_getStoreId($store));
 
-        $category->addData(array('path'=>implode('/',$parent_category->getPathIds())));
+        $category->addData(array('path'=>implode('/', $parent_category->getPathIds())));
+        $category->setAttributeSetId($category->getDefaultAttributeSetId());
 
-        $category ->setAttributeSetId($category->getDefaultAttributeSetId());
-        /* @var $category Mage_Catalog_Model_Category */
-
+        $useConfig = array();
         foreach ($category->getAttributes() as $attribute) {
             if ($this->_isAllowedAttribute($attribute)
-                && isset($categoryData[$attribute->getAttributeCode()])) {
-                $category->setData(
-                    $attribute->getAttributeCode(),
-                    $categoryData[$attribute->getAttributeCode()]
-                );
+                && isset($categoryData[$attribute->getAttributeCode()])
+            ) {
+                // check whether value is 'use_config'
+                $attrCode = $attribute->getAttributeCode();
+                $categoryDataValue = $categoryData[$attrCode];
+                if ('use_config' === $categoryDataValue ||
+                    (is_array($categoryDataValue) &&
+                    count($categoryDataValue) == 1 &&
+                    'use_config' === $categoryDataValue[0])
+                ) {
+                    $useConfig[] = $attrCode;
+                    $category->setData($attrCode, null);
+                } else {
+                    $category->setData($attrCode, $categoryDataValue);
+                }
             }
         }
 
         $category->setParentId($parent_category->getId());
+
+        /**
+         * Proceed with $useConfig set into category model for processing through validation
+         */
+        if (count($useConfig) > 0) {
+            $category->setData("use_post_data_config", $useConfig);
+        }
 
         try {
             $validate = $category->validate();
             if ($validate !== true) {
                 foreach ($validate as $code => $error) {
                     if ($error === true) {
-                        Mage::throwException(Mage::helper('catalog')->__('Attribute "%s" is required', $code));
-                    }
-                    else {
+                        Mage::throwException(Mage::helper('catalog')->__('Attribute "%s" is required.', $code));
+                    } else {
                         Mage::throwException($error);
                     }
                 }
@@ -273,6 +300,9 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
             $category->save();
         }
         catch (Mage_Core_Exception $e) {
+            $this->_fault('data_invalid', $e->getMessage());
+        }
+        catch (Exception $e) {
             $this->_fault('data_invalid', $e->getMessage());
         }
 
@@ -306,7 +336,7 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
             if ($validate !== true) {
                 foreach ($validate as $code => $error) {
                     if ($error === true) {
-                        Mage::throwException(Mage::helper('catalog')->__('Attribute "%s" is required', $code));
+                        Mage::throwException(Mage::helper('catalog')->__('Attribute "%s" is required.', $code));
                     }
                     else {
                         Mage::throwException($error);
@@ -336,30 +366,18 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
         $category = $this->_initCategory($categoryId);
         $parent_category = $this->_initCategory($parentId);
 
-        $tree = Mage::getResourceModel('catalog/category_tree')
-                ->load();
-
-        $node           = $tree->getNodeById($category->getId());
-        $newParentNode  = $tree->getNodeById($parent_category->getId());
-
-        if (!$node || !$node->getId()) {
-            $this->_fault('not_exists');
-        }
-
         // if $afterId is null - move category to the down
         if ($afterId === null && $parent_category->hasChildren()) {
             $parentChildren = $parent_category->getChildren();
             $afterId = array_pop(explode(',', $parentChildren));
         }
 
-        $prevNode = $tree->getNodeById($afterId);
-
-        if (!$prevNode || !$prevNode->getId()) {
-            $prevNode = null;
+        if( strpos($parent_category->getPath(), $category->getPath()) === 0) {
+            $this->_fault('not_moved', "Operation do not allow to move a parent category to any of children category");
         }
 
         try {
-            $tree->move($node, $newParentNode, $prevNode);
+            $category->move($parentId, $afterId);
         } catch (Mage_Core_Exception $e) {
             $this->_fault('not_moved', $e->getMessage());
         }
@@ -390,24 +408,16 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      * Get prduct Id from sku or from product id
      *
      * @param int|string $productId
+     * @param  string $identifierType
      * @return int
      */
-    protected function _getProductId($productId)
+    protected function _getProductId($productId, $identifierType = null)
     {
-        $product = Mage::getModel('catalog/product');
-
-        $idBySku = $product->getIdBySku($productId);
-        if ($idBySku) {
-            $productId = $idBySku;
-        }
-
-        $product->load($productId);
-
+        $product = Mage::helper('catalog/product')->getProduct($productId, null, $identifierType);
         if (!$product->getId()) {
             $this->_fault('not_exists','Product not exists.');
         }
-
-        return $productId;
+        return $product->getId();
     }
 
 
@@ -422,9 +432,9 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
     {
         $category = $this->_initCategory($categoryId);
 
-        $collection = $category->setStoreId($this->_getStoreId($store))
-            ->getProductCollection()
-            ->setOrder('position', 'asc');
+        $storeId = $this->_getStoreId($store);
+        $collection = $category->setStoreId($storeId)->getProductCollection();
+        ($storeId == 0)? $collection->addOrder('position', 'asc') : $collection->setOrder('position', 'asc');;
 
         $result = array();
 
@@ -449,7 +459,7 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      * @param int $position
      * @return boolean
      */
-    public function assignProduct($categoryId, $productId, $position = null)
+    public function assignProduct($categoryId, $productId, $position = null, $identifierType = null)
     {
         $category = $this->_initCategory($categoryId);
         $positions = $category->getProductsPosition();
@@ -475,11 +485,11 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      * @param int $position
      * @return boolean
      */
-    public function updateProduct($categoryId, $productId, $position = null)
+    public function updateProduct($categoryId, $productId, $position = null, $identifierType = null)
     {
         $category = $this->_initCategory($categoryId);
         $positions = $category->getProductsPosition();
-        $productId = $this->_getProductId($productId);
+        $productId = $this->_getProductId($productId, $identifierType);
         if (!isset($positions[$productId])) {
             $this->_fault('product_not_assigned');
         }
@@ -502,11 +512,11 @@ class Mage_Catalog_Model_Category_Api extends Mage_Catalog_Model_Api_Resource
      * @param int $productId
      * @return boolean
      */
-    public function removeProduct($categoryId, $productId)
+    public function removeProduct($categoryId, $productId, $identifierType = null)
     {
         $category = $this->_initCategory($categoryId);
         $positions = $category->getProductsPosition();
-        $productId = $this->_getProductId($productId);
+        $productId = $this->_getProductId($productId, $identifierType);
         if (!isset($positions[$productId])) {
             $this->_fault('product_not_assigned');
         }

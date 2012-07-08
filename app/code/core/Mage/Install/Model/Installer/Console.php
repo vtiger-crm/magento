@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Install
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Install
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -75,6 +75,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
                 'locale'              => array('required' => true, 'comment' => ''),
                 'timezone'            => array('required' => true, 'comment' => ''),
                 'default_currency'    => array('required' => true, 'comment' => ''),
+                'db_model'            => array('comment' => ''),
                 'db_host'             => array('required' => true, 'comment' => ''),
                 'db_name'             => array('required' => true, 'comment' => ''),
                 'db_user'             => array('required' => true, 'comment' => ''),
@@ -94,6 +95,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
                 'encryption_key'    => array('comment' => ''),
                 'session_save'      => array('comment' => ''),
                 'admin_frontname'   => array('comment' => ''),
+                'enable_charts'     => array('comment' => ''),
             );
         }
         return $this->_options;
@@ -142,7 +144,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
          */
         foreach ($this->_getOptions() as $name => $option) {
             if (isset($option['required']) && $option['required'] && !isset($args[$name])) {
-                $error = 'ERROR: ' . 'You should provide the value for --' . $name .' parameter';
+                $error = 'ERROR: ' . 'You should provide the value for --' . $name . ' parameter';
                 if (!empty($option['comment'])) {
                     $error .= ': ' . $option['comment'];
                 }
@@ -285,6 +287,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
          * Database and web config
          */
         $this->_getDataModel()->setConfigData(array(
+            'db_model'            => $this->_args['db_model'],
             'db_host'             => $this->_args['db_host'],
             'db_name'             => $this->_args['db_name'],
             'db_user'             => $this->_args['db_user'],
@@ -298,6 +301,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
             'session_save'        => $this->_checkSessionSave($this->_args['session_save']),
             'admin_frontname'     => $this->_checkAdminFrontname($this->_args['admin_frontname']),
             'skip_url_validation' => $this->_checkFlag($this->_args['skip_url_validation']),
+            'enable_charts'       => $this->_checkFlag($this->_args['enable_charts']),
         ));
 
         /**
@@ -308,7 +312,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
             'lastname'          => $this->_args['admin_lastname'],
             'email'             => $this->_args['admin_email'],
             'username'          => $this->_args['admin_username'],
-            'password'          => $this->_args['admin_password'],
+            'new_password'      => $this->_args['admin_password'],
         ));
 
         return $this;
@@ -351,7 +355,7 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
             /**
              * Install configuration
              */
-            $installer->installConfig($this->_getDataModel()->getConfigData()); // TODO fix wizard and simplify this everythere
+            $installer->installConfig($this->_getDataModel()->getConfigData()); // TODO fix wizard and simplify this everywhere
 
             if ($this->hasErrors()) {
                 return false;
@@ -373,10 +377,33 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
                 return false;
             }
 
+            // apply data updates
+            Mage_Core_Model_Resource_Setup::applyAllDataUpdates();
+
+            /**
+             * Validate entered data for administrator user
+             */
+            $user = $installer->validateAndPrepareAdministrator($this->_getDataModel()->getAdminData());
+
+            if ($this->hasErrors()) {
+                return false;
+            }
+
+            /**
+             * Prepare encryption key and validate it
+             */
+            $encryptionKey = empty($this->_args['encryption_key']) ? md5(time()) : $this->_args['encryption_key'];
+            $this->_getDataModel()->setEncryptionKey($encryptionKey);
+            $installer->validateEncryptionKey($encryptionKey);
+
+            if ($this->hasErrors()) {
+                return false;
+            }
+
             /**
              * Create primary administrator user
              */
-            $installer->createAdministrator($this->_getDataModel()->getAdminData());
+            $installer->createAdministrator($user);
 
             if ($this->hasErrors()) {
                 return false;
@@ -385,8 +412,6 @@ class Mage_Install_Model_Installer_Console extends Mage_Install_Model_Installer_
             /**
              * Save encryption key or create if empty
              */
-            $encryptionKey = empty($this->_args['encryption_key']) ? md5(time()) : $this->_args['encryption_key'];
-            $this->_getDataModel()->setEncryptionKey($encryptionKey);
             $installer->installEnryptionKey($encryptionKey);
 
             if ($this->hasErrors()) {

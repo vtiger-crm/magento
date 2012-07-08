@@ -18,40 +18,52 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Admin
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Admin
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Admin observer model
  *
- * @category   Mage
- * @package    Mage_Admin
+ * @category    Mage
+ * @package     Mage_Admin
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Admin_Model_Observer
 {
-    public function actionPreDispatchAdmin($event)
+    /**
+     * Handler for controller_action_predispatch event
+     *
+     * @param Varien_Event_Observer $observer
+     * @return boolean
+     */
+    public function actionPreDispatchAdmin($observer)
     {
-        $session  = Mage::getSingleton('admin/session');
-        /* @var $session Mage_Admin_Model_Session */
+        $session = Mage::getSingleton('admin/session');
+        /** @var $session Mage_Admin_Model_Session */
         $request = Mage::app()->getRequest();
         $user = $session->getUser();
 
-        if ($request->getActionName() == 'forgotpassword' || $request->getActionName() == 'logout') {
+        $requestedActionName = $request->getActionName();
+        $openActions = array(
+            'forgotpassword',
+            'resetpassword',
+            'resetpasswordpost',
+            'logout'
+        );
+        if (in_array($requestedActionName, $openActions)) {
             $request->setDispatched(true);
-        }
-        else {
+        } else {
             if($user) {
                 $user->reload();
             }
             if (!$user || !$user->getId()) {
                 if ($request->getPost('login')) {
                     $postLogin  = $request->getPost('login');
-                    $username   = $postLogin['username'];
-                    $password   = $postLogin['password'];
+                    $username   = isset($postLogin['username']) ? $postLogin['username'] : '';
+                    $password   = isset($postLogin['password']) ? $postLogin['password'] : '';
                     $user = $session->login($username, $password, $request);
                     $request->setPost('login', null);
                 }
@@ -61,8 +73,7 @@ class Mage_Admin_Model_Observer
                             ->setControllerName('index')
                             ->setActionName('deniedIframe')
                             ->setDispatched(false);
-                    }
-                    elseif($request->getParam('isAjax')) {
+                    } elseif($request->getParam('isAjax')) {
                         $request->setParam('forwarded', true)
                             ->setControllerName('index')
                             ->setActionName('deniedJson')
@@ -80,5 +91,15 @@ class Mage_Admin_Model_Observer
         }
 
         $session->refreshAcl();
+    }
+
+    /**
+     * Unset session first visit flag after displaying page
+     *
+     * @deprecated after 1.4.0.1, logic moved to admin session
+     * @param Varien_Event_Observer $event
+     */
+    public function actionPostDispatchAdmin($event)
+    {
     }
 }

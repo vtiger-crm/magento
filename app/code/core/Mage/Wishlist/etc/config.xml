@@ -19,16 +19,16 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Wishlist
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Wishlist
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Wishlist>
-            <version>0.7.4</version>
+            <version>1.6.0.0</version>
         </Mage_Wishlist>
     </modules>
     <global>
@@ -40,10 +40,11 @@
         <models>
             <wishlist>
                 <class>Mage_Wishlist_Model</class>
-                <resourceModel>wishlist_mysql4</resourceModel>
+                <resourceModel>wishlist_resource</resourceModel>
             </wishlist>
-            <wishlist_mysql4>
-                <class>Mage_Wishlist_Model_Mysql4</class>
+            <wishlist_resource>
+                <class>Mage_Wishlist_Model_Resource</class>
+                <deprecatedNode>wishlist_mysql4</deprecatedNode>
                 <entities>
                     <wishlist>
                         <table>wishlist</table>
@@ -51,28 +52,19 @@
                     <item>
                         <table>wishlist_item</table>
                     </item>
+                    <item>
+                        <table>wishlist_item</table>
+                    </item>
+                    <item_option><table>wishlist_item_option</table></item_option>
                 </entities>
-            </wishlist_mysql4>
+            </wishlist_resource>
         </models>
         <resources>
             <wishlist_setup>
                 <setup>
                     <module>Mage_Wishlist</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </wishlist_setup>
-            <wishlist_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </wishlist_write>
-            <wishlist_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </wishlist_read>
         </resources>
         <template>
             <email>
@@ -87,7 +79,6 @@
             <checkout_cart_update_items_before>
                 <observers>
                     <wishlist>
-                        <type>singleton</type>
                         <class>wishlist/observer</class>
                         <method>processCartUpdateBefore</method>
                     </wishlist>
@@ -96,13 +87,21 @@
             <checkout_cart_add_product_complete>
                 <observers>
                     <wishlist>
-                        <type>singleton</type>
                         <class>wishlist/observer</class>
                         <method>processAddToCart</method>
                     </wishlist>
                 </observers>
             </checkout_cart_add_product_complete>
         </events>
+        <wishlist>
+            <item>
+                <product_attributes>
+                    <visibility/>
+                    <url_path/>
+                    <url_key/>
+                </product_attributes>
+            </item>
+        </wishlist>
     </global>
     <frontend>
         <routers>
@@ -123,34 +122,36 @@
                 </Mage_Wishlist>
             </modules>
         </translate>
-          <layout>
-              <updates>
-                  <wishlist module="Mage_Wishlist">
-                      <file>wishlist.xml</file>
-                  </wishlist>
-              </updates>
-          </layout>
+        <layout>
+            <updates>
+                <wishlist module="Mage_Wishlist">
+                    <file>wishlist.xml</file>
+                </wishlist>
+            </updates>
+        </layout>
+        <events>
+            <customer_login>
+                <observers>
+                    <wishlist>
+                        <class>wishlist/observer</class>
+                        <method>customerLogin</method>
+                    </wishlist>
+                </observers>
+            </customer_login>
+            <customer_logout>
+                <observers>
+                    <wishlist>
+                        <class>wishlist/observer</class>
+                        <method>customerLogout</method>
+                    </wishlist>
+                </observers>
+            </customer_logout>
+        </events>
+        <secure_url>
+            <wishlist>/wishlist/</wishlist>
+        </secure_url>
     </frontend>
     <adminhtml>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <config>
-                                    <children>
-                                        <wishlist translate="title" module="wishlist">
-                                            <title>Wishlist Section</title>
-                                        </wishlist>
-                                    </children>
-                                </config>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
         <translate>
             <modules>
                 <Mage_Wishlist>
@@ -161,7 +162,6 @@
             </modules>
         </translate>
     </adminhtml>
-
     <default>
         <wishlist>
             <general>

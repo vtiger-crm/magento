@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_SalesRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -67,8 +67,13 @@ class Mage_SalesRule_Model_Rule_Condition_Product_Subselect
         $hlp = Mage::helper('salesrule');
         $this->setAttributeOption(array(
             'qty'  => $hlp->__('total quantity'),
-            'row_total'  => $hlp->__('total amount'),
+            'base_row_total'  => $hlp->__('total amount'),
         ));
+        return $this;
+    }
+
+    public function loadValueOptions()
+    {
         return $this;
     }
 

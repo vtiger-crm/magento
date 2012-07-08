@@ -20,12 +20,25 @@
  *
  * @category    Mage
  * @package     Mage_CatalogInventory
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * CatalogInventory Stock Status per website Model
+ *
+ * @method Mage_CatalogInventory_Model_Resource_Stock_Status _getResource()
+ * @method Mage_CatalogInventory_Model_Resource_Stock_Status getResource()
+ * @method int getProductId()
+ * @method Mage_CatalogInventory_Model_Stock_Status setProductId(int $value)
+ * @method int getWebsiteId()
+ * @method Mage_CatalogInventory_Model_Stock_Status setWebsiteId(int $value)
+ * @method int getStockId()
+ * @method Mage_CatalogInventory_Model_Stock_Status setStockId(int $value)
+ * @method float getQty()
+ * @method Mage_CatalogInventory_Model_Stock_Status setQty(float $value)
+ * @method int getStockStatus()
+ * @method Mage_CatalogInventory_Model_Stock_Status setStockStatus(int $value)
  *
  * @category    Mage
  * @package     Mage_CatalogInventory
@@ -410,16 +423,6 @@ class Mage_CatalogInventory_Model_Stock_Status extends Mage_Core_Model_Abstract
     }
 
     /**
-     * Retrieve resource model wraper
-     *
-     * @return Mage_CatalogInventory_Model_Mysql4_Stock_Status
-     */
-    public function getResource()
-    {
-        return parent::getResource();
-    }
-
-    /**
      * Retrieve Product Type
      *
      * @param int $productId
@@ -461,6 +464,9 @@ class Mage_CatalogInventory_Model_Stock_Status extends Mage_Core_Model_Abstract
         }
         if ($websiteId === null) {
             $websiteId = Mage::app()->getStore()->getWebsiteId();
+            if ((int)$websiteId == 0 && $productCollection->getStoreId()) {
+                $websiteId = Mage::app()->getStore($productCollection->getStoreId())->getWebsiteId();
+            }
         }
         $productIds = array();
         foreach ($productCollection as $product) {
@@ -495,6 +501,37 @@ class Mage_CatalogInventory_Model_Stock_Status extends Mage_Core_Model_Abstract
     public function addStockStatusToSelect(Varien_Db_Select $select, Mage_Core_Model_Website $website)
     {
         $this->_getResource()->addStockStatusToSelect($select, $website);
+        return $this;
+    }
+
+    /**
+     * Add stock status limitation to catalog product price index select object
+     *
+     * @param Varien_Db_Select $select
+     * @param string|Zend_Db_Expr $entityField
+     * @param string|Zend_Db_Expr $websiteField
+     * @return Mage_CatalogInventory_Model_Stock_Status
+     */
+    public function prepareCatalogProductIndexSelect(Varien_Db_Select $select, $entityField, $websiteField)
+    {
+        if (Mage::helper('cataloginventory')->isShowOutOfStock()) {
+            return $this;
+        }
+
+        $this->_getResource()->prepareCatalogProductIndexSelect($select, $entityField, $websiteField);
+
+        return $this;
+    }
+
+    /**
+     * Add only is in stock products filter to product collection
+     *
+     * @param Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Collection $collection
+     * @return Mage_CatalogInventory_Model_Stock_Status
+     */
+    public function addIsInStockFilterToCollection($collection)
+    {
+        $this->_getResource()->addIsInStockFilterToCollection($collection);
         return $this;
     }
 }

@@ -18,18 +18,27 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Catalog product link model
  *
- * @category   Mage
- * @package    Mage_Catalog
+ * @method Mage_Catalog_Model_Resource_Product_Link _getResource()
+ * @method Mage_Catalog_Model_Resource_Product_Link getResource()
+ * @method int getProductId()
+ * @method Mage_Catalog_Model_Product_Link setProductId(int $value)
+ * @method int getLinkedProductId()
+ * @method Mage_Catalog_Model_Product_Link setLinkedProductId(int $value)
+ * @method int getLinkTypeId()
+ * @method Mage_Catalog_Model_Product_Link setLinkTypeId(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Catalog
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Catalog_Model_Product_Link extends Mage_Core_Model_Abstract
@@ -138,11 +147,17 @@ class Mage_Catalog_Model_Product_Link extends Mage_Core_Model_Abstract
         return $this;
     }
 
+    /**
+     * Save grouped product relation links
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @return Mage_Catalog_Model_Product_Link
+     */
     public function saveGroupedLinks($product)
     {
         $data = $product->getGroupedLinkData();
         if (!is_null($data)) {
-            $this->_getResource()->saveProductLinks($product, $data, self::LINK_TYPE_GROUPED);
+            $this->_getResource()->saveGroupedLinks($product, $data, self::LINK_TYPE_GROUPED);
         }
         return $this;
     }

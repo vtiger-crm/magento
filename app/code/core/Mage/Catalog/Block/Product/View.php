@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -34,24 +34,44 @@
  */
 class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstract
 {
+    /**
+     * Default MAP renderer type
+     *
+     * @var string
+     */
+    protected $_mapRenderer = 'msrp_item';
+
+    /**
+     * Add meta information from product to head block
+     *
+     * @return Mage_Catalog_Block_Product_View
+     */
     protected function _prepareLayout()
     {
         $this->getLayout()->createBlock('catalog/breadcrumbs');
-        if ($headBlock = $this->getLayout()->getBlock('head')) {
-            if ($title = $this->getProduct()->getMetaTitle()) {
+        $headBlock = $this->getLayout()->getBlock('head');
+        if ($headBlock) {
+            $product = $this->getProduct();
+            $title = $product->getMetaTitle();
+            if ($title) {
                 $headBlock->setTitle($title);
             }
-
-            if ($keyword = $this->getProduct()->getMetaKeyword()) {
+            $keyword = $product->getMetaKeyword();
+            $currentCategory = Mage::registry('current_category');
+            if ($keyword) {
                 $headBlock->setKeywords($keyword);
-            } elseif( $currentCategory = Mage::registry('current_category') ) {
-                $headBlock->setKeywords($this->getProduct()->getName());
+            } elseif($currentCategory) {
+                $headBlock->setKeywords($product->getName());
             }
-
-            if ($description = $this->getProduct()->getMetaDescription()) {
+            $description = $product->getMetaDescription();
+            if ($description) {
                 $headBlock->setDescription( ($description) );
             } else {
-                $headBlock->setDescription( $this->getProduct()->getDescription() );
+                $headBlock->setDescription(Mage::helper('core/string')->substr($product->getDescription(), 0, 255));
+            }
+            if ($this->helper('catalog/product')->canUseCanonicalTag()) {
+                $params = array('_ignore_category'=>true);
+                $headBlock->addLinkRel('canonical', $product->getUrlModel()->getUrl($product, $params));
             }
         }
 
@@ -72,6 +92,11 @@ class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstrac
         return Mage::registry('product');
     }
 
+    /**
+     * Check if product can be emailed to friend
+     *
+     * @return bool
+     */
     public function canEmailToFriend()
     {
         $sendToFriendModel = Mage::registry('send_to_friend_model');
@@ -87,18 +112,33 @@ class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstrac
      */
     public function getAddToCartUrl($product, $additional = array())
     {
-        $additional = array();
+        if ($this->hasCustomAddToCartUrl()) {
+            return $this->getCustomAddToCartUrl();
+        }
 
         if ($this->getRequest()->getParam('wishlist_next')){
             $additional['wishlist_next'] = 1;
         }
 
+        $addUrlKey = Mage_Core_Controller_Front_Action::PARAM_NAME_URL_ENCODED;
+        $addUrlValue = Mage::getUrl('*/*/*', array('_use_rewrite' => true, '_current' => false));
+        $additional[$addUrlKey] = Mage::helper('core')->urlEncode($addUrlValue);
+
         return $this->helper('checkout/cart')->getAddUrl($product, $additional);
     }
 
+    /**
+     * Get JSON encripted configuration array which can be used for JS dynamic
+     * price calculation depending on product options
+     *
+     * @return string
+     */
     public function getJsonConfig()
     {
         $config = array();
+        if (!$this->hasOptions()) {
+            return Mage::helper('core')->jsonEncode($config);
+        }
 
         $_request = Mage::getSingleton('tax/calculation')->getRateRequest(false, false, false);
         $_request->setProductClassId($this->getProduct()->getTaxClassId());
@@ -113,11 +153,6 @@ class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstrac
         $_priceInclTax = Mage::helper('tax')->getPrice($this->getProduct(), $_finalPrice, true);
         $_priceExclTax = Mage::helper('tax')->getPrice($this->getProduct(), $_finalPrice);
 
-        $idSuffix = '__none__';
-        if ($this->hasOptions()) {
-            $idSuffix = '_clone';
-        }
-
         $config = array(
             'productId'           => $this->getProduct()->getId(),
             'priceFormat'         => Mage::app()->getLocale()->getJsPriceFormat(),
@@ -126,25 +161,31 @@ class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstrac
             'showBothPrices'      => Mage::helper('tax')->displayBothPrices(),
             'productPrice'        => Mage::helper('core')->currency($_finalPrice, false, false),
             'productOldPrice'     => Mage::helper('core')->currency($_regularPrice, false, false),
+            'priceInclTax'        => Mage::helper('core')->currency($_priceInclTax, false, false),
+            'priceExclTax'        => Mage::helper('core')->currency($_priceExclTax, false, false),
+            /**
+             * @var skipCalculate
+             * @deprecated after 1.5.1.0
+             */
             'skipCalculate'       => ($_priceExclTax != $_priceInclTax ? 0 : 1),
             'defaultTax'          => $defaultTax,
             'currentTax'          => $currentTax,
-            'idSuffix'            => $idSuffix,
+            'idSuffix'            => '_clone',
             'oldPlusDisposition'  => 0,
             'plusDisposition'     => 0,
             'oldMinusDisposition' => 0,
             'minusDisposition'    => 0,
         );
 
-		$responseObject = new Varien_Object();
-		Mage::dispatchEvent('catalog_product_view_config', array('response_object'=>$responseObject));
-		if (is_array($responseObject->getAdditionalOptions())) {
-			foreach ($responseObject->getAdditionalOptions() as $option=>$value) {
-				$config[$option] = $value;
-			}
-		}
+        $responseObject = new Varien_Object();
+        Mage::dispatchEvent('catalog_product_view_config', array('response_object'=>$responseObject));
+        if (is_array($responseObject->getAdditionalOptions())) {
+            foreach ($responseObject->getAdditionalOptions() as $option=>$value) {
+                $config[$option] = $value;
+            }
+        }
 
-        return Zend_Json::encode($config);
+        return Mage::helper('core')->jsonEncode($config);
     }
 
     /**
@@ -168,5 +209,42 @@ class Mage_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Abstrac
     public function hasRequiredOptions()
     {
         return $this->getProduct()->getTypeInstance(true)->hasRequiredOptions($this->getProduct());
+    }
+
+    /**
+     * Define if setting of product options must be shown instantly.
+     * Used in case when options are usually hidden and shown only when user
+     * presses some button or link. In editing mode we better show these options
+     * instantly.
+     *
+     * @return bool
+     */
+    public function isStartCustomization()
+    {
+        return $this->getProduct()->getConfigureMode() || Mage::app()->getRequest()->getParam('startcustomization');
+    }
+
+    /**
+     * Get default qty - either as preconfigured, or as 1.
+     * Also restricts it by minimal qty.
+     *
+     * @param null|Mage_Catalog_Model_Product
+     *
+     * @return int|float
+     */
+    public function getProductDefaultQty($product = null)
+    {
+        if (!$product) {
+            $product = $this->getProduct();
+        }
+
+        $qty = $this->getMinimalQty($product);
+        $config = $product->getPreconfiguredValues();
+        $configQty = $config->getQty();
+        if ($configQty > $qty) {
+            $qty = $configQty;
+        }
+
+        return $qty;
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,14 +42,20 @@ class Mage_Adminhtml_Helper_Dashboard_Order extends Mage_Adminhtml_Helper_Dashbo
             ->prepareSummary($this->getParam('period'), 0, 0, $isFilter);
 
         if ($this->getParam('store')) {
-            $this->_collection->addAttributeToFilter('store_id', $this->getParam('store'));
+            $this->_collection->addFieldToFilter('store_id', $this->getParam('store'));
         } else if ($this->getParam('website')){
             $storeIds = Mage::app()->getWebsite($this->getParam('website'))->getStoreIds();
-            $this->_collection->addAttributeToFilter('store_id', array('in' => implode(',', $storeIds)));
+            $this->_collection->addFieldToFilter('store_id', array('in' => implode(',', $storeIds)));
         } else if ($this->getParam('group')){
             $storeIds = Mage::app()->getGroup($this->getParam('group'))->getStoreIds();
-            $this->_collection->addAttributeToFilter('store_id', array('in' => implode(',', $storeIds)));
+            $this->_collection->addFieldToFilter('store_id', array('in' => implode(',', $storeIds)));
+        } elseif (!$this->_collection->isLive()) {
+            $this->_collection->addFieldToFilter('store_id',
+                array('eq' => Mage::app()->getStore(Mage_Core_Model_Store::ADMIN_CODE)->getId())
+            );
         }
+
+
 
         $this->_collection->load();
     }

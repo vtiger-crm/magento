@@ -21,10 +21,13 @@
  * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 /* Clearing */
+.message-popup .message-popup-head,
+.message-popup .message-popup-content,
+.message-popup .message-popup-content .message,
 .login-form .form-buttons,
 .wrapper,
 .footer,
-.bundle .option-title,
+.option-title,
 .columns,
 .main-col,
 .field-row,
@@ -53,7 +56,10 @@ ul.tabs li a,
 .files .row,
 .files-wide .row,
 .uploader .file-row,
-.grid tr.filter .range .range-line { zoom:1; }
+.grid tr.filter .range .range-line,
+.centinel .authentication,
+.paypal-payment-notice,
+.product-options .options-list li { zoom:1; }
 
 .clear { display:block; clear:both; height:0; font-size:0; line-height:0; overflow:hidden; }
 
@@ -68,6 +74,11 @@ button.disabled:active { filter:alpha(opacity=80); }
 #loading-mask { filter:alpha(opacity=80); }
 #message-popup-window-mask { filter:alpha(opacity=20); }
 .content-header-floating { filter:alpha(opacity=85); }
+
+.message-popup .message-popup-content .message { _height:4.5em; }
+
+#popup-window-mask,
+.popup-window-mask { background:#efefef; filter:alpha(opacity=50); }
 
 /* Scalable Button Override */
 button, .form-button            { width:auto; margin-left:5px; overflow:visible; }

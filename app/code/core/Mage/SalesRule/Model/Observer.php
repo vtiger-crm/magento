@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_SalesRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -29,6 +29,13 @@ class Mage_SalesRule_Model_Observer
 {
     protected $_validator;
 
+    /**
+     * Get quote item validator/processor object
+     *
+     * @deprecated
+     * @param   Varien_Event $event
+     * @return  Mage_SalesRule_Model_Validator
+     */
     public function getValidator($event)
     {
         if (!$this->_validator) {
@@ -38,6 +45,12 @@ class Mage_SalesRule_Model_Observer
         return $this->_validator;
     }
 
+    /**
+     * Process quote item (apply discount to item)
+     *
+     * @deprecated process call movet to total model
+     * @param Varien_Event_Observer $observer
+     */
     public function sales_quote_address_discount_item($observer)
     {
         $this->getValidator($observer->getEvent())
@@ -87,5 +100,146 @@ class Mage_SalesRule_Model_Observer
                 }
             }
         }
+
+        $coupon = Mage::getModel('salesrule/coupon');
+        /** @var Mage_SalesRule_Model_Coupon */
+        $coupon->load($order->getCouponCode(), 'code');
+        if ($coupon->getId()) {
+            $coupon->setTimesUsed($coupon->getTimesUsed() + 1);
+            $coupon->save();
+            if ($customerId) {
+                $couponUsage = Mage::getResourceModel('salesrule/coupon_usage');
+                $couponUsage->updateCustomerCouponTimesUsed($customerId, $coupon->getId());
+            }
+        }
+    }
+
+    /**
+     * Refresh sales coupons report statistics for last day
+     *
+     * @param Mage_Cron_Model_Schedule $schedule
+     * @return Mage_SalesRule_Model_Observer
+     */
+    public function aggregateSalesReportCouponsData($schedule)
+    {
+        Mage::app()->getLocale()->emulate(0);
+        $currentDate = Mage::app()->getLocale()->date();
+        $date = $currentDate->subHour(25);
+        Mage::getResourceModel('salesrule/report_rule')->aggregate($date);
+        Mage::app()->getLocale()->revert();
+        return $this;
+    }
+
+    /**
+     * Check rules that contains affected attribute
+     * If rules were found they will be set to inactive and notice will be add to admin session
+     *
+     * @param string $attributeCode
+     * @return Mage_SalesRule_Model_Observer
+     */
+    protected function _checkSalesRulesAvailability($attributeCode)
+    {
+        /* @var $collection Mage_SalesRule_Model_Mysql4_Rule_Collection */
+        $collection = Mage::getResourceModel('salesrule/rule_collection')
+            ->addAttributeInConditionFilter($attributeCode);
+
+        $disabledRulesCount = 0;
+        foreach ($collection as $rule) {
+            /* @var $rule Mage_SalesRule_Model_Rule */
+            $rule->setIsActive(0);
+            /* @var $rule->getConditions() Mage_SalesRule_Model_Rule_Condition_Combine */
+            $this->_removeAttributeFromConditions($rule->getConditions(), $attributeCode);
+            $this->_removeAttributeFromConditions($rule->getActions(), $attributeCode);
+            $rule->save();
+
+            $disabledRulesCount++;
+        }
+
+        if ($disabledRulesCount) {
+            Mage::getSingleton('adminhtml/session')->addWarning(
+                Mage::helper('salesrule')->__('%d Shopping Cart Price Rules based on "%s" attribute have been disabled.', $disabledRulesCount, $attributeCode));
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove catalog attribute condition by attribute code from rule conditions
+     *
+     * @param Mage_Rule_Model_Condition_Combine $combine
+     * @param string $attributeCode
+     */
+    protected function _removeAttributeFromConditions($combine, $attributeCode)
+    {
+        $conditions = $combine->getConditions();
+        foreach ($conditions as $conditionId => $condition) {
+            if ($condition instanceof Mage_Rule_Model_Condition_Combine) {
+                $this->_removeAttributeFromConditions($condition, $attributeCode);
+            }
+            if ($condition instanceof Mage_SalesRule_Model_Rule_Condition_Product) {
+                if ($condition->getAttribute() == $attributeCode) {
+                    unset($conditions[$conditionId]);
+                }
+            }
+        }
+        $combine->setConditions($conditions);
+    }
+
+    /**
+     * After save attribute if it is not used for promo rules already check rules for containing this attribute
+     *
+     * @param Varien_Event_Observer $observer
+     * @return Mage_SalesRule_Model_Observer
+     */
+    public function catalogAttributeSaveAfter(Varien_Event_Observer $observer)
+    {
+        $attribute = $observer->getEvent()->getAttribute();
+        if ($attribute->dataHasChangedFor('is_used_for_promo_rules') && !$attribute->getIsUsedForPromoRules()) {
+            $this->_checkSalesRulesAvailability($attribute->getAttributeCode());
+        }
+
+        return $this;
+    }
+
+    /**
+     * After delete attribute check rules that contains deleted attribute
+     * If rules was found they will seted to inactive and added notice to admin session
+     *
+     * @param Varien_Event_Observer $observer
+     * @return Mage_SalesRule_Model_Observer
+     */
+    public function catalogAttributeDeleteAfter(Varien_Event_Observer $observer)
+    {
+        $attribute = $observer->getEvent()->getAttribute();
+        if ($attribute->getIsUsedForPromoRules()) {
+            $this->_checkSalesRulesAvailability($attribute->getAttributeCode());
+        }
+
+        return $this;
+    }
+
+    /**
+     * Append sales rule product attributes to select by quote item collection
+     *
+     * @param Varien_Event_Observer $observer
+     * @return Mage_SalesRule_Model_Observer
+     */
+    public function addProductAttributes(Varien_Event_Observer $observer)
+    {
+        // @var Varien_Object
+        $attributesTransfer = $observer->getEvent()->getAttributes();
+
+        $attributes = Mage::getResourceModel('salesrule/rule')
+            ->getActiveAttributes(
+                Mage::app()->getWebsite()->getId(),
+                Mage::getSingleton('customer/session')->getCustomer()->getGroupId()
+            );
+        $result = array();
+        foreach ($attributes as $attribute) {
+            $result[$attribute['attribute_code']] = true;
+        }
+        $attributesTransfer->addData($result);
+        return $this;
     }
 }
+

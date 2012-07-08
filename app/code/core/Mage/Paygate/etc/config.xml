@@ -19,54 +19,42 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Paygate
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Paygate
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
-   <modules>
-      <Mage_Paygate>
-         <version>0.7.0</version>
-
-      </Mage_Paygate>
-   </modules>
-   <global>
-      <models>
-         <paygate>
-            <class>Mage_Paygate_Model</class>
-            <resourceModel>paygate_mysql4</resourceModel>
-         </paygate>
-         <paygate_mysql4>
-            <class>Mage_Paygate_Model_Mysql4</class>
-            <entities>
-                <authorizenet_debug><table>paygate_authorizenet_debug</table></authorizenet_debug>
-            </entities>
-         </paygate_mysql4>
-      </models>
-      <resources>
-         <paygate_setup>
-            <setup>
-               <module>Mage_Paygate</module>
-            </setup>
-            <connection>
-               <use>core_setup</use>
-            </connection>
-         </paygate_setup>
-         <paygate_write>
-            <connection>
-               <use>core_write</use>
-            </connection>
-         </paygate_write>
-         <paygate_read>
-            <connection>
-               <use>core_read</use>
-            </connection>
-         </paygate_read>
-      </resources>
-   </global>
-
+    <modules>
+        <Mage_Paygate>
+            <version>1.6.0.0</version>
+        </Mage_Paygate>
+    </modules>
+    <global>
+        <models>
+            <paygate>
+                <class>Mage_Paygate_Model</class>
+                <resourceModel>paygate_resource</resourceModel>
+            </paygate>
+            <paygate_resource>
+                <class>Mage_Paygate_Model_Resource</class>
+                <deprecatedNode>paygate_mysql4</deprecatedNode>
+                <entities>
+                    <authorizenet_debug>
+                        <table>paygate_authorizenet_debug</table>
+                    </authorizenet_debug>
+                </entities>
+            </paygate_resource>
+        </models>
+        <resources>
+            <paygate_setup>
+                <setup>
+                    <module>Mage_Paygate</module>
+                </setup>
+            </paygate_setup>
+        </resources>
+    </global>
     <adminhtml>
         <translate>
             <modules>
@@ -78,7 +66,6 @@
             </modules>
         </translate>
     </adminhtml>
-
     <frontend>
         <translate>
             <modules>
@@ -89,7 +76,27 @@
                 </Mage_Paygate>
             </modules>
         </translate>
+        <routers>
+            <paygate>
+                <use>standard</use>
+                <args>
+                    <module>Mage_Paygate</module>
+                    <frontName>paygate</frontName>
+                </args>
+            </paygate>
+        </routers>
     </frontend>
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <Mage_Paygate before="Mage_Adminhtml">Mage_Paygate_Adminhtml</Mage_Paygate>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
 
     <default>
         <payment>
@@ -100,37 +107,17 @@
                 <debug>0</debug>
                 <email_customer>0</email_customer>
                 <login backend_model="adminhtml/system_config_backend_encrypted"/>
-                <merchant_email></merchant_email>
+                <merchant_email/>
                 <model>paygate/authorizenet</model>
-                <order_status>1</order_status>
+                <order_status>processing</order_status>
                 <payment_action>authorize</payment_action>
                 <test>1</test>
                 <title>Credit Card (Authorize.net)</title>
                 <trans_key backend_model="adminhtml/system_config_backend_encrypted"/>
                 <allowspecific>0</allowspecific>
+                <currency>USD</currency>
+                <partial_authorization_checksum_checking>1</partial_authorization_checksum_checking>
             </authorizenet>
-
-            <verisign>
-                <active>0</active>
-                <cctypes>AE,VI,MC,DI</cctypes>
-                <debug>0</debug>
-                <model>paygate/payflow_pro</model>
-                <order_status>1</order_status>
-                <fraud_order_status>holded</fraud_order_status>
-                <partner></partner>
-                <payment_action>authorize</payment_action>
-                <pwd backend_model="adminhtml/system_config_backend_encrypted"/>
-                <tender>C</tender>
-                <title>Credit Card (Payflow Pro)</title>
-                <url>https://pilot-payflowpro.verisign.com/transaction</url>
-                <user backend_model="adminhtml/system_config_backend_encrypted"/>
-                <vendor/>
-                <verbosity>MEDIUM</verbosity>
-                <allowspecific>0</allowspecific>
-        		<proxy_host/>
-        		<proxy_port/>
-        		<use_proxy>0</use_proxy>
-            </verisign>
         </payment>
     </default>
 </config>

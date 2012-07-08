@@ -17,10 +17,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Js
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     js
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 var TranslateInline = Class.create();
@@ -47,7 +47,10 @@ TranslateInline.prototype = {
         if(!el.initializedTranslate) {
             el.addClassName('translate-inline');
             el.initializedTranslate = true;
-            Event.observe(el, 'mouseover', this.trigShow.bind(this, el));
+            // mouseover is not suitable here because for some reason this handler is executed before the handler
+            // specified in menu element description. This causes 'book' to be shown out of the screen because
+            // 'over' CSS class has not been added yet.
+            Event.observe(el, 'mousemove', this.trigShow.bind(this, el));
             Event.observe(el, 'mouseout', this.trigHideDelayed.bind(this));
         }
     },
@@ -97,17 +100,17 @@ TranslateInline.prototype = {
         var content = '<form id="translate-inline-form">';
         var t = new Template(
             '<div class="magento_table_container"><table cellspacing="0">'+
-            '<tr><td class="label">Location: </td><td class="value">#{location}</td></tr>'+
-            '<tr><td class="label">Scope: </td><td class="value">#{scope}</td></tr>'+
-            '<tr><td class="label">Shown: </td><td class="value">#{shown_escape}</td></tr>'+
-            '<tr><td class="label">Original: </td><td class="value">#{original_escape}</td></tr>'+
-            '<tr><td class="label">Translated: </td><td class="value">#{translated_escape}</td></tr>'+
-            '<tr><td class="label"><label for="perstore_#{i}">Store View Specific:</label> </td><td class="value">'+
+            '<tr><th class="label">Location:</th><td class="value">#{location}</td></tr>'+
+            '<tr><th class="label">Scope:</th><td class="value">#{scope}</td></tr>'+
+            '<tr><th class="label">Shown:</th><td class="value">#{shown_escape}</td></tr>'+
+            '<tr><th class="label">Original:</th><td class="value">#{original_escape}</td></tr>'+
+            '<tr><th class="label">Translated:</th><td class="value">#{translated_escape}</td></tr>'+
+            '<tr><th class="label"><label for="perstore_#{i}">Store View Specific:</label></th><td class="value">'+
                 '<input id="perstore_#{i}" name="translate[#{i}][perstore]" type="checkbox" value="1"/>'+
             '</td></tr>'+
-            '<tr><td class="label"><label for="custom_#{i}">Custom:</label> </td><td class="value">'+
+            '<tr><th class="label"><label for="custom_#{i}">Custom:</label></th><td class="value">'+
                 '<input name="translate[#{i}][original]" type="hidden" value="#{scope}::#{original_escape}"/>'+
-                '<input id="custom_#{i}" name="translate[#{i}][custom]" class="input-text" value="#{translated_escape}"/>'+
+                '<input id="custom_#{i}" name="translate[#{i}][custom]" class="input-text" value="#{translated_escape}" />'+
             '</td></tr>'+
             '</table></div>'
         );
@@ -131,14 +134,14 @@ TranslateInline.prototype = {
             closable:true,
             className:"magento",
             title:"Translation",
-            width:500,
-            height:400,
+            width:650,
+            height:470,
             zIndex:1000,
             recenterAuto:false,
             hideEffect:Element.hide,
             showEffect:Element.show,
             id:"translate-inline",
-            buttonClass:"form-button",
+            buttonClass:"form-button button",
             okLabel:"Submit",
             ok: this.formOk.bind(this),
             cancel: this.formClose.bind(this),

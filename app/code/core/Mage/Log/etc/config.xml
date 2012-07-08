@@ -19,33 +19,39 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Log
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Log
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
-    <Mage_Log>
-        <version>0.7.6</version>
-    </Mage_Log>
+        <Mage_Log>
+            <version>1.6.0.0</version>
+        </Mage_Log>
     </modules>
     <global>
         <ignoredModules>
             <entities>
-                <install />
-                <adminhtml />
-                <admin />
+                <install/>
+                <adminhtml/>
+                <admin/>
             </entities>
         </ignoredModules>
+        <ignore_user_agents>
+            <google1>Googlebot/1.0 (googlebot@googlebot.com http://googlebot.com/)</google1>
+            <google2>Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)</google2>
+            <google3>Googlebot/2.1 (+http://www.googlebot.com/bot.html)</google3>
+        </ignore_user_agents>
         <models>
             <log>
                 <class>Mage_Log_Model</class>
-                <resourceModel>log_mysql4</resourceModel>
+                <resourceModel>log_resource</resourceModel>
             </log>
-            <log_mysql4>
-                <class>Mage_Log_Model_Mysql4</class>
+            <log_resource>
+                <class>Mage_Log_Model_Resource</class>
+                <deprecatedNode>log_mysql4</deprecatedNode>
                 <entities>
                     <customer>
                         <table>log_customer</table>
@@ -75,27 +81,14 @@
                         <table>log_visitor_online</table>
                     </visitor_online>
                 </entities>
-            </log_mysql4>
+            </log_resource>
         </models>
         <resources>
             <log_setup>
                 <setup>
                     <module>Mage_Log</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </log_setup>
-            <log_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </log_write>
-            <log_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </log_read>
         </resources>
         <template>
             <email>
@@ -112,7 +105,6 @@
             <controller_action_predispatch>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>initByRequest</method>
                     </log>
@@ -121,7 +113,6 @@
             <controller_action_postdispatch>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>saveByRequest</method>
                     </log>
@@ -130,7 +121,6 @@
             <customer_login>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>bindCustomerLogin</method>
                     </log>
@@ -139,7 +129,6 @@
             <customer_logout>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>bindCustomerLogout</method>
                     </log>
@@ -148,7 +137,6 @@
             <sales_quote_save_after>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>bindQuoteCreate</method>
                     </log>
@@ -157,7 +145,6 @@
             <checkout_quote_destroy>
                 <observers>
                     <log>
-                        <type>singleton</type>
                         <class>log/visitor</class>
                         <method>bindQuoteDestroy</method>
                     </log>
@@ -165,7 +152,6 @@
             </checkout_quote_destroy>
         </events>
     </frontend>
-
     <adminhtml>
         <translate>
             <modules>
@@ -177,7 +163,6 @@
             </modules>
         </translate>
     </adminhtml>
-
     <default>
         <log>
             <visitor>
@@ -188,15 +173,14 @@
             <log>
                 <clean_after_day>180</clean_after_day>
                 <enabled>0</enabled>
-                <time></time>
+                <time/>
                 <frequency>D</frequency>
-                <error_email></error_email>
+                <error_email/>
                 <error_email_identity>general</error_email_identity>
                 <error_email_template>system_log_error_email_template</error_email_template>
             </log>
         </system>
     </default>
-
     <crontab>
         <jobs>
             <log_clean>
@@ -204,14 +188,6 @@
                     <model>log/cron::logClean</model>
                 </run>
             </log_clean>
-            <!-- every_10_minutes>
-                <schedule>
-                    <cron_expr>*/10 * * * *</cron_expr>
-                </schedule>
-                <run>
-                    <model>log/aggregation::run</model>
-                </run>
-            </every_10_minutes -->
         </jobs>
     </crontab>
 </config>

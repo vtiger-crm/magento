@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,17 +33,15 @@
  */
 class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Controller_Sales_Invoice
 {
+    /**
+     * Get requested items qty's from request
+     */
     protected function _getItemQtys()
     {
         $data = $this->getRequest()->getParam('invoice');
         if (isset($data['items'])) {
             $qtys = $data['items'];
-            //$this->_getSession()->setInvoiceItemQtys($qtys);
-        }
-        /*elseif ($this->_getSession()->getInvoiceItemQtys()) {
-            $qtys = $this->_getSession()->getInvoiceItemQtys();
-        }*/
-        else {
+        } else {
             $qtys = array();
         }
         return $qtys;
@@ -56,61 +54,39 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
      */
     protected function _initInvoice($update = false)
     {
+        $this->_title($this->__('Sales'))->_title($this->__('Invoices'));
+
         $invoice = false;
-        if ($invoiceId = $this->getRequest()->getParam('invoice_id')) {
+        $itemsToInvoice = 0;
+        $invoiceId = $this->getRequest()->getParam('invoice_id');
+        $orderId = $this->getRequest()->getParam('order_id');
+        if ($invoiceId) {
             $invoice = Mage::getModel('sales/order_invoice')->load($invoiceId);
-        }
-        elseif ($orderId = $this->getRequest()->getParam('order_id')) {
-            $order      = Mage::getModel('sales/order')->load($orderId);
+            if (!$invoice->getId()) {
+                $this->_getSession()->addError($this->__('The invoice no longer exists.'));
+                return false;
+            }
+        } elseif ($orderId) {
+            $order = Mage::getModel('sales/order')->load($orderId);
             /**
              * Check order existing
              */
             if (!$order->getId()) {
-                $this->_getSession()->addError($this->__('Order not longer exist'));
+                $this->_getSession()->addError($this->__('The order no longer exists.'));
                 return false;
             }
             /**
              * Check invoice create availability
              */
             if (!$order->canInvoice()) {
-                $this->_getSession()->addError($this->__('Can not do invoice for order'));
+                $this->_getSession()->addError($this->__('The order does not allow creating an invoice.'));
                 return false;
             }
-
-            $convertor  = Mage::getModel('sales/convert_order');
-            $invoice    = $convertor->toInvoice($order);
-
             $savedQtys = $this->_getItemQtys();
-            /* @var $orderItem Mage_Sales_Model_Order_Item */
-            foreach ($order->getAllItems() as $orderItem) {
-
-                if (!$orderItem->isDummy() && !$orderItem->getQtyToInvoice() && $orderItem->getLockedDoInvoice()) {
-                    continue;
-                }
-
-                if ($order->getForcedDoShipmentWithInvoice() && $orderItem->getLockedDoShip()) {
-                    continue;
-                }
-
-                if (!$update && $orderItem->isDummy() && !empty($savedQtys) && !$this->_needToAddDummy($orderItem, $savedQtys)) {
-                    continue;
-                }
-                $item = $convertor->itemToInvoiceItem($orderItem);
-
-                if (isset($savedQtys[$orderItem->getId()])) {
-                    $qty = $savedQtys[$orderItem->getId()];
-                }
-                else {
-                    if ($orderItem->isDummy()) {
-                        $qty = 1;
-                    } else {
-                        $qty = $orderItem->getQtyToInvoice();
-                    }
-                }
-                $item->setQty($qty);
-                $invoice->addItem($item);
+            $invoice = Mage::getModel('sales/service_order', $order)->prepareInvoice($savedQtys);
+            if (!$invoice->getTotalQty()) {
+                Mage::throwException($this->__('Cannot create an invoice without products.'));
             }
-            $invoice->collectTotals();
         }
 
         Mage::register('current_invoice', $invoice);
@@ -142,69 +118,19 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
      */
     protected function _prepareShipment($invoice)
     {
-        $convertor  = Mage::getModel('sales/convert_order');
-        /* @var $convertor Mage_Sales_Model_Convert_Order */
-        $shipment    = $convertor->toShipment($invoice->getOrder());
-
         $savedQtys = $this->_getItemQtys();
-        $skipedParent = array();
-
-        foreach ($invoice->getOrder()->getAllItems() as $item) {
-            /*
-             * if this is child and its parent was skipped
-             * bc of something we need to skip child also
-             */
-            if ($item->getParentItem() && isset($skipedParent[$item->getParentItem()->getId()])){
-                continue;
-            }
-
-            if (isset($savedQtys[$item->getId()])) {
-                $qty = min($savedQtys[$item->getId()], $item->getQtyToShip());
-            } else {
-                $qty = $item->getQtyToShip();
-            }
-
-            if (!$item->isDummy(true) && !$item->getQtyToShip() && $item->getLockedDoShip()) {
-                continue;
-            }
-
-            /**
-             * if this is a dummy item and we don't need it. we skip it.
-             * also if this item is parent we need to mark that we skipped
-             * it so children will be also skipped
-             */
-            if ($item->isDummy(true) && !$this->_needToAddDummyForShipment($item, $savedQtys)) {
-                if ($item->getChildrenItems()) {
-                    $skipedParent[$item->getId()] = 1;
-                }
-                continue;
-            }
-
-            if ($item->getIsVirtual()) {
-                continue;
-            }
-
-            $shipItem = $convertor->itemToShipmentItem($item);
-
-            if ($item->isDummy(true)) {
-                $qty = 1;
-            }
-
-            $shipItem->setQty($qty);
-            $shipment->addItem($shipItem);
-        }
-
-        if (!count($shipment->getAllItems())) {
-            // no need to create empty shipment
+        $shipment = Mage::getModel('sales/service_order', $invoice->getOrder())->prepareShipment($savedQtys);
+        if (!$shipment->getTotalQty()) {
             return false;
         }
 
-        $shipment->register();
 
-        if ($tracks = $this->getRequest()->getPost('tracking')) {
+        $shipment->register();
+        $tracks = $this->getRequest()->getPost('tracking');
+        if ($tracks) {
             foreach ($tracks as $data) {
                 $track = Mage::getModel('sales/order_shipment_track')
-                ->addData($data);
+                    ->addData($data);
                 $shipment->addTrack($track);
             }
         }
@@ -216,7 +142,10 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
      */
     public function viewAction()
     {
-        if ($invoice = $this->_initInvoice()) {
+        $invoice = $this->_initInvoice();
+        if ($invoice) {
+            $this->_title(sprintf("#%s", $invoice->getIncrementId()));
+
             $this->loadLayout()
                 ->_setActiveMenu('sales/order');
             $this->getLayout()->getBlock('sales_invoice_view')
@@ -245,13 +174,18 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
      */
     public function newAction()
     {
-        if ($invoice = $this->_initInvoice()) {
+        $invoice = $this->_initInvoice();
+        if ($invoice) {
+            $this->_title($this->__('New Invoice'));
+
+            if ($comment = Mage::getSingleton('adminhtml/session')->getCommentText(true)) {
+                $invoice->setCommentText($comment);
+            }
+
             $this->loadLayout()
                 ->_setActiveMenu('sales/order')
                 ->renderLayout();
-        }
-        else {
-            // $this->_forward('noRoute');
+        } else {
             $this->_redirect('*/sales_order/view', array('order_id'=>$this->getRequest()->getParam('order_id')));
         }
     }
@@ -263,22 +197,25 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
     {
         try {
             $invoice = $this->_initInvoice(true);
+            // Save invoice comment text in current invoice object in order to display it in corresponding view
+            $invoiceRawData = $this->getRequest()->getParam('invoice');
+            $invoiceRawCommentText = $invoiceRawData['comment_text'];
+            $invoice->setCommentText($invoiceRawCommentText);
+
             $this->loadLayout();
             $response = $this->getLayout()->getBlock('order_items')->toHtml();
-        }
-        catch (Mage_Core_Exception $e) {
+        } catch (Mage_Core_Exception $e) {
             $response = array(
                 'error'     => true,
                 'message'   => $e->getMessage()
             );
-            $response = Zend_Json::encode($response);
-        }
-        catch (Exception $e) {
+            $response = Mage::helper('core')->jsonEncode($response);
+        } catch (Exception $e) {
             $response = array(
                 'error'     => true,
-                'message'   => $this->__('Can not update item qty')
+                'message'   => $this->__('Cannot update item quantity.')
             );
-            $response = Zend_Json::encode($response);
+            $response = Mage::helper('core')->jsonEncode($response);
         }
         $this->getResponse()->setBody($response);
     }
@@ -290,15 +227,26 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
     public function saveAction()
     {
         $data = $this->getRequest()->getPost('invoice');
+        $orderId = $this->getRequest()->getParam('order_id');
+
+        if (!empty($data['comment_text'])) {
+            Mage::getSingleton('adminhtml/session')->setCommentText($data['comment_text']);
+        }
+
         try {
-            if ($invoice = $this->_initInvoice()) {
+            $invoice = $this->_initInvoice();
+            if ($invoice) {
 
                 if (!empty($data['capture_case'])) {
                     $invoice->setRequestedCaptureCase($data['capture_case']);
                 }
 
                 if (!empty($data['comment_text'])) {
-                    $invoice->addComment($data['comment_text'], isset($data['comment_customer_notify']));
+                    $invoice->addComment(
+                        $data['comment_text'],
+                        isset($data['comment_customer_notify']),
+                        isset($data['is_visible_on_front'])
+                    );
                 }
 
                 $invoice->register();
@@ -307,6 +255,7 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
                     $invoice->setEmailSent(true);
                 }
 
+                $invoice->getOrder()->setCustomerNoteNotify(!empty($data['send_email']));
                 $invoice->getOrder()->setIsInProcess(true);
 
                 $transactionSave = Mage::getModel('core/resource_transaction')
@@ -322,41 +271,46 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
                 }
                 $transactionSave->save();
 
-                /**
-                 * Sending emails
-                 */
+                if (isset($shippingResponse) && $shippingResponse->hasErrors()) {
+                    $this->_getSession()->addError($this->__('The invoice and the shipment  have been created. The shipping label cannot be created at the moment.'));
+                } elseif (!empty($data['do_shipment'])) {
+                    $this->_getSession()->addSuccess($this->__('The invoice and shipment have been created.'));
+                } else {
+                    $this->_getSession()->addSuccess($this->__('The invoice has been created.'));
+                }
+
+                // send invoice/shipment emails
                 $comment = '';
                 if (isset($data['comment_customer_notify'])) {
                     $comment = $data['comment_text'];
                 }
-                $invoice->sendEmail(!empty($data['send_email']), $comment);
+                try {
+                    $invoice->sendEmail(!empty($data['send_email']), $comment);
+                } catch (Exception $e) {
+                    Mage::logException($e);
+                    $this->_getSession()->addError($this->__('Unable to send the invoice email.'));
+                }
                 if ($shipment) {
-                    $shipment->sendEmail(!empty($data['send_email']));
+                    try {
+                        $shipment->sendEmail(!empty($data['send_email']));
+                    } catch (Exception $e) {
+                        Mage::logException($e);
+                        $this->_getSession()->addError($this->__('Unable to send the shipment email.'));
+                    }
                 }
-
-                if (!empty($data['do_shipment'])) {
-                    $this->_getSession()->addSuccess($this->__('Invoice and shipment was successfully created.'));
-                }
-                else {
-                    $this->_getSession()->addSuccess($this->__('Invoice was successfully created.'));
-                }
-
-                $this->_redirect('*/sales_order/view', array('order_id' => $invoice->getOrderId()));
-                return;
+                Mage::getSingleton('adminhtml/session')->getCommentText(true);
+                $this->_redirect('*/sales_order/view', array('order_id' => $orderId));
+            } else {
+                $this->_redirect('*/*/new', array('order_id' => $orderId));
             }
-            else {
-                $this->_forward('noRoute');
-                return;
-            }
-        }
-        catch (Mage_Core_Exception $e) {
+            return;
+        } catch (Mage_Core_Exception $e) {
             $this->_getSession()->addError($e->getMessage());
+        } catch (Exception $e) {
+            $this->_getSession()->addError($this->__('Unable to save the invoice.'));
+            Mage::logException($e);
         }
-        catch (Exception $e) {
-            $this->_getSession()->addError($this->__('Can not save invoice'));
-        }
-
-        $this->_redirect('*/*/new', array('order_id' => $this->getRequest()->getParam('order_id')));
+        $this->_redirect('*/*/new', array('order_id' => $orderId));
     }
 
 
@@ -369,17 +323,14 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
             try {
                 $invoice->capture();
                 $this->_saveInvoice($invoice);
-                $this->_getSession()->addSuccess($this->__('Invoice was successfully captured'));
-            }
-            catch (Mage_Core_Exception $e) {
+                $this->_getSession()->addSuccess($this->__('The invoice has been captured.'));
+            } catch (Mage_Core_Exception $e) {
                 $this->_getSession()->addError($e->getMessage());
-            }
-            catch (Exception $e) {
-                $this->_getSession()->addError($this->__('Invoice capture error'));
+            } catch (Exception $e) {
+                $this->_getSession()->addError($this->__('Invoice capturing error.'));
             }
             $this->_redirect('*/*/view', array('invoice_id'=>$invoice->getId()));
-        }
-        else {
+        } else {
             $this->_forward('noRoute');
         }
     }
@@ -393,17 +344,14 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
             try {
                 $invoice->cancel();
                 $this->_saveInvoice($invoice);
-                $this->_getSession()->addSuccess($this->__('Invoice was successfully canceled.'));
-            }
-            catch (Mage_Core_Exception $e) {
+                $this->_getSession()->addSuccess($this->__('The invoice has been canceled.'));
+            } catch (Mage_Core_Exception $e) {
                 $this->_getSession()->addError($e->getMessage());
-            }
-            catch (Exception $e) {
-                $this->_getSession()->addError($this->__('Invoice cancel error.'));
+            } catch (Exception $e) {
+                $this->_getSession()->addError($this->__('Invoice canceling error.'));
             }
             $this->_redirect('*/*/view', array('invoice_id'=>$invoice->getId()));
-        }
-        else {
+        } else {
             $this->_forward('noRoute');
         }
     }
@@ -417,17 +365,14 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
             try {
                 $invoice->void();
                 $this->_saveInvoice($invoice);
-                $this->_getSession()->addSuccess($this->__('Invoice was successfully voided'));
-            }
-            catch (Mage_Core_Exception $e) {
+                $this->_getSession()->addSuccess($this->__('The invoice has been voided.'));
+            } catch (Mage_Core_Exception $e) {
                 $this->_getSession()->addError($e->getMessage());
-            }
-            catch (Exception $e) {
-                $this->_getSession()->addError($this->__('Invoice void error'));
+            } catch (Exception $e) {
+                $this->_getSession()->addError($this->__('Invoice voiding error.'));
             }
             $this->_redirect('*/*/view', array('invoice_id'=>$invoice->getId()));
-        }
-        else {
+        } else {
             $this->_forward('noRoute');
         }
     }
@@ -438,38 +383,48 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
             $this->getRequest()->setParam('invoice_id', $this->getRequest()->getParam('id'));
             $data = $this->getRequest()->getPost('comment');
             if (empty($data['comment'])) {
-                Mage::throwException($this->__('Comment text field can not be empty.'));
+                Mage::throwException($this->__('The Comment Text field cannot be empty.'));
             }
             $invoice = $this->_initInvoice();
-            $invoice->addComment($data['comment'], isset($data['is_customer_notified']));
+            $invoice->addComment(
+                $data['comment'],
+                isset($data['is_customer_notified']),
+                isset($data['is_visible_on_front'])
+            );
             $invoice->sendUpdateEmail(!empty($data['is_customer_notified']), $data['comment']);
             $invoice->save();
 
             $this->loadLayout();
             $response = $this->getLayout()->getBlock('invoice_comments')->toHtml();
-        }
-        catch (Mage_Core_Exception $e) {
+        } catch (Mage_Core_Exception $e) {
             $response = array(
                 'error'     => true,
                 'message'   => $e->getMessage()
             );
-            $response = Zend_Json::encode($response);
-        }
-        catch (Exception $e) {
+            $response = Mage::helper('core')->jsonEncode($response);
+        } catch (Exception $e) {
             $response = array(
                 'error'     => true,
-                'message'   => $this->__('Can not add new comment.')
+                'message'   => $this->__('Cannot add new comment.')
             );
-            $response = Zend_Json::encode($response);
+            $response = Mage::helper('core')->jsonEncode($response);
         }
         $this->getResponse()->setBody($response);
     }
+
+
+
+
+
+
+
 
     /**
      * Decides if we need to create dummy invoice item or not
      * for eaxample we don't need create dummy parent if all
      * children are not in process
      *
+     * @deprecated after 1.4, Mage_Sales_Model_Service_Order used
      * @param Mage_Sales_Model_Order_Item $item
      * @param array $qtys
      * @return bool
@@ -495,6 +450,7 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
      * for eaxample we don't need create dummy parent if all
      * children are not in process
      *
+     * @deprecated after 1.4, Mage_Sales_Model_Service_Order used
      * @param Mage_Sales_Model_Order_Item $item
      * @param array $qtys
      * @return bool
@@ -522,6 +478,15 @@ class Mage_Adminhtml_Sales_Order_InvoiceController extends Mage_Adminhtml_Contro
             }
             return false;
         }
+    }
+
+    /**
+     * Create pdf for current invoice
+     */
+    public function printAction()
+    {
+        $this->_initInvoice();
+        parent::printAction();
     }
 
 }

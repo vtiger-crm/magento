@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -32,6 +32,9 @@
 class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widget_Grid
 {
 
+    /**
+     * Initialization
+     */
     public function __construct()
     {
         parent::__construct();
@@ -40,28 +43,39 @@ class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widg
         $this->setDefaultDir('DESC');
     }
 
+    /**
+     * Retrieve collection class
+     *
+     * @return string
+     */
+    protected function _getCollectionClass()
+    {
+        return 'sales/order_shipment_grid_collection';
+    }
+
+    /**
+     * Prepare and set collection of grid
+     *
+     * @return Mage_Adminhtml_Block_Widget_Grid
+     */
     protected function _prepareCollection()
     {
-        //TODO: add full name logic
-        $collection = Mage::getResourceModel('sales/order_shipment_collection')
-            ->addAttributeToSelect('increment_id')
-            ->addAttributeToSelect('created_at')
-            ->addAttributeToSelect('total_qty')
-            ->joinAttribute('shipping_firstname', 'order_address/firstname', 'shipping_address_id', null, 'left')
-            ->joinAttribute('shipping_lastname', 'order_address/lastname', 'shipping_address_id', null, 'left')
-            ->joinAttribute('order_increment_id', 'order/increment_id', 'order_id', null, 'left')
-            ->joinAttribute('order_created_at', 'order/created_at', 'order_id', null, 'left')
-        ;
+        $collection = Mage::getResourceModel($this->_getCollectionClass());
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
 
+    /**
+     * Prepare and add columns to grid
+     *
+     * @return Mage_Adminhtml_Block_Widget_Grid
+     */
     protected function _prepareColumns()
     {
         $this->addColumn('increment_id', array(
             'header'    => Mage::helper('sales')->__('Shipment #'),
             'index'     => 'increment_id',
-            'type'      => 'number',
+            'type'      => 'text',
         ));
 
         $this->addColumn('created_at', array(
@@ -73,7 +87,7 @@ class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widg
         $this->addColumn('order_increment_id', array(
             'header'    => Mage::helper('sales')->__('Order #'),
             'index'     => 'order_increment_id',
-            'type'      => 'number',
+            'type'      => 'text',
         ));
 
         $this->addColumn('order_created_at', array(
@@ -82,14 +96,9 @@ class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widg
             'type'      => 'datetime',
         ));
 
-        $this->addColumn('shipping_firstname', array(
-            'header' => Mage::helper('sales')->__('Ship to First name'),
-            'index' => 'shipping_firstname',
-        ));
-
-        $this->addColumn('shipping_lastname', array(
-            'header' => Mage::helper('sales')->__('Ship to Last name'),
-            'index' => 'shipping_lastname',
+        $this->addColumn('shipping_name', array(
+            'header' => Mage::helper('sales')->__('Ship to Name'),
+            'index' => 'shipping_name',
         ));
 
         $this->addColumn('total_qty', array(
@@ -107,7 +116,7 @@ class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widg
                 'actions'   => array(
                     array(
                         'caption' => Mage::helper('sales')->__('View'),
-                        'url'     => array('base'=>'*/*/view'),
+                        'url'     => array('base'=>'*/sales_shipment/view'),
                         'field'   => 'shipment_id'
                     )
                 ),
@@ -116,31 +125,60 @@ class Mage_Adminhtml_Block_Sales_Shipment_Grid extends Mage_Adminhtml_Block_Widg
                 'is_system' => true
         ));
 
+        $this->addExportType('*/*/exportCsv', Mage::helper('sales')->__('CSV'));
+        $this->addExportType('*/*/exportExcel', Mage::helper('sales')->__('Excel XML'));
+
         return parent::_prepareColumns();
     }
 
+    /**
+     * Get url for row
+     *
+     * @param string $row
+     * @return string
+     */
     public function getRowUrl($row)
     {
-        return $this->getUrl('*/*/view',
+        if (!Mage::getSingleton('admin/session')->isAllowed('sales/order/shipment')) {
+            return false;
+        }
+
+        return $this->getUrl('*/sales_shipment/view',
             array(
                 'shipment_id'=> $row->getId(),
             )
         );
     }
 
+    /**
+     * Prepare and set options for massaction
+     *
+     * @return Mage_Adminhtml_Block_Sales_Shipment_Grid
+     */
     protected function _prepareMassaction()
     {
         $this->setMassactionIdField('entity_id');
         $this->getMassactionBlock()->setFormFieldName('shipment_ids');
+        $this->getMassactionBlock()->setUseSelectAll(false);
 
         $this->getMassactionBlock()->addItem('pdfshipments_order', array(
              'label'=> Mage::helper('sales')->__('PDF Packingslips'),
-             'url'  => $this->getUrl('*/*/pdfshipments'),
+             'url'  => $this->getUrl('*/sales_shipment/pdfshipments'),
+        ));
+
+        $this->getMassactionBlock()->addItem('print_shipping_label', array(
+             'label'=> Mage::helper('sales')->__('Print Shipping Labels'),
+             'url'  => $this->getUrl('*/sales_order_shipment/massPrintShippingLabel'),
         ));
 
         return $this;
     }
 
+    /**
+     * Get url of grid
+     *
+     * @return string
+     */
     public function getGridUrl()
     {
         return $this->getUrl('*/*/*', array('_current' => true));

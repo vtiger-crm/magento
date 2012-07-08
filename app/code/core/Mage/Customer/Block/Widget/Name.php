@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 class Mage_Customer_Block_Widget_Name extends Mage_Customer_Block_Widget_Abstract
@@ -56,55 +56,85 @@ class Mage_Customer_Block_Widget_Name extends Mage_Customer_Block_Widget_Abstrac
      */
     public function showPrefix()
     {
-        return $this->_showConfig('prefix_show');
+        return (bool)$this->_getAttribute('prefix')->getIsVisible();
     }
 
+    /**
+     * Define if prefix attribute is required
+     *
+     * @return bool
+     */
     public function isPrefixRequired()
     {
-        return $this->getConfig('prefix_show')=='req';
+        return (bool)$this->_getAttribute('prefix')->getIsRequired();
     }
 
+    /**
+     * Retrieve name prefix dropdown options
+     *
+     * @return array|bool
+     */
     public function getPrefixOptions()
     {
-        $options = trim($this->getConfig('prefix_options'));
-        if (!$options) {
-            return false;
+        $prefixOptions = $this->helper('customer')->getNamePrefixOptions();
+
+        if ($this->getObject() && !empty($prefixOptions)) {
+            $oldPrefix = $this->escapeHtml(trim($this->getObject()->getPrefix()));
+            $prefixOptions[$oldPrefix] = $oldPrefix;
         }
-        $options = explode(';', $options);
-        foreach ($options as &$v) {
-            $v = $this->htmlEscape(trim($v));
-        }
-        return $options;
+        return $prefixOptions;
     }
 
+    /**
+     * Define if middle name attribute can be shown
+     *
+     * @return bool
+     */
     public function showMiddlename()
     {
-        return $this->_showConfig('middlename_show');
+        return (bool)$this->_getAttribute('middlename')->getIsVisible();
     }
 
+    /**
+     * Define if suffix attribute can be shown
+     *
+     * @return bool
+     */
     public function showSuffix()
     {
-        return $this->_showConfig('suffix_show');
+        return (bool)$this->_getAttribute('suffix')->getIsVisible();
     }
 
+    /**
+     * Define if suffix attribute is required
+     *
+     * @return bool
+     */
     public function isSuffixRequired()
     {
-        return $this->getConfig('suffix_show') == 'req';
+        return (bool)$this->_getAttribute('suffix')->getIsRequired();
     }
 
+    /**
+     * Retrieve name suffix dropdown options
+     *
+     * @return array|bool
+     */
     public function getSuffixOptions()
     {
-        $options = trim($this->getConfig('suffix_options'));
-        if (!$options) {
-            return false;
+        $suffixOptions = $this->helper('customer')->getNameSuffixOptions();
+        if ($this->getObject() && !empty($suffixOptions)) {
+            $oldSuffix = $this->escapeHtml(trim($this->getObject()->getSuffix()));
+            $suffixOptions[$oldSuffix] = $oldSuffix;
         }
-        $options = explode(';', $options);
-        foreach ($options as &$v) {
-            $v = $this->htmlEscape(trim($v));
-        }
-        return $options;
+        return $suffixOptions;
     }
 
+    /**
+     * Class name getter
+     *
+     * @return string
+     */
     public function getClassName()
     {
         if (!$this->hasData('class_name')) {
@@ -113,6 +143,11 @@ class Mage_Customer_Block_Widget_Name extends Mage_Customer_Block_Widget_Abstrac
         return $this->getData('class_name');
     }
 
+    /**
+     * Container class name getter
+     *
+     * @return string
+     */
     public function getContainerClassName()
     {
         $class = $this->getClassName();
@@ -120,5 +155,35 @@ class Mage_Customer_Block_Widget_Name extends Mage_Customer_Block_Widget_Abstrac
         $class .= $this->showMiddlename() ? '-middlename' : '';
         $class .= $this->showSuffix() ? '-suffix' : '';
         return $class;
+    }
+
+    /**
+     * Retrieve customer or customer address attribute instance
+     *
+     * @param string $attributeCode
+     * @return Mage_Eav_Model_Entity_Attribute_Abstract
+     */
+    protected function _getAttribute($attributeCode)
+    {
+        if ($this->getForceUseCustomerAttributes() || $this->getObject() instanceof Mage_Customer_Model_Customer) {
+            return parent::_getAttribute($attributeCode);
+        }
+
+        return Mage::getSingleton('eav/config')->getAttribute('customer_address', $attributeCode);
+    }
+
+    /**
+     * Retrieve store attribute label
+     *
+     * @param string $attributeCode
+     * @return string
+     */
+    public function getStoreLabel($attributeCode)
+    {
+        $attribute = $this->_getAttribute($attributeCode);
+        if ($attribute) {
+            return $this->__($attribute->getStoreLabel());
+        }
+        return '';
     }
 }

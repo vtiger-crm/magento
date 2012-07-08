@@ -18,15 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 class Mage_Adminhtml_Block_Dashboard extends Mage_Adminhtml_Block_Template
 {
     protected $_locale;
+
+    /**
+     * Location of the "Enable Chart" config param
+     */
+    const XML_PATH_ENABLE_CHARTS = 'admin/dashboard/enable_charts';
 
     public function __construct()
     {
@@ -57,9 +62,14 @@ class Mage_Adminhtml_Block_Dashboard extends Mage_Adminhtml_Block_Template
                 $this->getLayout()->createBlock('adminhtml/dashboard_searches_top')
         );
 
-        $this->setChild('diagrams',
-                $this->getLayout()->createBlock('adminhtml/dashboard_diagrams')
-        );
+        if (Mage::getStoreConfig(self::XML_PATH_ENABLE_CHARTS)) {
+            $block = $this->getLayout()->createBlock('adminhtml/dashboard_diagrams');
+        } else {
+            $block = $this->getLayout()->createBlock('adminhtml/template')
+                ->setTemplate('dashboard/graph/disabled.phtml')
+                ->setConfigUrl($this->getUrl('adminhtml/system_config/edit', array('section'=>'admin')));
+        }
+        $this->setChild('diagrams', $block);
 
         $this->setChild('grids',
                 $this->getLayout()->createBlock('adminhtml/dashboard_grids')

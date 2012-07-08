@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_GiftMessage
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -28,13 +28,14 @@
 /**
  * Gift Message attribute source model
  *
+ * @deprecated after 1.4.2.0
+ *
  * @category    Mage
  * @package     Mage_GiftMessage
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_GiftMessage_Model_Entity_Attribute_Source_Boolean_Config extends Mage_Eav_Model_Entity_Attribute_Source_Boolean
 {
-    
     /**
      * Retrieve all attribute options
      *

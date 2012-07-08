@@ -18,25 +18,38 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Abstract resource model
  *
- * @category   Mage
- * @package    Mage_Core
+ * @category    Mage
+ * @package     Mage_Core
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 abstract class Mage_Core_Model_Resource_Abstract
 {
+    /**
+     * Main constructor
+     */
     public function __construct()
     {
+        /**
+         * Please override this one instead of overriding real __construct constructor
+         */
         $this->_construct();
     }
+
+    /**
+     * Array of callbacks subscribed to commit transaction commit
+     *
+     * @var array
+     */
+    static protected $_commitCallbacks = array();
 
     /**
      * Resource initialization
@@ -65,6 +78,19 @@ abstract class Mage_Core_Model_Resource_Abstract
     }
 
     /**
+     * Subscribe some callback to transaction commit
+     *
+     * @param callback $callback
+     * @return Mage_Core_Model_Resource_Abstract
+     */
+    public function addCommitCallback($callback)
+    {
+        $adapterKey = spl_object_hash($this->_getWriteAdapter());
+        self::$_commitCallbacks[$adapterKey][] = $callback;
+        return $this;
+    }
+
+    /**
      * Commit resource transaction
      *
      * @return Mage_Core_Model_Resource_Abstract
@@ -72,6 +98,19 @@ abstract class Mage_Core_Model_Resource_Abstract
     public function commit()
     {
         $this->_getWriteAdapter()->commit();
+        /**
+         * Process after commit callbacks
+         */
+        if ($this->_getWriteAdapter()->getTransactionLevel() === 0) {
+            $adapterKey = spl_object_hash($this->_getWriteAdapter());
+            if (isset(self::$_commitCallbacks[$adapterKey])) {
+                $callbacks = self::$_commitCallbacks[$adapterKey];
+                self::$_commitCallbacks[$adapterKey] = array();
+                foreach ($callbacks as $index => $callback) {
+                    call_user_func($callback);
+                }
+            }
+        }
         return $this;
     }
 
@@ -89,38 +128,113 @@ abstract class Mage_Core_Model_Resource_Abstract
     /**
      * Format date to internal format
      *
-     * @param   string | Zend_Date $date
-     * @param   bool $includeTime
-     * @return  string
+     * @param string|Zend_Date $date
+     * @param bool $includeTime
+     * @return string
      */
     public function formatDate($date, $includeTime=true)
     {
-        if ($date instanceof Zend_Date) {
-            if ($includeTime) {
-                return $date->toString(Varien_Date::DATETIME_INTERNAL_FORMAT);
+         return Varien_Date::formatDate($date, $includeTime);
+    }
+
+    /**
+     * Convert internal date to UNIX timestamp
+     *
+     * @param string $str
+     * @return int
+     */
+    public function mktime($str)
+    {
+        return Varien_Date::formatDate($str);
+    }
+
+    /**
+     * Serialize specified field in an object
+     *
+     * @param Varien_Object $object
+     * @param string $field
+     * @param mixed $defaultValue
+     * @param bool $unsetEmpty
+     * @return Mage_Core_Model_Resource_Abstract
+     */
+    protected function _serializeField(Varien_Object $object, $field, $defaultValue = null, $unsetEmpty = false)
+    {
+        $value = $object->getData($field);
+        if (empty($value)) {
+            if ($unsetEmpty) {
+                $object->unsetData($field);
+            } else {
+                if (is_object($defaultValue) || is_array($defaultValue)) {
+                    $defaultValue = serialize($defaultValue);
+                }
+                $object->setData($field, $defaultValue);
             }
-            else {
-                return $date->toString(Varien_Date::DATE_INTERNAL_FORMAT);
-            }
+        } elseif (is_array($value) || is_object($value)) {
+            $object->setData($field, serialize($value));
         }
 
-    	if (empty($date)) {
-    		return new Zend_Db_Expr('NULL');
-    	}
+        return $this;
+    }
 
-        if (!is_numeric($date)) {
-            $date = strtotime($date);
-        }
-        if ($includeTime) {
-            return date('Y-m-d H:i:s', $date);
-        }
-        else {
-            return date('Y-m-d', $date);
+    /**
+     * Unserialize Varien_Object field in an object
+     *
+     * @param Mage_Core_Model_Abstract $object
+     * @param string $field
+     * @param mixed $defaultValue
+     */
+    protected function _unserializeField(Varien_Object $object, $field, $defaultValue = null)
+    {
+        $value = $object->getData($field);
+        if (empty($value)) {
+            $object->setData($field, $defaultValue);
+        } elseif (!is_array($value) && !is_object($value)) {
+            $object->setData($field, unserialize($value));
         }
     }
 
-    public function mktime($str)
+    /**
+     * Prepare data for passed table
+     *
+     * @param Varien_Object $object
+     * @param string $table
+     * @return array
+     */
+    protected function _prepareDataForTable(Varien_Object $object, $table)
     {
-        return  strtotime($str);
+        $data = array();
+        $fields = $this->_getWriteAdapter()->describeTable($table);
+        foreach (array_keys($fields) as $field) {
+            if ($object->hasData($field)) {
+                $fieldValue = $object->getData($field);
+                if ($fieldValue instanceof Zend_Db_Expr) {
+                    $data[$field] = $fieldValue;
+                } else {
+                    if (null !== $fieldValue) {
+                        $fieldValue   = $this->_prepareTableValueForSave($fieldValue, $fields[$field]['DATA_TYPE']);
+                        $data[$field] = $this->_getWriteAdapter()->prepareColumnValue($fields[$field], $fieldValue);
+                    } else if (!empty($fields[$field]['NULLABLE'])) {
+                        $data[$field] = null;
+                    }
+                }
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Prepare value for save
+     *
+     * @param mixed $value
+     * @param string $type
+     * @return mixed
+     */
+    protected function _prepareTableValueForSave($value, $type)
+    {
+        $type = strtolower($type);
+        if ($type == 'decimal' || $type == 'numeric' || $type == 'float') {
+            $value = Mage::app()->getLocale()->getNumber($value);
+        }
+        return $value;
     }
 }

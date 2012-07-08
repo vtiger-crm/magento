@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleCheckout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleCheckout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 set_include_path(get_include_path().PS.Mage::getBaseDir('lib').DS.'googlecheckout');
@@ -35,7 +35,7 @@ abstract class Mage_GoogleCheckout_Model_Api_Xml_Abstract extends Varien_Object
 {
     public function log($text, $nl=true)
     {
-        error_log(print_r($text,1).($nl?"\n":''), 3, Mage::getBaseDir('log').DS.'callback.log');
+        error_log(print_r($text, 1) . ($nl ? "\n" : ''), 3, Mage::getBaseDir('log') . DS . 'callback.log');
         return $this;
     }
 
@@ -106,8 +106,8 @@ abstract class Mage_GoogleCheckout_Model_Api_Xml_Abstract extends Varien_Object
             //Setup the log file
             $logDir = Mage::getBaseDir('log');
             $this->getData('g_request')->SetLogFiles(
-                $logDir.DS.'googleerror.log',
-                $logDir.DS.'googlemessage.log',
+                $logDir . DS . 'googleerror.log',
+                $logDir . DS . 'googlemessage.log',
                 L_ALL
             );
         }
@@ -130,8 +130,8 @@ abstract class Mage_GoogleCheckout_Model_Api_Xml_Abstract extends Varien_Object
             //Setup the log file
             $logDir = Mage::getBaseDir('log');
             $this->getData('g_response')->SetLogFiles(
-                $logDir.DS.'googleerror.log',
-                $logDir.DS.'googlemessage.log',
+                $logDir . DS . 'googleerror.log',
+                $logDir . DS . 'googlemessage.log',
                 L_ALL
             );
         }
@@ -153,38 +153,39 @@ abstract class Mage_GoogleCheckout_Model_Api_Xml_Abstract extends Varien_Object
 
     public function _call($xml)
     {
-        $auth = 'Basic '.base64_encode($this->getMerchantId().':'.$this->getMerchantKey());
+        $auth = 'Basic ' . base64_encode($this->getMerchantId() . ':' . $this->getMerchantKey());
 
         $headers = array(
-            'Authorization: '.$auth,
+            'Authorization: ' . $auth,
             'Content-Type: application/xml;charset=UTF-8',
             'Accept: application/xml;charset=UTF-8',
         );
 
         $url = $this->_getApiUrl();
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\r\n" . $xml;
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\r\n".$xml;
+        $debugData = array('request' => $xml, 'dir' => 'out');
 
-        if (Mage::getStoreConfig('google/checkout/debug', $this->getStoreId())) {
-            $debug = Mage::getModel('googlecheckout/api_debug');
-            $debug->setDir('out')->setUrl($url)->setRequestBody($xml)->save();
+        try {
+            $http = new Varien_Http_Adapter_Curl();
+            $http->write('POST', $url, '1.1', $headers, $xml);
+            $response = $http->read();
+            $response = preg_split('/^\r?$/m', $response, 2);
+            $response = trim($response[1]);
+            $debugData['result'] = $response;
+        }
+        catch (Exception $e) {
+            $debugData['result'] = array('error' => $e->getMessage(), 'code' => $e->getCode());
+            $this->getApi()->debugData($debugData);
+            throw $e;
         }
 
-        $http = new Varien_Http_Adapter_Curl();
-        $http->write('POST', $url, '1.1', $headers, $xml);
-        $response = $http->read();
-        $response = preg_split('/^\r?$/m', $response, 2);
-        $response = trim($response[1]);
-
-        if (!empty($debug)) {
-            $debug->setResponseBody($response)->save();
-        }
-
+        $this->getApi()->debugData($debugData);
         $result = @simplexml_load_string($response);
         if (!$result) {
             $result = simplexml_load_string('<error><error-message>Invalid response from Google Checkout server</error-message></error>');
         }
-        if ($result->getName()=='error') {
+        if ($result->getName() == 'error') {
             $this->setError($this->__('Google Checkout: %s', (string)$result->{'error-message'}));
             $this->setWarnings((array)$result->{'warning-messages'});
         } else {
@@ -199,5 +200,32 @@ abstract class Mage_GoogleCheckout_Model_Api_Xml_Abstract extends Varien_Object
     protected function _getCallbackUrl()
     {
         return Mage::getUrl('googlecheckout/api', array('_forced_secure'=>Mage::getStoreConfig('google/checkout/use_secure_callback_url', $this->getStoreId())));
+    }
+
+    /**
+     * Recalculate amount to store currency
+     *
+     * @param float $amount
+     * @param Mage_Sales_Model_Quote $quote
+     * @return float
+     */
+    protected function _reCalculateToStoreCurrency($amount, $quote)
+    {
+        if ($quote->getQuoteCurrencyCode() != $quote->getBaseCurrencyCode()) {
+            $amount = $amount * $quote->getStoreToQuoteRate();
+            $amount = Mage::app()->getStore()->roundPrice($amount);
+        }
+        return $amount;
+    }
+
+    /**
+     * Get Tax Class for Shipping option
+     *
+     * @param Mage_Sales_Model_Quote $quote
+     * @return mixed
+     */
+    protected function _getTaxClassForShipping($quote)
+    {
+        return Mage::getStoreConfig(Mage_Tax_Model_Config::CONFIG_XML_PATH_SHIPPING_TAX_CLASS, $quote->getStoreId());
     }
 }

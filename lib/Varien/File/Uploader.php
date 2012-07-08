@@ -27,9 +27,12 @@
 /**
  * File upload class
  *
+ * ATTENTION! This class must be used like abstract class and must added
+ * validation by protected file extension list to extended class
+ *
  * @category   Varien
  * @package    Varien_File
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
 
 class Varien_File_Uploader
@@ -121,18 +124,46 @@ class Varien_File_Uploader
 
     protected $_allowedExtensions = null;
 
+    /**
+     * Validate callbacks storage
+     *
+     * @var array
+     * @access protected
+     */
+    protected $_validateCallbacks = array();
+
     const SINGLE_STYLE = 0;
     const MULTIPLE_STYLE = 1;
+    const TMP_NAME_EMPTY = 666;
+
+    /**
+     * Resulting of uploaded file
+     *
+     * @var array|bool      Array with file info keys: path, file. Result is
+     *                      FALSE when file not uploaded
+     */
+    protected $_result;
 
     function __construct($fileId)
     {
         $this->_setUploadFileId($fileId);
         if( !file_exists($this->_file['tmp_name']) ) {
-            throw new Exception('File was not uploaded.');
-            return;
+            $code = empty($this->_file['tmp_name']) ? self::TMP_NAME_EMPTY : 0;
+            throw new Exception('File was not uploaded.', $code);
         } else {
             $this->_fileExists = true;
         }
+    }
+
+    /**
+     * After save logic
+     *
+     * @param  array $result
+     * @return Varien_File_Uploader
+     */
+    protected function _afterSave($result)
+    {
+        return $this;
     }
 
     /**
@@ -144,68 +175,143 @@ class Varien_File_Uploader
      * @access public
      * @return void|bool
      */
-    public function save($destinationFolder, $newFileName=null)
+    public function save($destinationFolder, $newFileName = null)
+    {
+        $this->_validateFile();
+
+        if ($this->_allowCreateFolders) {
+            $this->_createDestinationFolder($destinationFolder);
+        }
+
+        if (!is_writable($destinationFolder)) {
+            throw new Exception('Destination folder is not writable or does not exists.');
+        }
+
+        $this->_result = false;
+
+        $destinationFile = $destinationFolder;
+        $fileName = isset($newFileName) ? $newFileName : $this->_file['name'];
+        $fileName = self::getCorrectFileName($fileName);
+        if ($this->_enableFilesDispersion) {
+            $fileName = $this->correctFileNameCase($fileName);
+            $this->setAllowCreateFolders(true);
+            $this->_dispretionPath = self::getDispretionPath($fileName);
+            $destinationFile.= $this->_dispretionPath;
+            $this->_createDestinationFolder($destinationFile);
+        }
+
+        if ($this->_allowRenameFiles) {
+            $fileName = self::getNewFileName(self::_addDirSeparator($destinationFile) . $fileName);
+        }
+
+        $destinationFile = self::_addDirSeparator($destinationFile) . $fileName;
+
+        $this->_result = $this->_moveFile($this->_file['tmp_name'], $destinationFile);
+
+        if ($this->_result) {
+            chmod($destinationFile, 0777);
+            if ($this->_enableFilesDispersion) {
+                $fileName = str_replace(DIRECTORY_SEPARATOR, '/',
+                    self::_addDirSeparator($this->_dispretionPath)) . $fileName;
+            }
+            $this->_uploadedFileName = $fileName;
+            $this->_uploadedFileDir = $destinationFolder;
+            $this->_result = $this->_file;
+            $this->_result['path'] = $destinationFolder;
+            $this->_result['file'] = $fileName;
+
+            $this->_afterSave($this->_result);
+        }
+
+        return $this->_result;
+    }
+
+    /**
+     * Move files from TMP folder into destination folder
+     *
+     * @param string $tmpPath
+     * @param string $destPath
+     * @return bool
+     */
+    protected function _moveFile($tmpPath, $destPath)
+    {
+        return move_uploaded_file($tmpPath, $destPath);
+    }
+
+    /**
+     * Validate file before save
+     *
+     * @access public
+     */
+    protected function _validateFile()
     {
         if( $this->_fileExists === false ) {
             return;
         }
 
-        if( $this->_allowCreateFolders ) {
-            $this->_createDestinationFolder($destinationFolder);
-        }
+        $filePath = $this->_file['tmp_name'];
+        $fileName = $this->_file['name'];
 
-        if( !is_writable($destinationFolder) ) {
-            throw new Exception('Destination folder is not writable or does not exists.');
-        }
-
-        $result = false;
-
-        $destFile = $destinationFolder;
-        $fileName = ( isset($newFileName) ) ? $newFileName : self::getCorrectFileName($this->_file['name']);
+        //is file extension allowed
         $fileExtension = substr($fileName, strrpos($fileName, '.')+1);
-
-        if( !$this->chechAllowedExtension($fileExtension) ) {
+        if (!$this->checkAllowedExtension($fileExtension)) {
             throw new Exception('Disallowed file type.');
         }
-
-        if( $this->_enableFilesDispersion ) {
-            $fileName = $this->correctFileNameCase($fileName);
-            $this->setAllowCreateFolders(true);
-            $this->_dispretionPath = self::getDispretionPath($fileName);
-            $destFile.= $this->_dispretionPath;
-            $this->_createDestinationFolder($destFile);
-        }
-
-        if( $this->_allowRenameFiles ) {
-            $fileName = self::getNewFileName(self::_addDirSeparator($destFile).$fileName);
-        }
-
-        $destFile = self::_addDirSeparator($destFile) . $fileName;
-
-        $result = move_uploaded_file($this->_file['tmp_name'], $destFile);
-
-        if( $result ) {
-            chmod($destFile, 0777);
-            if ( $this->_enableFilesDispersion ) {
-                $fileName = str_replace(DIRECTORY_SEPARATOR, '/', self::_addDirSeparator($this->_dispretionPath)) . $fileName;
+        //run validate callbacks
+        foreach ($this->_validateCallbacks as $params) {
+            if (is_object($params['object']) && method_exists($params['object'], $params['method'])) {
+                $params['object']->$params['method']($filePath);
             }
-            $this->_uploadedFileName = $fileName;
-            $this->_uploadedFileDir = $destinationFolder;
-            $result = $this->_file;
-            $result['path'] = $destinationFolder;
-            $result['file'] = $fileName;
-            return $result;
-        } else {
-            return $result;
         }
     }
 
+    /**
+     * Add validation callback model for us in self::_validateFile()
+     *
+     * @param string $callbackName
+     * @param object $callbackObject
+     * @param string $callbackMethod    Method name of $callbackObject. It must
+     *                                  have interface (string $tmpFilePath)
+     * @return Varien_File_Uploader
+     */
+    public function addValidateCallback($callbackName, $callbackObject, $callbackMethod)
+    {
+        $this->_validateCallbacks[$callbackName] = array(
+           'object' => $callbackObject,
+           'method' => $callbackMethod
+        );
+        return $this;
+    }
+
+    /**
+     * Delete validation callback model for us in self::_validateFile()
+     *
+     * @param string $callbackName
+     * @access public
+     * @return Varien_File_Uploader
+     */
+    public function removeValidateCallback($callbackName)
+    {
+        if (isset($this->_validateCallbacks[$callbackName])) {
+            unset($this->_validateCallbacks[$callbackName]);
+        }
+        return $this;
+    }
+
+    /**
+     * Correct filename with special chars and spaces
+     *
+     * @param string $fileName
+     * @return string
+     */
     static public function getCorrectFileName($fileName)
     {
-        if (preg_match('/[^a-z0-9_\\-\\.]/i', $fileName)) {
-            $fileName = 'file' . substr($fileName, strrpos($fileName, '.'));
-        }
+        $fileName = preg_replace('/[^a-z0-9_\\-\\.]+/i', '_', $fileName);
+        $fileInfo = pathinfo($fileName);
 
+        if (preg_match('/^_+$/', $fileInfo['filename'])) {
+            $fileName = 'file.' . $fileInfo['extension'];
+        }
         return $fileName;
     }
 
@@ -240,8 +346,8 @@ class Varien_File_Uploader
      */
     public function checkMimeType($validTypes=Array())
     {
-        if( count($validTypes) > 0 ) {
-            if( !in_array($this->_getMimeType(), $validTypes) ) {
+        if (count($validTypes) > 0) {
+            if (!in_array($this->_getMimeType(), $validTypes)) {
                 return false;
             }
         }
@@ -310,7 +416,7 @@ class Varien_File_Uploader
         return $this;
     }
 
-    public function setAllowedExtensions($extensions=array())
+    public function setAllowedExtensions($extensions = array())
     {
         foreach ((array)$extensions as $extension) {
             $this->_allowedExtensions[] = strtolower($extension);
@@ -318,15 +424,30 @@ class Varien_File_Uploader
         return $this;
     }
 
+    /**
+     * Check if specified extension is allowed
+     *
+     * @param string $extension
+     * @return boolean
+     */
+    public function checkAllowedExtension($extension)
+    {
+        if (!is_array($this->_allowedExtensions) || empty($this->_allowedExtensions)) {
+            return true;
+        }
+
+        return in_array(strtolower($extension), $this->_allowedExtensions);
+    }
+
+    /**
+     * @deprecated after 1.5.0.0-beta2
+     *
+     * @param string $extension
+     * @return boolean
+     */
     public function chechAllowedExtension($extension)
     {
-        if (is_null($this->_allowedExtensions)) {
-            return true;
-        }
-        elseif (in_array(strtolower($extension), $this->_allowedExtensions)) {
-            return true;
-        }
-        return false;
+        return $this->checkAllowedExtension($extension);
     }
 
     private function _getMimeType()
@@ -346,14 +467,14 @@ class Varien_File_Uploader
         } else {
             preg_match("/^(.*?)\[(.*?)\]$/", $fileId, $file);
 
-            if( count($file) > 0 && (count($file[0]) > 0) && (count($file[1]) > 0) ) {
+            if (count($file) > 0 && (count($file[0]) > 0) && (count($file[1]) > 0)) {
                 array_shift($file);
                 $this->_uploadType = self::MULTIPLE_STYLE;
 
                 $fileAttributes = $_FILES[$file[0]];
                 $tmp_var = array();
 
-                foreach( $fileAttributes as $attributeName => $attributeValue ) {
+                foreach ($fileAttributes as $attributeName => $attributeValue) {
                     $tmp_var[$attributeName] = $attributeValue[$file[1]];
                 }
 
@@ -370,7 +491,7 @@ class Varien_File_Uploader
 
     private function _createDestinationFolder($destinationFolder)
     {
-        if( !$destinationFolder ) {
+        if (!$destinationFolder) {
             return $this;
         }
 
@@ -382,39 +503,12 @@ class Varien_File_Uploader
             throw new Exception("Unable to create directory '{$destinationFolder}'.");
         }
         return $this;
-
-        $destinationFolder = str_replace('/', DIRECTORY_SEPARATOR, $destinationFolder);
-        $path = explode(DIRECTORY_SEPARATOR, $destinationFolder);
-        $newPath = null;
-        $oldPath = null;
-        foreach( $path as $key => $directory ) {
-            if (trim($directory)=='') {
-                continue;
-            }
-            if (strlen($directory)===2 && $directory{1}===':') {
-                $newPath = $directory;
-                continue;
-            }
-            $newPath.= ( $newPath != DIRECTORY_SEPARATOR ) ? DIRECTORY_SEPARATOR . $directory : $directory;
-            if( is_dir($newPath) ) {
-                $oldPath = $newPath;
-                continue;
-            } else {
-                if( is_writable($oldPath) ) {
-                    mkdir($newPath, 0777);
-                } else {
-                    throw new Exception("Unable to create directory '{$newPath}'. Access forbidden.");
-                }
-            }
-            $oldPath = $newPath;
-        }
-        return $this;
     }
 
     static public function getNewFileName($destFile)
     {
         $fileInfo = pathinfo($destFile);
-        if( file_exists($destFile) ) {
+        if (file_exists($destFile)) {
             $index = 1;
             $baseName = $fileInfo['filename'] . '.' . $fileInfo['extension'];
             while( file_exists($fileInfo['dirname'] . DIRECTORY_SEPARATOR . $baseName) ) {
@@ -433,12 +527,13 @@ class Varien_File_Uploader
     {
         $char = 0;
         $dispretionPath = '';
-        while( ($char < 2) && ($char < strlen($fileName)) ) {
+        while (($char < 2) && ($char < strlen($fileName))) {
             if (empty($dispretionPath)) {
-                $dispretionPath = DIRECTORY_SEPARATOR.('.' == $fileName[$char] ? '_' : $fileName[$char]);
-            }
-            else {
-                $dispretionPath = self::_addDirSeparator($dispretionPath) . ('.' == $fileName[$char] ? '_' : $fileName[$char]);
+                $dispretionPath = DIRECTORY_SEPARATOR
+                    . ('.' == $fileName[$char] ? '_' : $fileName[$char]);
+            } else {
+                $dispretionPath = self::_addDirSeparator($dispretionPath)
+                      . ('.' == $fileName[$char] ? '_' : $fileName[$char]);
             }
             $char ++;
         }

@@ -18,19 +18,28 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Core Flag model
  *
- * @category   Mage
- * @package    Mage_Core
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Core_Model_Resource_Flag _getResource()
+ * @method Mage_Core_Model_Resource_Flag getResource()
+ * @method string getFlagCode()
+ * @method Mage_Core_Model_Flag setFlagCode(string $value)
+ * @method int getState()
+ * @method Mage_Core_Model_Flag setState(int $value)
+ * @method string getLastUpdate()
+ * @method Mage_Core_Model_Flag setLastUpdate(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Core
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Core_Model_Flag extends Mage_Core_Model_Abstract
 {
@@ -43,10 +52,14 @@ class Mage_Core_Model_Flag extends Mage_Core_Model_Abstract
 
     /**
      * Init resource model
+     * Set flag_code if it is specified in arguments
      *
      */
     protected function _construct()
     {
+        if ($this->hasData('flag_code')) {
+            $this->_flagCode = $this->getData('flag_code');
+        }
         $this->_init('core/flag');
     }
 

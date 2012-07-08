@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -43,25 +43,26 @@ class Mage_Adminhtml_Block_Notification_Grid_Renderer_Actions
      */
     public function render(Varien_Object $row)
     {
-        if (!$row->getIsRead()) {
-            return sprintf('<a target="_blank" href="%s">%s</a> | <a href="%s">%s</a> | <a href="%s" onClick="deleteConfirm(\'%s\',this.href); return false;">%s</a>',
-                $row->getUrl(),
-                Mage::helper('adminnotification')->__('Read Details'),
-                $this->getUrl('*/*/markAsRead/', array('_current'=>true, 'id' => $row->getId())),
-                Mage::helper('adminnotification')->__('Mark as Read'),
-                $this->getUrl('*/*/remove/', array('_current'=>true, 'id' => $row->getId())),
-                Mage::helper('adminnotification')->__('Are you sure?'),
-                Mage::helper('adminnotification')->__('Remove')
-            );
-        }
-        else {
-            return sprintf('<a target="_blank" href="%s">%s</a> | <a href="%s" onClick="deleteConfirm(\'%s\',this.href); return false;">%s</a>',
-                $row->getUrl(),
-                Mage::helper('adminnotification')->__('Read Details'),
-                $this->getUrl('*/*/remove/', array('_current'=>true, 'id' => $row->getId())),
-                Mage::helper('adminnotification')->__('Are you sure?'),
-                Mage::helper('adminnotification')->__('Remove')
-            );
-        }
+        $readDetailsHtml = ($row->getUrl())
+            ? '<a target="_blank" href="'. $row->getUrl() .'">' .
+                Mage::helper('adminnotification')->__('Read Details') .'</a> | '
+            : '';
+
+        $markAsReadHtml = (!$row->getIsRead())
+            ? '<a href="'. $this->getUrl('*/*/markAsRead/', array('_current' => true, 'id' => $row->getId())) .'">' .
+                Mage::helper('adminnotification')->__('Mark as Read') .'</a> | '
+            : '';
+
+        return sprintf('%s%s<a href="%s" onClick="deleteConfirm(\'%s\', this.href); return false;">%s</a>',
+            $readDetailsHtml,
+            $markAsReadHtml,
+            $this->getUrl('*/*/remove/', array(
+                '_current'=>true,
+                'id' => $row->getId(),
+                Mage_Core_Controller_Front_Action::PARAM_NAME_URL_ENCODED => $this->helper('core/url')->getEncodedUrl())
+            ),
+            Mage::helper('adminnotification')->__('Are you sure?'),
+            Mage::helper('adminnotification')->__('Remove')
+        );
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Payment
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Payment
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -112,5 +112,48 @@ class Mage_Payment_Block_Form_Cc extends Mage_Payment_Block_Form
             return (bool) $configData;
         }
         return true;
+    }
+
+    /*
+    * Whether switch/solo card type available
+    */
+    public function hasSsCardType()
+    {
+        $availableTypes = explode(',', $this->getMethod()->getConfigData('cctypes'));
+        $ssPresenations = array_intersect(array('SS', 'SM', 'SO'), $availableTypes);
+        if ($availableTypes && count($ssPresenations) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /*
+    * solo/switch card start year
+    * @return array
+    */
+     public function getSsStartYears()
+    {
+        $years = array();
+        $first = date("Y");
+
+        for ($index=5; $index>=0; $index--) {
+            $year = $first - $index;
+            $years[$year] = $year;
+        }
+        $years = array(0=>$this->__('Year'))+$years;
+        return $years;
+    }
+
+    /**
+     * Render block HTML
+     *
+     * @return string
+     */
+    protected function _toHtml()
+    {
+        Mage::dispatchEvent('payment_form_block_to_html_before', array(
+            'block'     => $this
+        ));
+        return parent::_toHtml();
     }
 }

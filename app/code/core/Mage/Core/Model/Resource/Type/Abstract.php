@@ -18,28 +18,54 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 abstract class Mage_Core_Model_Resource_Type_Abstract
 {
+    /**
+     * Name
+     *
+     * @var String
+     */
     protected $_name = '';
+
+    /**
+     * Entity class
+     *
+     * @var String
+     */
     protected $_entityClass = 'Mage_Core_Model_Resource_Entity_Abstract';
 
+    /**
+     * Retrieve entity type
+     *
+     * @return String
+     */
     public function getEntityClass()
     {
-    	return $this->_entityClass;
+        return $this->_entityClass;
     }
-    
+
+    /**
+     * Set name
+     *
+     * @param String $name
+     */
     public function setName($name)
     {
         $this->_name = $name;
     }
-    
+
+    /**
+     * Retrieve name
+     *
+     * @return String
+     */
     public function getName()
     {
         return $this->_name;

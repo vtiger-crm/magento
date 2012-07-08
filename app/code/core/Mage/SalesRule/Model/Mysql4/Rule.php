@@ -18,51 +18,21 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_SalesRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
-class Mage_SalesRule_Model_Mysql4_Rule extends Mage_Core_Model_Mysql4_Abstract
+/**
+ * SalesRule resource model
+ *
+ * @category    Mage
+ * @package     Mage_SalesRule
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
+class Mage_SalesRule_Model_Mysql4_Rule extends Mage_SalesRule_Model_Resource_Rule
 {
-    protected function _construct()
-    {
-        $this->_init('salesrule/rule', 'rule_id');
-    }
 
-    public function _beforeSave(Mage_Core_Model_Abstract $object)
-    {
-        if (!$object->getFromDate()) {
-            $object->setFromDate(new Zend_Date(Mage::getModel('core/date')->gmtTimestamp()));
-        }
-        if ($object->getFromDate() instanceof Zend_Date) {
-            $object->setFromDate($object->getFromDate()->toString(Varien_Date::DATETIME_INTERNAL_FORMAT));
-        }
-
-        if (!$object->getToDate()) {
-            $object->setToDate(new Zend_Db_Expr('NULL'));
-        }
-        else {
-            if ($object->getToDate() instanceof Zend_Date) {
-                $object->setToDate($object->getToDate()->toString(Varien_Date::DATETIME_INTERNAL_FORMAT));
-            }
-        }
-
-        if (!$object->getDiscountQty()) {
-            $object->setDiscountQty(new Zend_Db_Expr('NULL'));
-        }
-
-        parent::_beforeSave($object);
-    }
-
-    public function getCustomerUses($rule, $customerId)
-    {
-        $read = $this->_getReadAdapter();
-        $select = $read->select()->from($this->getTable('rule_customer'), array('cnt'=>'count(*)'))
-            ->where('rule_id=?', $rule->getRuleId())
-            ->where('customer_id=?', $customerId);
-        return $read->fetchOne($select);
-    }
 }

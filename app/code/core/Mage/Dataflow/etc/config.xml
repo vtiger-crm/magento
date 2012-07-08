@@ -19,26 +19,27 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Dataflow
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Dataflow
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Dataflow>
-            <version>0.7.4</version>
+            <version>1.6.0.0</version>
         </Mage_Dataflow>
     </modules>
     <global>
         <models>
             <dataflow>
                 <class>Mage_Dataflow_Model</class>
-                <resourceModel>dataflow_mysql4</resourceModel>
+                <resourceModel>dataflow_resource</resourceModel>
             </dataflow>
-            <dataflow_mysql4>
-                <class>Mage_Dataflow_Model_Mysql4</class>
+            <dataflow_resource>
+                <class>Mage_Dataflow_Model_Resource</class>
+                <deprecatedNode>dataflow_mysql4</deprecatedNode>
                 <entities>
                     <session>
                         <table>dataflow_session</table>
@@ -62,27 +63,23 @@
                         <table>dataflow_batch_import</table>
                     </batch_import>
                 </entities>
-            </dataflow_mysql4>
+            </dataflow_resource>
         </models>
         <resources>
             <dataflow_setup>
                 <setup>
                     <module>Mage_Dataflow</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </dataflow_setup>
-            <dataflow_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </dataflow_write>
-            <dataflow_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </dataflow_read>
         </resources>
     </global>
+    <adminhtml>
+        <layout>
+            <updates>
+                <dataflow>
+                    <file>dataflow.xml</file>
+                </dataflow>
+            </updates>
+        </layout>
+    </adminhtml>
 </config>

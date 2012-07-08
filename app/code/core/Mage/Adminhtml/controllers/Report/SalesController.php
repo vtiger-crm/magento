@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,24 +33,159 @@
  */
 class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Action
 {
+    /**
+     * Admin session model
+     *
+     * @var null|Mage_Admin_Model_Session
+     */
+    protected $_adminSession = null;
+
     public function _initAction()
     {
-        $act = $this->getRequest()->getActionName();
-        if(!$act)
-            $act = 'default';
         $this->loadLayout()
             ->_addBreadcrumb(Mage::helper('reports')->__('Reports'), Mage::helper('reports')->__('Reports'))
             ->_addBreadcrumb(Mage::helper('reports')->__('Sales'), Mage::helper('reports')->__('Sales'));
         return $this;
     }
 
+    public function _initReportAction($blocks)
+    {
+        if (!is_array($blocks)) {
+            $blocks = array($blocks);
+        }
+
+        $requestData = Mage::helper('adminhtml')->prepareFilterString($this->getRequest()->getParam('filter'));
+        $requestData = $this->_filterDates($requestData, array('from', 'to'));
+        $requestData['store_ids'] = $this->getRequest()->getParam('store_ids');
+        $params = new Varien_Object();
+
+        foreach ($requestData as $key => $value) {
+            if (!empty($value)) {
+                $params->setData($key, $value);
+            }
+        }
+
+        foreach ($blocks as $block) {
+            if ($block) {
+                $block->setPeriodType($params->getData('period_type'));
+                $block->setFilterData($params);
+            }
+        }
+
+        return $this;
+    }
+
     public function salesAction()
     {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Sales'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_ORDER_FLAG_CODE, 'sales');
+
         $this->_initAction()
             ->_setActiveMenu('report/sales/sales')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Sales Report'), Mage::helper('adminhtml')->__('Sales Report'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_sales'))
-            ->renderLayout();
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Sales Report'), Mage::helper('adminhtml')->__('Sales Report'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_sales.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
+    }
+
+    public function bestsellersAction()
+    {
+        $this->_title($this->__('Reports'))->_title($this->__('Products'))->_title($this->__('Bestsellers'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_BESTSELLERS_FLAG_CODE, 'bestsellers');
+
+        $this->_initAction()
+            ->_setActiveMenu('report/sales/bestsellers')
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Products Bestsellers Report'), Mage::helper('adminhtml')->__('Products Bestsellers Report'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_bestsellers.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
+    }
+
+    /**
+     * Export bestsellers report grid to CSV format
+     */
+    public function exportBestsellersCsvAction()
+    {
+        $fileName   = 'bestsellers.csv';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_bestsellers_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
+    }
+
+    /**
+     * Export bestsellers report grid to Excel XML format
+     */
+    public function exportBestsellersExcelAction()
+    {
+        $fileName   = 'bestsellers.xml';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_bestsellers_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
+    }
+
+    /**
+     * Retrieve array of collection names by code specified in request
+     *
+     * @deprecated after 1.4.0.1
+     * @return array
+     */
+    protected function _getCollectionNames()
+    {
+        return array();
+    }
+
+    protected function _showLastExecutionTime($flagCode, $refreshCode)
+    {
+        $flag = Mage::getModel('reports/flag')->setReportFlagCode($flagCode)->loadSelf();
+        $updatedAt = ($flag->hasData())
+            ? Mage::app()->getLocale()->storeDate(
+                0, new Zend_Date($flag->getLastUpdate(), Varien_Date::DATETIME_INTERNAL_FORMAT), true
+            )
+            : 'undefined';
+
+        $refreshStatsLink = $this->getUrl('*/*/refreshstatistics');
+        $directRefreshLink = $this->getUrl('*/*/refreshRecent', array('code' => $refreshCode));
+
+        Mage::getSingleton('adminhtml/session')->addNotice(Mage::helper('adminhtml')->__('Last updated: %s. To refresh last day\'s <a href="%s">statistics</a>, click <a href="%s">here</a>.', $updatedAt, $refreshStatsLink, $directRefreshLink));
+        return $this;
+    }
+
+    /**
+     * Refresh statistics for last 25 hours
+     *
+     * @deprecated after 1.4.0.1
+     * @return Mage_Adminhtml_Report_SalesController
+     */
+    public function refreshRecentAction()
+    {
+        return $this->_forward('refreshRecent', 'report_statistics');
+    }
+
+    /**
+     * Refresh statistics for all period
+     *
+     * @deprecated after 1.4.0.1
+     * @return Mage_Adminhtml_Report_SalesController
+     */
+    public function refreshLifetimeAction()
+    {
+        return $this->_forward('refreshLifetime', 'report_statistics');
     }
 
     /**
@@ -59,10 +194,9 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportSalesCsvAction()
     {
         $fileName   = 'sales.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_sales_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_sales_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
     }
 
     /**
@@ -71,19 +205,30 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportSalesExcelAction()
     {
         $fileName   = 'sales.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_sales_grid')
-            ->getExcel($fileName);
-
-        $this->_prepareDownloadResponse($fileName, $content);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_sales_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
     }
 
     public function taxAction()
     {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Tax'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_TAX_FLAG_CODE, 'tax');
+
         $this->_initAction()
             ->_setActiveMenu('report/sales/tax')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Tax'), Mage::helper('adminhtml')->__('Tax'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_tax'))
-            ->renderLayout();
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Tax'), Mage::helper('adminhtml')->__('Tax'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_tax.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
     }
 
     /**
@@ -92,10 +237,9 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportTaxCsvAction()
     {
         $fileName   = 'tax.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_tax_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_tax_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
     }
 
     /**
@@ -104,118 +248,30 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportTaxExcelAction()
     {
         $fileName   = 'tax.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_tax_grid')
-            ->getExcel($fileName);
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    public function invoicedAction()
-    {
-        $this->_initAction()
-            ->_setActiveMenu('report/sales/invoiced')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Total Invoiced'), Mage::helper('adminhtml')->__('Total Invoiced'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_invoiced'))
-            ->renderLayout();
-    }
-
-    /**
-     * Export invoiced report grid to CSV format
-     */
-    public function exportInvoicedCsvAction()
-    {
-        $fileName   = 'invoiced.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_invoiced_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    /**
-     * Export invoiced report grid to Excel XML format
-     */
-    public function exportInvoicedExcelAction()
-    {
-        $fileName   = 'invoiced.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_invoiced_grid')
-            ->getExcel($fileName);
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    public function refundedAction()
-    {
-        $this->_initAction()
-            ->_setActiveMenu('report/sales/refunded')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Total Refunded'), Mage::helper('adminhtml')->__('Total Refunded'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_refunded'))
-            ->renderLayout();
-    }
-
-    /**
-     * Export refunded report grid to CSV format
-     */
-    public function exportRefundedCsvAction()
-    {
-        $fileName   = 'refunded.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_refunded_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    /**
-     * Export refunded report grid to Excel XML format
-     */
-    public function exportRefundedExcelAction()
-    {
-        $fileName   = 'refunded.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_refunded_grid')
-            ->getExcel($fileName);
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    public function couponsAction()
-    {
-        $this->_initAction()
-            ->_setActiveMenu('report/sales/coupons')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Coupons'), Mage::helper('adminhtml')->__('Coupons'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_coupons'))
-            ->renderLayout();
-    }
-
-    /**
-     * Export coupons report grid to CSV format
-     */
-    public function exportCouponsCsvAction()
-    {
-        $fileName   = 'coupons.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_coupons_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
-    }
-
-    /**
-     * Export coupons report grid to Excel XML format
-     */
-    public function exportCouponsExcelAction()
-    {
-        $fileName   = 'coupons.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_coupons_grid')
-            ->getExcel($fileName);
-
-        $this->_prepareDownloadResponse($fileName, $content);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_tax_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
     }
 
     public function shippingAction()
     {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Shipping'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_SHIPPING_FLAG_CODE, 'shipping');
+
         $this->_initAction()
             ->_setActiveMenu('report/sales/shipping')
-            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Shipping'), Mage::helper('adminhtml')->__('Shipping'))
-            ->_addContent($this->getLayout()->createBlock('adminhtml/report_sales_shipping'))
-            ->renderLayout();
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Shipping'), Mage::helper('adminhtml')->__('Shipping'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_shipping.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
     }
 
     /**
@@ -224,10 +280,9 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportShippingCsvAction()
     {
         $fileName   = 'shipping.csv';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_shipping_grid')
-            ->getCsv();
-
-        $this->_prepareDownloadResponse($fileName, $content);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_shipping_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
     }
 
     /**
@@ -236,39 +291,191 @@ class Mage_Adminhtml_Report_SalesController extends Mage_Adminhtml_Controller_Ac
     public function exportShippingExcelAction()
     {
         $fileName   = 'shipping.xml';
-        $content    = $this->getLayout()->createBlock('adminhtml/report_sales_shipping_grid')
-            ->getExcel($fileName);
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_shipping_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
+    }
 
-        $this->_prepareDownloadResponse($fileName, $content);
+    public function invoicedAction()
+    {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Total Invoiced'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_INVOICE_FLAG_CODE, 'invoiced');
+
+        $this->_initAction()
+            ->_setActiveMenu('report/sales/invoiced')
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Total Invoiced'), Mage::helper('adminhtml')->__('Total Invoiced'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_invoiced.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
+    }
+
+    /**
+     * Export invoiced report grid to CSV format
+     */
+    public function exportInvoicedCsvAction()
+    {
+        $fileName   = 'invoiced.csv';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_invoiced_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
+    }
+
+    /**
+     * Export invoiced report grid to Excel XML format
+     */
+    public function exportInvoicedExcelAction()
+    {
+        $fileName   = 'invoiced.xml';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_invoiced_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
+    }
+
+    public function refundedAction()
+    {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Total Refunded'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_REFUNDED_FLAG_CODE, 'refunded');
+
+        $this->_initAction()
+            ->_setActiveMenu('report/sales/refunded')
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Total Refunded'), Mage::helper('adminhtml')->__('Total Refunded'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_refunded.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
+    }
+
+    /**
+     * Export refunded report grid to CSV format
+     */
+    public function exportRefundedCsvAction()
+    {
+        $fileName   = 'refunded.csv';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_refunded_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
+    }
+
+    /**
+     * Export refunded report grid to Excel XML format
+     */
+    public function exportRefundedExcelAction()
+    {
+        $fileName   = 'refunded.xml';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_refunded_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
+    }
+
+    public function couponsAction()
+    {
+        $this->_title($this->__('Reports'))->_title($this->__('Sales'))->_title($this->__('Coupons'));
+
+        $this->_showLastExecutionTime(Mage_Reports_Model_Flag::REPORT_COUPONS_FLAG_CODE, 'coupons');
+
+        $this->_initAction()
+            ->_setActiveMenu('report/sales/coupons')
+            ->_addBreadcrumb(Mage::helper('adminhtml')->__('Coupons'), Mage::helper('adminhtml')->__('Coupons'));
+
+        $gridBlock = $this->getLayout()->getBlock('report_sales_coupons.grid');
+        $filterFormBlock = $this->getLayout()->getBlock('grid.filter.form');
+
+        $this->_initReportAction(array(
+            $gridBlock,
+            $filterFormBlock
+        ));
+
+        $this->renderLayout();
+    }
+
+    /**
+     * Export coupons report grid to CSV format
+     */
+    public function exportCouponsCsvAction()
+    {
+        $fileName   = 'coupons.csv';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_coupons_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getCsvFile());
+    }
+
+    /**
+     * Export coupons report grid to Excel XML format
+     */
+    public function exportCouponsExcelAction()
+    {
+        $fileName   = 'coupons.xml';
+        $grid       = $this->getLayout()->createBlock('adminhtml/report_sales_coupons_grid');
+        $this->_initReportAction($grid);
+        $this->_prepareDownloadResponse($fileName, $grid->getExcelFile($fileName));
+    }
+
+    /**
+     * @deprecated after 1.4.0.1
+     */
+    public function refreshStatisticsAction()
+    {
+        return $this->_forward('index', 'report_statistics');
     }
 
     protected function _isAllowed()
     {
         switch ($this->getRequest()->getActionName()) {
             case 'sales':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/sales');
+                return $this->_getSession()->isAllowed('report/salesroot/sales');
                 break;
             case 'tax':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/tax');
+                return $this->_getSession()->isAllowed('report/salesroot/tax');
                 break;
             case 'shipping':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/shipping');
+                return $this->_getSession()->isAllowed('report/salesroot/shipping');
                 break;
             case 'invoiced':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/invoiced');
+                return $this->_getSession()->isAllowed('report/salesroot/invoiced');
                 break;
             case 'refunded':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/refunded');
+                return $this->_getSession()->isAllowed('report/salesroot/refunded');
                 break;
             case 'coupons':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/coupons');
+                return $this->_getSession()->isAllowed('report/salesroot/coupons');
                 break;
             case 'shipping':
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot/shipping');
+                return $this->_getSession()->isAllowed('report/salesroot/shipping');
+                break;
+            case 'bestsellers':
+                return $this->_getSession()->isAllowed('report/products/bestsellers');
                 break;
             default:
-                return Mage::getSingleton('admin/session')->isAllowed('report/salesroot');
+                return $this->_getSession()->isAllowed('report/salesroot');
                 break;
         }
+    }
+
+    /**
+     * Retrieve admin session model
+     *
+     * @return Mage_Admin_Model_Session
+     */
+    protected function _getSession()
+    {
+        if (is_null($this->_adminSession)) {
+            $this->_adminSession = Mage::getSingleton('admin/session');
+        }
+        return $this->_adminSession;
     }
 }

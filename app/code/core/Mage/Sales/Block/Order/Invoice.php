@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,7 @@
  * @package    Mage_Sales
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Sales_Block_Order_Invoice extends Mage_Core_Block_Template
+class Mage_Sales_Block_Order_Invoice extends Mage_Sales_Block_Order_Invoice_Items
 {
     protected function _construct()
     {
@@ -65,9 +65,30 @@ class Mage_Sales_Block_Order_Invoice extends Mage_Core_Block_Template
         return Mage::registry('current_order');
     }
 
+    /**
+     * Return back url for logged in and guest users
+     *
+     * @return string
+     */
     public function getBackUrl()
     {
-        return Mage::getUrl('*/*/history');
+        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+            return Mage::getUrl('*/*/history');
+        }
+        return Mage::getUrl('*/*/form');
+    }
+
+    /**
+     * Return back title for logged in and guest users
+     *
+     * @return string
+     */
+    public function getBackTitle()
+    {
+        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+            return Mage::helper('sales')->__('Back to My Orders');
+        }
+        return Mage::helper('sales')->__('View Another Order');
     }
 
     public function getViewUrl($order)

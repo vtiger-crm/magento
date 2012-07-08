@@ -18,20 +18,32 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Item option model
+ *
+ * @method Mage_Sales_Model_Resource_Quote_Item_Option _getResource()
+ * @method Mage_Sales_Model_Resource_Quote_Item_Option getResource()
+ * @method int getItemId()
+ * @method Mage_Sales_Model_Quote_Item_Option setItemId(int $value)
+ * @method int getProductId()
+ * @method Mage_Sales_Model_Quote_Item_Option setProductId(int $value)
+ * @method string getCode()
+ * @method Mage_Sales_Model_Quote_Item_Option setCode(string $value)
+ * @method string getValue()
+ * @method Mage_Sales_Model_Quote_Item_Option setValue(string $value)
  *
  * @category    Mage
  * @package     Mage_Sales
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Sales_Model_Quote_Item_Option extends Mage_Core_Model_Abstract
+    implements Mage_Catalog_Model_Product_Configuration_Item_Option_Interface
 {
     protected $_item;
     protected $_product;
@@ -42,6 +54,20 @@ class Mage_Sales_Model_Quote_Item_Option extends Mage_Core_Model_Abstract
     protected function _construct()
     {
         $this->_init('sales/quote_item_option');
+    }
+
+    /**
+     * Checks that item option model has data changes
+     *
+     * @return boolean
+     */
+    protected function _hasModelChanged()
+    {
+        if (!$this->hasDataChanges()) {
+            return false;
+        }
+
+        return $this->_getResource()->hasDataChanged($this);
     }
 
     /**
@@ -88,6 +114,16 @@ class Mage_Sales_Model_Quote_Item_Option extends Mage_Core_Model_Abstract
     public function getProduct()
     {
         return $this->_product;
+    }
+
+    /**
+     * Get option value
+     *
+     * @return mixed
+     */
+    public function getValue()
+    {
+        return $this->_getData('value');
     }
 
     /**

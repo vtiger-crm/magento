@@ -18,99 +18,109 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Wishlist
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Wishlist
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Wishlist shared items controllers
  *
- * @category   Mage
- * @package    Mage_Wishlist
+ * @category    Mage
+ * @package     Mage_Wishlist
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Wishlist_SharedController extends Mage_Core_Controller_Front_Action
+class Mage_Wishlist_SharedController extends Mage_Wishlist_Controller_Abstract
 {
+    /**
+     * Retrieve wishlist instance by requested code
+     *
+     * @return Mage_Wishlist_Model_Wishlist|false
+     */
+    protected function _getWishlist()
+    {
+        $code     = (string)$this->getRequest()->getParam('code');
+        if (empty($code)) {
+            return false;
+        }
 
+        $wishlist = Mage::getModel('wishlist/wishlist')->loadByCode($code);
+        if (!$wishlist->getId()) {
+            return false;
+        }
+
+        Mage::getSingleton('checkout/session')->setSharedWishlist($code);
+
+        return $wishlist;
+    }
+
+    /**
+     * Shared wishlist view page
+     *
+     */
     public function indexAction()
     {
-        $code = (string) $this->getRequest()->getParam('code');
-        if (empty($code)) {
-            $this->_forward('noRoute');
-            return;
-        }
-        $wishlist = Mage::getModel('wishlist/wishlist')->loadByCode($code);
+        $wishlist   = $this->_getWishlist();
+        $customerId = Mage::getSingleton('customer/session')->getCustomerId();
 
-        if ($wishlist->getCustomerId() && $wishlist->getCustomerId() == Mage::getSingleton('customer/session')->getCustomerId()) {
+        if ($wishlist && $wishlist->getCustomerId() && $wishlist->getCustomerId() == $customerId) {
             $this->_redirectUrl(Mage::helper('wishlist')->getListUrl());
             return;
         }
 
-        if(!$wishlist->getId()) {
-            $this->_forward('noRoute');
-            return;
-        } else {
-            Mage::register('shared_wishlist', $wishlist);
-            $this->loadLayout();
-            $this->_initLayoutMessages('wishlist/session');
-            $this->renderLayout();
-        }
+        Mage::register('shared_wishlist', $wishlist);
 
+        $this->loadLayout();
+        $this->_initLayoutMessages('checkout/session');
+        $this->_initLayoutMessages('wishlist/session');
+        $this->renderLayout();
     }
 
-    public function allcartAction()
+    /**
+     * Add shared wishlist item to shopping cart
+     *
+     * If Product has required options - redirect
+     * to product view page with message about needed defined required options
+     *
+     */
+    public function cartAction()
     {
-        $code = (string) $this->getRequest()->getParam('code');
-        if (empty($code)) {
-            $this->_forward('noRoute');
-            return;
-        }
+        $itemId = (int) $this->getRequest()->getParam('item');
 
-        $wishlist = Mage::getModel('wishlist/wishlist')->loadByCode($code);
-        Mage::getSingleton('checkout/session')->setSharedWishlist($code);
+        /* @var $item Mage_Wishlist_Model_Item */
+        $item = Mage::getModel('wishlist/item')->load($itemId);
 
-        if (!$wishlist->getId()) {
-            $this->_forward('noRoute');
-            return;
-        } else {
-            $urls = false;
-            foreach ($wishlist->getProductCollection() as $item) {
-                try {
-                    $product = Mage::getModel('catalog/product')
-                        ->load($item->getProductId());
-                    if ($product->isSalable()){
-                        Mage::getSingleton('checkout/cart')->addProduct($product);
-                    }
-                }
-                catch (Exception $e) {
-                    $url = Mage::getSingleton('checkout/session')->getRedirectUrl(true);
-                    if ($url){
-                        $url = Mage::getModel('core/url')->getUrl('catalog/product/view', array(
-                            'id'=>$item->getProductId(),
-                            'wishlist_next'=>1
-                        ));
 
-                        $urls[] = $url;
-                        $messages[] = $e->getMessage();
-                        $wishlistIds[] = $item->getId();
-                    }
-                }
+        /* @var $session Mage_Wishlist_Model_Session */
+        $session    = Mage::getSingleton('wishlist/session');
+        $cart       = Mage::getSingleton('checkout/cart');
 
-                Mage::getSingleton('checkout/cart')->save();
+        $redirectUrl = $this->_getRefererUrl();
+
+        try {
+            $options = Mage::getModel('wishlist/item_option')->getCollection()
+                    ->addItemFilter(array($itemId));
+            $item->setOptions($options->getOptionsByItem($itemId));
+
+            $item->addToCart($cart);
+            $cart->save()->getQuote()->collectTotals();
+
+            if (Mage::helper('checkout/cart')->getShouldRedirectToCart()) {
+                $redirectUrl = Mage::helper('checkout/cart')->getCartUrl();
             }
-            if ($urls) {
-                Mage::getSingleton('checkout/session')->addError(array_shift($messages));
-                $this->getResponse()->setRedirect(array_shift($urls));
-
-                Mage::getSingleton('checkout/session')->setWishlistPendingUrls($urls);
-                Mage::getSingleton('checkout/session')->setWishlistPendingMessages($messages);
-                Mage::getSingleton('checkout/session')->setWishlistIds($wishlistIds);
+        } catch (Mage_Core_Exception $e) {
+            if ($e->getCode() == Mage_Wishlist_Model_Item::EXCEPTION_CODE_NOT_SALABLE) {
+                $session->addError(Mage::helper('wishlist')->__('This product(s) is currently out of stock'));
             } else {
-                $this->_redirect('checkout/cart');
+                Mage::getSingleton('catalog/session')->addNotice($e->getMessage());
+                $redirectUrl = $item->getProductUrl();
             }
+        } catch (Exception $e) {
+            $session->addException($e, Mage::helper('wishlist')->__('Cannot add item to shopping cart'));
         }
+
+        return $this->_redirectUrl($redirectUrl);
     }
 }

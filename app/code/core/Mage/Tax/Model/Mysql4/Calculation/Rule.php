@@ -18,37 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Tax
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Tax
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Tax rate resource model
  *
- * @category   Mage
- * @package    Mage_Tax
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @category    Mage
+ * @package     Mage_Tax
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Tax_Model_Mysql4_Calculation_Rule extends Mage_Core_Model_Mysql4_Abstract
+class Mage_Tax_Model_Mysql4_Calculation_Rule extends Mage_Tax_Model_Resource_Calculation_Rule
 {
-    protected function _construct()
-    {
-        $this->_init('tax/tax_calculation_rule', 'tax_calculation_rule_id');
-    }
-
-    /**
-     * Initialize unique fields
-     *
-     * @return Mage_Core_Model_Mysql4_Abstract
-     */
-    protected function _initUniqueFields()
-    {
-        $this->_uniqueFields = array(array(
-            'field' => array('code'),
-            'title' => Mage::helper('tax')->__('Code'),
-        ));
-        return $this;
-    }
 }

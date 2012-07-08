@@ -18,20 +18,32 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 class Mage_Adminhtml_Block_Notification_Window extends Mage_Adminhtml_Block_Notification_Toolbar
 {
     /**
+     * XML path of Severity icons url
+     */
+    const XML_SEVERITY_ICONS_URL_PATH  = 'system/adminnotification/severity_icons_url';
+
+    /**
+     * Severity icons url
+     *
+     * @var string
+     */
+    protected $_severityIconsUrl;
+
+    /**
      * Is available flag
      *
      * @var bool
      */
-    protected $_available;
+    protected $_available = null;
 
     /**
      * Initialize block window
@@ -79,17 +91,16 @@ class Mage_Adminhtml_Block_Notification_Window extends Mage_Adminhtml_Block_Noti
      */
     public function canShow()
     {
+        if (!is_null($this->_available)) {
+            return $this->_available;
+        }
+
         if (!Mage::getSingleton('admin/session')->isFirstPageAfterLogin()) {
             $this->_available = false;
             return false;
         }
-        
-        if (!$this->isOutputEnabled('Mage_AdminNotification')) {
-            $this->_available = false;
-            return false;
-        }
 
-        if (!$this->_getHelper()->isReadablePopupObject()) {
+        if (!$this->isOutputEnabled('Mage_AdminNotification')) {
             $this->_available = false;
             return false;
         }
@@ -124,6 +135,33 @@ class Mage_Adminhtml_Block_Notification_Window extends Mage_Adminhtml_Block_Noti
     public function getLastNotice()
     {
         return $this->_getHelper()->getLatestNotice();
+    }
+
+    /**
+     * Retrieve severity icons url
+     *
+     * @return string
+     */
+    public function getSeverityIconsUrl()
+    {
+        if (is_null($this->_severityIconsUrl)) {
+            $this->_severityIconsUrl =
+                (Mage::app()->getFrontController()->getRequest()->isSecure() ? 'https://' : 'http://')
+                . sprintf(Mage::getStoreConfig(self::XML_SEVERITY_ICONS_URL_PATH), Mage::getVersion(),
+                    $this->getNoticeSeverity())
+            ;
+        }
+        return $this->_severityIconsUrl;
+    }
+
+    /**
+     * Retrieve severity text
+     *
+     * @return string
+     */
+    public function getSeverityText()
+    {
+        return strtolower(str_replace('SEVERITY_', '', $this->getNoticeSeverity()));
     }
 
     /**

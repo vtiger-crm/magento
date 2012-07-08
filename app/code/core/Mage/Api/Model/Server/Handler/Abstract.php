@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Api
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Api
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -37,10 +37,11 @@ abstract class Mage_Api_Model_Server_Handler_Abstract
 
     public function __construct()
     {
-        set_error_handler(array(get_class($this), 'handlePhpError'), E_ALL);
+        set_error_handler(array($this, 'handlePhpError'), E_ALL);
+        Mage::app()->loadAreaPart(Mage_Core_Model_App_Area::AREA_ADMINHTML, Mage_Core_Model_App_Area::PART_EVENTS);
     }
 
-    static public function handlePhpError($errorCode, $errorMessage, $errorFile)
+    public function handlePhpError($errorCode, $errorMessage, $errorFile)
     {
         Mage::log($errorMessage . $errorFile);
         if (in_array($errorCode, array(E_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR))) {
@@ -436,6 +437,11 @@ abstract class Mage_Api_Model_Server_Handler_Abstract
     public function resources($sessionId)
     {
         $this->_startSession($sessionId);
+
+        if (!$this->_getSession()->isLoggedIn($sessionId)) {
+            return $this->_fault('session_expired');
+        }
+
         $resources = array();
 
         $resourcesAlias = array();
@@ -496,6 +502,10 @@ abstract class Mage_Api_Model_Server_Handler_Abstract
     public function resourceFaults($sessionId, $resourceName)
     {
         $this->_startSession($sessionId);
+
+        if (!$this->_getSession()->isLoggedIn($sessionId)) {
+            return $this->_fault('session_expired');
+        }
 
         $resourcesAlias = $this->_getConfig()->getResourcesAlias();
         $resources      = $this->_getConfig()->getResources();

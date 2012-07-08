@@ -49,6 +49,22 @@ class Varien_Data_Form_Element_Date extends Varien_Data_Form_Element_Abstract
     }
 
     /**
+     * If script executes on x64 system, converts large 
+     * numeric values to timestamp limit
+     */
+    protected function _toTimestamp($value)
+    {
+
+        $value = (int)$value;
+        if ($value > 3155760000) {
+            $value = 0;
+        }
+
+        return $value;
+    }
+    
+
+    /**
      * Set date value
      * If Zend_Date instance is provided instead of value, other params will be ignored.
      * Format and locale must be compatible with Zend_Date
@@ -69,7 +85,8 @@ class Varien_Data_Form_Element_Date extends Varien_Data_Form_Element_Abstract
             return $this;
         }
         if (preg_match('/^[0-9]+$/', $value)) {
-            $this->_value = new Zend_Date((int)$value);
+            $this->_value = new Zend_Date($this->_toTimestamp($value));
+            //$this->_value = new Zend_Date((int)value);
             return $this;
         }
         // last check, if input format was set
@@ -138,14 +155,14 @@ class Varien_Data_Form_Element_Date extends Varien_Data_Form_Element_Abstract
         $this->addClass('input-text');
 
         $html = sprintf(
-            '<input name="%s" id="%s" value="%s" %s style="width:110px;" />'
+            '<input name="%s" id="%s" value="%s" %s style="width:110px !important;" />'
             .' <img src="%s" alt="" class="v-middle" id="%s_trig" title="%s" style="%s" />',
             $this->getName(), $this->getHtmlId(), $this->_escape($this->getValue()), $this->serialize($this->getHtmlAttributes()),
-            $this->getImage(), $this->getHtmlId(), __('Select Date'), ($this->getDisabled() ? 'display:none;' : '')
+            $this->getImage(), $this->getHtmlId(), 'Select Date', ($this->getDisabled() ? 'display:none;' : '')
         );
         $outputFormat = $this->getFormat();
         if (empty($outputFormat)) {
-            throw new Exception(__('Output format is not specified. Please, specify "format" key in constructor, or set it using setFormat().'));
+            throw new Exception('Output format is not specified. Please, specify "format" key in constructor, or set it using setFormat().');
         }
         $displayFormat = Varien_Date::convertZendToStrFtime($outputFormat, true, (bool)$this->getTime());
 

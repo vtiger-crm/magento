@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -74,15 +74,25 @@ class Mage_Catalog_Block_Product_Gallery extends Mage_Core_Block_Template
         return $this->getCurrentImage()->getFile();
     }
 
+    /**
+     * Retrieve image width
+     *
+     * @return bool|int
+     */
     public function getImageWidth()
     {
         $file = $this->getCurrentImage()->getPath();
         if (file_exists($file)) {
             $size = getimagesize($file);
-            if (isset($size[0]) && $size[0]>600) {
-                return 600;
+            if (isset($size[0])) {
+                if ($size[0] > 600) {
+                    return 600;
+                } else {
+                    return $size[0];
+                }
             }
         }
+
         return false;
     }
 

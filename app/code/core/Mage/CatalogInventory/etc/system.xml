@@ -19,10 +19,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogRule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogInventory
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -33,8 +33,8 @@
             <frontend_type>text</frontend_type>
             <sort_order>50</sort_order>
             <show_in_default>1</show_in_default>
-            <show_in_website>0</show_in_website>
-            <show_in_store>0</show_in_store>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
             <groups>
                 <options translate="label">
                     <label>Stock Options</label>
@@ -62,10 +62,27 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </can_back_in_stock>
+                        <show_out_of_stock>
+                            <label>Display Out of Stock Products</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </show_out_of_stock>
+                        <stock_threshold_qty translate="label">
+                            <label>Only X left Threshold</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                       </stock_threshold_qty>
                     </fields>
                 </options>
                 <item_options translate="label comment">
-                    <comment>&lt;strong&gt;Please note&lt;/strong&gt;, that these Settings are applicable to cart line Items, not the whole Cart.</comment>
+                    <comment>&lt;strong&gt;Note&lt;/strong&gt; that these settings are applicable to cart line items, not the whole cart.</comment>
                     <label>Product Stock Options</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>10</sort_order>
@@ -101,7 +118,7 @@
                             <show_in_store>0</show_in_store>
                         </max_sale_qty>
                         <min_qty translate="label">
-                            <label>Qty for Items' Status to become Out of Stock</label>
+                            <label>Qty for Item's Status to Become Out of Stock</label>
                             <frontend_type>text</frontend_type>
                             <sort_order>5</sort_order>
                             <show_in_default>1</show_in_default>
@@ -110,7 +127,8 @@
                         </min_qty>
                         <min_sale_qty translate="label">
                             <label>Minimum Qty Allowed in Shopping Cart</label>
-                            <frontend_type>text</frontend_type>
+                            <frontend_model>cataloginventory/adminhtml_form_field_minsaleqty</frontend_model>
+                            <backend_model>cataloginventory/system_config_backend_minsaleqty</backend_model>
                             <sort_order>6</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>0</show_in_website>
@@ -124,6 +142,34 @@
                             <show_in_website>0</show_in_website>
                             <show_in_store>0</show_in_store>
                        </notify_stock_qty>
+                       <auto_return translate="label">
+                            <label>Automatically Return Credit Memo Item to Stock</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                       </auto_return>
+                       <enable_qty_increments translate="label">
+                            <label>Enable Qty Increments</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>8</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                       </enable_qty_increments>
+                       <qty_increments translate="label">
+                            <label>Qty Increments</label>
+                            <frontend_type>text</frontend_type>
+                            <backend_model>cataloginventory/system_config_backend_qtyincrements</backend_model>
+                            <sort_order>9</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enable_qty_increments>1</enable_qty_increments></depends>
+                       </qty_increments>
                     </fields>
                 </item_options>
             </groups>

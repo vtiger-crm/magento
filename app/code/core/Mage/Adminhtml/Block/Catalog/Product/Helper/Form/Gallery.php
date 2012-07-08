@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -87,8 +87,19 @@ class Mage_Adminhtml_Block_Catalog_Product_Helper_Form_Gallery extends Varien_Da
      */
     public function usedDefault($attribute)
     {
-        $devaultValue = $this->getDataObject()->getAttributeDefaultValue($attribute->getAttributeCode());
-        return is_null($devaultValue);
+        $attributeCode = $attribute->getAttributeCode();
+        $defaultValue = $this->getDataObject()->getAttributeDefaultValue($attributeCode);
+
+        if (!$this->getDataObject()->getExistsStoreValueFlag($attributeCode)) {
+            return true;
+        } else if ($this->getValue() == $defaultValue && 
+                   $this->getDataObject()->getStoreId() != $this->_getDefaultStoreId()) {
+            return false;
+        }
+        if ($defaultValue === false && !$attribute->getIsRequired() && $this->getValue()) {
+            return false;
+        }
+        return $defaultValue === false;
     }
 
     /**
@@ -168,4 +179,13 @@ class Mage_Adminhtml_Block_Catalog_Product_Helper_Form_Gallery extends Varien_Da
         return '<tr><td class="value" colspan="3">' . $this->getElementHtml() . '</td></tr>';
     }
 
+    /**
+     * Default sore ID getter
+     *
+     * @return integer
+     */
+    protected function _getDefaultStoreId()
+    {
+        return Mage_Catalog_Model_Abstract::DEFAULT_STORE_ID;
+    }
 }

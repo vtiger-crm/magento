@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Shipping
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Shipping
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -31,6 +31,7 @@ class Mage_Shipping_Model_Carrier_Tablerate
 {
 
     protected $_code = 'tablerate';
+    protected $_isFixed = true;
     protected $_default_condition_name = 'package_weight';
 
     protected $_conditionNames = array();
@@ -55,12 +56,61 @@ class Mage_Shipping_Model_Carrier_Tablerate
             return false;
         }
 
+        // exclude Virtual products price from Package value if pre-configured
+        if (!$this->getConfigFlag('include_virtual_price') && $request->getAllItems()) {
+            foreach ($request->getAllItems() as $item) {
+                if ($item->getParentItem()) {
+                    continue;
+                }
+                if ($item->getHasChildren() && $item->isShipSeparately()) {
+                    foreach ($item->getChildren() as $child) {
+                        if ($child->getProduct()->isVirtual()) {
+                            $request->setPackageValue($request->getPackageValue() - $child->getBaseRowTotal());
+                        }
+                    }
+                } elseif ($item->getProduct()->isVirtual()) {
+                    $request->setPackageValue($request->getPackageValue() - $item->getBaseRowTotal());
+                }
+            }
+        }
+
+        // Free shipping by qty
+        $freeQty = 0;
+        if ($request->getAllItems()) {
+            foreach ($request->getAllItems() as $item) {
+                if ($item->getProduct()->isVirtual() || $item->getParentItem()) {
+                    continue;
+                }
+
+                if ($item->getHasChildren() && $item->isShipSeparately()) {
+                    foreach ($item->getChildren() as $child) {
+                        if ($child->getFreeShipping() && !$child->getProduct()->isVirtual()) {
+                            $freeQty += $item->getQty() * ($child->getQty() - (is_numeric($child->getFreeShipping()) ? $child->getFreeShipping() : 0));
+                        }
+                    }
+                } elseif ($item->getFreeShipping()) {
+                    $freeQty += ($item->getQty() - (is_numeric($item->getFreeShipping()) ? $item->getFreeShipping() : 0));
+                }
+            }
+        }
+
         if (!$request->getConditionName()) {
             $request->setConditionName($this->getConfigData('condition_name') ? $this->getConfigData('condition_name') : $this->_default_condition_name);
         }
 
+         // Package weight and qty free shipping
+        $oldWeight = $request->getPackageWeight();
+        $oldQty = $request->getPackageQty();
+
+        $request->setPackageWeight($request->getFreeMethodWeight());
+        $request->setPackageQty($oldQty - $freeQty);
+
         $result = Mage::getModel('shipping/rate_result');
         $rate = $this->getRate($request);
+
+        $request->setPackageWeight($oldWeight);
+        $request->setPackageQty($oldQty);
+
         if (!empty($rate) && $rate['price'] >= 0) {
             $method = Mage::getModel('shipping/rate_result_method');
 
@@ -70,7 +120,11 @@ class Mage_Shipping_Model_Carrier_Tablerate
             $method->setMethod('bestway');
             $method->setMethodTitle($this->getConfigData('name'));
 
-            $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+            if ($request->getFreeShipping() === true || ($request->getPackageQty() == $freeQty)) {
+                $shippingPrice = 0;
+            } else {
+                $shippingPrice = $this->getFinalPriceWithHandlingFee($rate['price']);
+            }
 
             $method->setPrice($shippingPrice);
             $method->setCost($rate['cost']);

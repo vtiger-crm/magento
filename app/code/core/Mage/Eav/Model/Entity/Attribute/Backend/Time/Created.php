@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Eav
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Eav
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,10 +33,19 @@
  */
 class Mage_Eav_Model_Entity_Attribute_Backend_Time_Created extends Mage_Eav_Model_Entity_Attribute_Backend_Abstract
 {
+    /**
+     * Set created date
+     *
+     * @param Mage_Core_Model_Object $object
+     * @return Mage_Eav_Model_Entity_Attribute_Backend_Time_Created
+     */
     public function beforeSave($object)
     {
-        if (!$object->getId() && is_null($object->getData($this->getAttribute()->getAttributeCode()))) {
-            $object->setData($this->getAttribute()->getAttributeCode(), now());
+        $attributeCode = $this->getAttribute()->getAttributeCode();
+        if ($object->isObjectNew() && is_null($object->getData($attributeCode))) {
+            $object->setData($attributeCode, Varien_Date::now());
         }
+
+        return $this;
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <div class="grid np">
@@ -49,6 +49,7 @@
         <?php $_i=0;foreach ($_items as $_item): if ($_item->getOrderItem()->getIsVirtual() || $_item->getOrderItem()->getParentItem()): continue; endif; $_i++ ?>
         <tbody class="<?php echo $_i%2?'odd':'even' ?>">
             <?php echo $this->getItemHtml($_item) ?>
+            <?php echo $this->getItemExtraInfoHtml($_item->getOrderItem()) ?>
         </tbody>
         <?php endforeach; ?>
     </table>
@@ -61,7 +62,7 @@
         <div id="order-history_form">
             <span class="field-row">
                 <label class="normal" for="shipment_comment_text"><?php echo Mage::helper('sales')->__('Shipment Comments') ?></label>
-                <textarea id="shipment_comment_text" name="shipment[comment_text]" rows="3" cols="5" style="height:6em; width:99%;"></textarea>
+                <textarea id="shipment_comment_text" name="shipment[comment_text]" rows="3" cols="5" style="height:6em; width:99%;"><?php echo $this->getShipment()->getCommentText(); ?></textarea>
             </span>
             <div class="clear"></div>
         </div>
@@ -71,6 +72,12 @@
 <div class="box-right entry-edit">
     <div class="order-totals">
         <div class="order-totals-bottom">
+          <?php if ($this->canCreateShippingLabel()): ?>
+          <p>
+              <label class="normal" for="create_shipping_label"><?php echo Mage::helper('sales')->__('Create Shipping Label') ?></label>
+              <input id="create_shipping_label" name="shipment[create_shipping_label]" value="1" type="checkbox"  onclick="toggleCreateLabelCheckbox();" />
+          </p>
+          <?php endif ?>
           <p>
               <label class="normal" for="notify_customer"><?php echo Mage::helper('sales')->__('Append Comments') ?></label>
               <input id="notify_customer" name="shipment[comment_customer_notify]" value="1" type="checkbox" />
@@ -106,6 +113,23 @@ function bindSendEmail()
     else {
         notifyCustomerCheckbox.disabled = true;
         //shipmentCommentText.disabled = true;
+    }
+}
+function toggleCreateLabelCheckbox(){
+    var checkbox = $('create_shipping_label');
+    var submitButton = checkbox.up('.order-totals').select('.submit-button span')[0];
+    if (checkbox.checked) {
+        submitButton.innerText += '...';
+    } else {
+        submitButton.innerText = submitButton.innerText.replace(/\.\.\.$/, '');
+    }
+}
+function submitShipment(btn){
+    var checkbox = $(btn).up('.order-totals').select('#create_shipping_label')[0];
+    if (checkbox && checkbox.checked) {
+        packaging.showWindow();
+    } else if(editForm.submit()) {
+        disableElements('submit-button');
     }
 }
 //]]>

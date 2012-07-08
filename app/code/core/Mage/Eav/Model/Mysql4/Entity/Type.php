@@ -18,41 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Eav
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Eav
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * EAV entity type resource model
  *
- * @category   Mage
- * @package    Mage_Eav
+ * @category    Mage
+ * @package     Mage_Eav
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Eav_Model_Mysql4_Entity_Type extends Mage_Core_Model_Mysql4_Abstract
+class Mage_Eav_Model_Mysql4_Entity_Type extends Mage_Eav_Model_Resource_Entity_Type
 {
-
-    /**
-     * Enter description here...
-     *
-     */
-    protected function _construct()
-    {
-        $this->_init('eav/entity_type', 'entity_type_id');
-    }
-
-    /**
-     * Enter description here...
-     *
-     * @param unknown_type $object
-     * @param string $code
-     * @return Mage_Eav_Model_Mysql4_Entity_Type
-     */
-    public function loadByCode($object, $code)
-    {
-        return $this->load($object, $code, 'entity_type_code');
-    }
-
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Compiler
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Compiler
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -75,7 +75,7 @@ class Mage_Compiler_Block_Process extends Mage_Adminhtml_Block_Template
                 $this->getLayout()->createBlock('adminhtml/widget_button')
                     ->setData(array(
                         'label'     => Mage::helper('compiler')->__('Disable'),
-                        'onclick' => 'setLocation(\'' . $this->getUrl('compiler/process/disable') . '\')',
+                        'onclick' => 'setLocation(\'' . $this->getUrl('*/compiler_process/disable') . '\')',
                         'class'     => 'save'
             )));
         } else {
@@ -83,7 +83,7 @@ class Mage_Compiler_Block_Process extends Mage_Adminhtml_Block_Template
                 $this->getLayout()->createBlock('adminhtml/widget_button')
                     ->setData(array(
                         'label'     => Mage::helper('compiler')->__('Enable'),
-                        'onclick' => 'setLocation(\'' . $this->getUrl('compiler/process/enable') . '\')',
+                        'onclick' => 'setLocation(\'' . $this->getUrl('*/compiler_process/enable') . '\')',
                         'class'     => 'save'
             )));
         }
@@ -98,7 +98,7 @@ class Mage_Compiler_Block_Process extends Mage_Adminhtml_Block_Template
      */
     protected function getHeader()
     {
-        return Mage::helper('compiler')->__('Compilation (Beta)');
+        return Mage::helper('compiler')->__('Compilation');
     }
 
     public function getChangeStatusButtonHtml()
@@ -126,7 +126,7 @@ class Mage_Compiler_Block_Process extends Mage_Adminhtml_Block_Template
      */
     public function getRunFormAction()
     {
-        return $this->getUrl('compiler/process/recompile');
+        return $this->getUrl('*/compiler_process/recompile');
     }
 
     /**

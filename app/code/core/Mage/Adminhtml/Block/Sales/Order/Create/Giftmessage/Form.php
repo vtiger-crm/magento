@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -76,7 +76,7 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form extends Mage_Admi
     }
 
     /**
-     * Retrive default value for giftmessage sender
+     * Retrieve default value for giftmessage sender
      *
      * @return string
      */
@@ -100,7 +100,7 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form extends Mage_Admi
     }
 
     /**
-     * Retrive default value for giftmessage recipient
+     * Retrieve default value for giftmessage recipient
      *
      * @return string
      */
@@ -110,18 +110,20 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form extends Mage_Admi
             return '';
         }
 
-        if($this->getEntity()->getOrder()) {
-            if ($this->getEntity()->getOrder()->getShippingAddress()) {
-                return $this->getEntity()->getOrder()->getShippingAddress()->getName();
-            } else if ($this->getEntity()->getOrder()->getBillingAddress()) {
-                return $this->getEntity()->getOrder()->getBillingAddress()->getName();
-            }
+        $object = $this->getEntity();
+
+        if ($this->getEntity()->getOrder()) {
+            $object = $this->getEntity()->getOrder();
+        }
+        else if ($this->getEntity()->getQuote()){
+            $object = $this->getEntity()->getQuote();
         }
 
-        if ($this->getEntity()->getShippingAddress()) {
-            return $this->getEntity()->getShippingAddress()->getName();
-        } else if ($this->getEntity()->getBillingAddress()) {
-            return $this->getEntity()->getBillingAddress()->getName();
+        if ($object->getShippingAddress()) {
+            return $object->getShippingAddress()->getName();
+        }
+        else if ($object->getBillingAddress()) {
+            return $object->getBillingAddress()->getName();
         }
 
         return '';
@@ -145,32 +147,11 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form extends Mage_Admi
 
         $form->setHtmlIdPrefix($this->_getFieldIdPrefix());
 
-        $fieldset->addField('sender','text',
-            array(
-                'name'  =>  $this->_getFieldName('sender'),
-                'label' =>  Mage::helper('sales')->__('From'),
-                'class' =>  $this->getMessage()->getMessage() ? 'required-entry' : ''
-            )
-        );
-        $fieldset->addField('recipient','text',
-            array(
-                'name'  =>  $this->_getFieldName('recipient'),
-                'label' =>  Mage::helper('sales')->__('To'),
-                'class' =>  $this->getMessage()->getMessage() ? 'required-entry' : ''
-            )
-        );
-
-        $fieldset->addField('message', 'textarea',
-            array(
-                'name'      =>  $this->_getFieldName('message'),
-                'label'     =>  Mage::helper('sales')->__('Message'),
-                'rows'      =>  '5',
-                'cols'      =>  '20',
-                'onchange'  =>  'toogleRequired(\'' . $this->_getFieldId('message')
-                             .  '\', [\'' . $this->_getFieldId('sender')
-                             .  '\', \'' . $this->_getFieldId('recipient') . '\']);'
-            )
-        );
+        if ($this->getEntityType() == 'item') {
+            $this->_prepareHiddenFields($fieldset);
+        } else {
+            $this->_prepareVisibleFields($fieldset);
+        }
 
         // Set default sender and recipient from billing and shipping adresses
         if(!$this->getMessage()->getSender()) {
@@ -189,6 +170,71 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form extends Mage_Admi
         $form->setValues($this->getMessage()->getData());
 
         $this->setForm($form);
+        return $this;
+    }
+
+    /**
+     * Prepare form fieldset
+     * All fields are hidden
+     *
+     * @param Varien_Data_Form_Element_Fieldset $fieldset
+     *
+     * @return Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form
+     */
+    protected function _prepareHiddenFields(Varien_Data_Form_Element_Fieldset $fieldset)
+    {
+        $fieldset->addField('sender', 'hidden',
+            array(
+                'name' => $this->_getFieldName('sender')
+            )
+        );
+        $fieldset->addField('recipient', 'hidden',
+            array(
+                'name' => $this->_getFieldName('recipient')
+            )
+        );
+
+        $fieldset->addField('message', 'hidden',
+            array(
+                'name' => $this->_getFieldName('message')
+            )
+        );
+        return $this;
+    }
+
+    /**
+     * Prepare form fieldset
+     * All fields are visible
+     *
+     * @param Varien_Data_Form_Element_Fieldset $fieldset
+     *
+     * @return Mage_Adminhtml_Block_Sales_Order_Create_Giftmessage_Form
+     */
+    protected function _prepareVisibleFields(Varien_Data_Form_Element_Fieldset $fieldset)
+    {
+        $fieldset->addField('sender', 'text',
+            array(
+                'name'     => $this->_getFieldName('sender'),
+                'label'    => Mage::helper('sales')->__('From'),
+                'required' => $this->getMessage()->getMessage() ? true : false
+            )
+        );
+        $fieldset->addField('recipient', 'text',
+            array(
+                'name'     => $this->_getFieldName('recipient'),
+                'label'    => Mage::helper('sales')->__('To'),
+                'required' => $this->getMessage()->getMessage() ? true : false
+            )
+        );
+
+        $fieldset->addField('message', 'textarea',
+            array(
+                'name'      => $this->_getFieldName('message'),
+                'label'     => Mage::helper('sales')->__('Message'),
+                'rows'      => '5',
+                'cols'      => '20',
+            )
+        );
         return $this;
     }
 

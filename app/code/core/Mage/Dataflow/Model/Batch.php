@@ -18,18 +18,29 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Dataflow
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Dataflow
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Dataflow Batch model
  *
- * @category   Mage
- * @package    Mage_Dataflow
+ * @method Mage_Dataflow_Model_Resource_Batch _getResource()
+ * @method Mage_Dataflow_Model_Resource_Batch getResource()
+ * @method int getProfileId()
+ * @method Mage_Dataflow_Model_Batch setProfileId(int $value)
+ * @method int getStoreId()
+ * @method Mage_Dataflow_Model_Batch setStoreId(int $value)
+ * @method string getAdapter()
+ * @method Mage_Dataflow_Model_Batch setAdapter(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Dataflow_Model_Batch setCreatedAt(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Dataflow
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Dataflow_Model_Batch extends Mage_Core_Model_Abstract

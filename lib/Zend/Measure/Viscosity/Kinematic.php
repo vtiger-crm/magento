@@ -14,9 +14,9 @@
  *
  * @category  Zend
  * @package   Zend_Measure
- * @copyright Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
- * @version   $Id: Kinematic.php 13209 2008-12-13 22:34:06Z thomas $
+ * @version   $Id: Kinematic.php 20096 2010-01-06 02:05:09Z bkarwin $
  */
 
 /**
@@ -31,7 +31,7 @@
  * @category   Zend
  * @package    Zend_Measure
  * @subpackage Zend_Measure_Viscosity_Kinematic
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Measure_Viscosity_Kinematic extends Zend_Measure_Abstract

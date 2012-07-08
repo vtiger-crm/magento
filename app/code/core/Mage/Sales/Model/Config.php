@@ -18,15 +18,17 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 class Mage_Sales_Model_Config
 {
+    const XML_PATH_ORDER_STATES = 'global/sales/order/states';
+
     public function getQuoteRuleConditionInstance($type)
     {
         $config = Mage::getConfig()->getNodeClassInstance("global/sales/quote/rule/conditions/$type");
@@ -36,5 +38,26 @@ class Mage_Sales_Model_Config
     public function getQuoteRuleActionInstance($type)
     {
         return Mage::getConfig()->getNodeClassInstance("global/sales/quote/rule/actions/$type");
+    }
+
+    /**
+     * Retrieve order statuses for state
+     *
+     * @param string $state
+     * @return array
+     */
+    public function getOrderStatusesForState($state)
+    {
+        $states = Mage::getConfig()->getNode(self::XML_PATH_ORDER_STATES);
+        if (!isset($states->$state) || !isset($states->$state->statuses)) {
+           return array();
+        }
+
+        $statuses = array();
+
+        foreach ($states->$state->statuses->children() as $status => $node) {
+            $statuses[] = $status;
+        }
+        return $statuses;
     }
 }

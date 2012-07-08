@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -58,7 +58,9 @@ class Mage_Adminhtml_Block_System_Config_Form_Field
     {
         $id = $element->getHtmlId();
 
-        $html = '<tr><td class="label"><label for="'.$id.'">'.$element->getLabel().'</label></td>';
+        $useContainerId = $element->getData('use_container_id');
+        $html = '<tr id="row_' . $id . '">'
+              . '<td class="label"><label for="'.$id.'">'.$element->getLabel().'</label></td>';
 
         //$isDefault = !$this->getRequest()->getParam('website') && !$this->getRequest()->getParam('store');
         $isMultiple = $element->getExtType()==='multiple';
@@ -71,11 +73,11 @@ class Mage_Adminhtml_Block_System_Config_Form_Field
         $addInheritCheckbox = false;
         if ($element->getCanUseWebsiteValue()) {
             $addInheritCheckbox = true;
-            $checkboxLabel = Mage::helper('adminhtml')->__('Use website');
+            $checkboxLabel = Mage::helper('adminhtml')->__('Use Website');
         }
         elseif ($element->getCanUseDefaultValue()) {
             $addInheritCheckbox = true;
-            $checkboxLabel = Mage::helper('adminhtml')->__('Use default');
+            $checkboxLabel = Mage::helper('adminhtml')->__('Use Default');
         }
 
         if ($addInheritCheckbox) {
@@ -88,9 +90,10 @@ class Mage_Adminhtml_Block_System_Config_Form_Field
         $html.= '<td class="value">';
         $html.= $this->_getElementHtml($element);
         if ($element->getComment()) {
-            $html.= '<p class="nm"><small>'.$element->getComment().'</small></p>';
+            $html.= '<p class="note"><span>'.$element->getComment().'</span></p>';
         }
         $html.= '</td>';
+
         if ($addInheritCheckbox) {
 
             $defText = $element->getDefaultValue();
@@ -116,6 +119,20 @@ class Mage_Adminhtml_Block_System_Config_Form_Field
             $html.= '<label for="'.$id.'_inherit" class="inherit" title="'.htmlspecialchars($defText).'">'.$checkboxLabel.'</label>';
             $html.= '</td>';
         }
+
+        $html.= '<td class="scope-label">';
+        if ($element->getScope()) {
+            $html .= $element->getScopeLabel();
+        }
+        $html.= '</td>';
+
+        $html.= '<td class="">';
+        if ($element->getHint()) {
+            $html.= '<div class="hint" >';
+            $html.= '<div style="display: none;">' . $element->getHint() . '</div>';
+            $html.= '</div>';
+        }
+        $html.= '</td>';
 
         $html.= '</tr>';
         return $html;

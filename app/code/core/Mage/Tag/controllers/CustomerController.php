@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Tag
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Tag
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -49,20 +49,22 @@ class Mage_Tag_CustomerController extends Mage_Core_Controller_Front_Action
 
     public function indexAction()
     {
-        if( !Mage::getSingleton('customer/session')->getCustomerId() ) {
+        if( !Mage::getSingleton('customer/session')->isLoggedIn() ) {
             Mage::getSingleton('customer/session')->authenticate($this);
             return;
         }
 
         $this->loadLayout();
         $this->_initLayoutMessages('tag/session');
-         $this->_initLayoutMessages('catalog/session');
+        $this->_initLayoutMessages('catalog/session');
 
-        if ($navigationBlock = $this->getLayout()->getBlock('customer_account_navigation')) {
+        $navigationBlock = $this->getLayout()->getBlock('customer_account_navigation');
+        if ($navigationBlock) {
             $navigationBlock->setActive('tag/customer');
         }
 
-        if ($block = $this->getLayout()->getBlock('customer_tags')) {
+        $block = $this->getLayout()->getBlock('customer_tags');
+        if ($block) {
             $block->setRefererUrl($this->_getRefererUrl());
         }
 
@@ -72,16 +74,19 @@ class Mage_Tag_CustomerController extends Mage_Core_Controller_Front_Action
 
     public function viewAction()
     {
-        if( !Mage::getSingleton('customer/session')->getCustomerId() ) {
+        if( !Mage::getSingleton('customer/session')->isLoggedIn() ) {
             Mage::getSingleton('customer/session')->authenticate($this);
             return;
         }
-        if ($tagId = $this->_getTagId()) {
+
+        $tagId = $this->_getTagId();
+        if ($tagId) {
             Mage::register('tagId', $tagId);
             $this->loadLayout();
             $this->_initLayoutMessages('tag/session');
 
-            if ($navigationBlock = $this->getLayout()->getBlock('customer_account_navigation')) {
+            $navigationBlock = $this->getLayout()->getBlock('customer_account_navigation');
+            if ($navigationBlock) {
                 $navigationBlock->setActive('tag/customer');
             }
 
@@ -94,44 +99,33 @@ class Mage_Tag_CustomerController extends Mage_Core_Controller_Front_Action
         }
     }
 
+    /**
+     * @deprecated after 1.3.2.3
+     * This functionality was removed
+     *
+     */
     public function editAction()
     {
-        if( !Mage::getSingleton('customer/session')->getCustomerId() ) {
-            Mage::getSingleton('customer/session')->authenticate($this);
-            return;
-        }
-
-        if ($tagId = $this->_getTagId()) {
-            $this->loadLayout();
-            $this->_initLayoutMessages('tag/session');
-            $this->_initLayoutMessages('customer/session');
-            if ($navigationBlock = $this->getLayout()->getBlock('customer_account_navigation')) {
-                $navigationBlock->setActive('tag/customer');
-            }
-            $this->renderLayout();
-        }
-        else {
-            $this->_forward('noRoute');
-        }
+        $this->_forward('noRoute');
     }
 
     public function removeAction()
     {
-        if( !Mage::getSingleton('customer/session')->getCustomerId() ) {
+        if( !Mage::getSingleton('customer/session')->isLoggedIn() ) {
             Mage::getSingleton('customer/session')->authenticate($this);
             return;
         }
 
-        if ($tagId = $this->_getTagId()) {
+        $tagId = $this->_getTagId();
+        if ($tagId) {
             try {
                 $model = Mage::registry('tagModel');
                 $model->deactivate();
                 $tag = Mage::getModel('tag/tag')->load($tagId)->aggregate();
-                Mage::getSingleton('tag/session')->addSuccess(Mage::helper('tag')->__('Your tag was successfully deleted'));
+                Mage::getSingleton('tag/session')->addSuccess(Mage::helper('tag')->__('The tag has been deleted.'));
                 $this->getResponse()->setRedirect(Mage::getUrl('*/*/', array(
                     self::PARAM_NAME_URL_ENCODED => Mage::helper('core')->urlEncode(Mage::getUrl('customer/account/'))
                 )));
-                //$this->
                 return;
             } catch (Exception $e) {
                 Mage::getSingleton('tag/session')->addError(Mage::helper('tag')->__('Unable to remove tag. Please, try again later.'));
@@ -142,96 +136,13 @@ class Mage_Tag_CustomerController extends Mage_Core_Controller_Front_Action
         }
     }
 
+    /**
+     * @deprecated after 1.3.2.3
+     * This functionality was removed
+     *
+     */
     public function saveAction()
     {
-        if( !Mage::getSingleton('customer/session')->getCustomerId() ) {
-            Mage::getSingleton('customer/session')->authenticate($this);
-            return;
-        }
-
-        $tagId      = (int) $this->getRequest()->getParam('tagId');
-        $customerId = Mage::getSingleton('customer/session')->getCustomerId();
-        $tagName    = (string) $this->getRequest()->getPost('productTagName');
-
-        if (strlen($tagName) === 0) {
-            Mage::getSingleton('tag/session')->addError(Mage::helper('tag')->__('Tag can\'t be empty.'));
-            $this->_redirect('*/*/edit', array('tagId'=>$tagId));
-            return;
-        }
-
-        if ($tagId) {
-            try {
-                $productId  = 0;
-                $message    = false;
-                $storeId    = Mage::app()->getStore()->getId();
-
-                $tagModel = Mage::getModel('tag/tag');
-                $tagModel->load($tagId);
-
-                /* @var $tagRelationModel Mage_Tag_Model_Tag_Relation */
-                $tagRelationModel = Mage::getModel('tag/tag_relation');
-                // rename isset tag
-                if ($tagModel->getName() != $tagName) {
-                    // deactivate old tagged products
-                    $tagRelationModel->loadByTagCustomer(null, $tagModel->getId(), $customerId, $storeId)
-                        ->deactivate();
-
-                    $tagModel->loadByName($tagName);
-
-                    if($tagModel->getId()) {
-                        $status = $tagModel->getStatus();
-                    }
-                    else {
-                        $message= Mage::helper('tag')->__('Thank you. Your tag has been accepted for moderation.');
-                        $status = $tagModel->getPendingStatus();
-                    }
-
-                    $tagModel->setName($tagName)
-                        ->setStatus($status)
-                        ->setStoreId($storeId)
-                        ->save();
-                }
-
-                $tagRelationModel->loadByTagCustomer(null, $tagId, $customerId, $storeId);
-
-                if ($tagRelationModel->getCustomerId() == $customerId ) {
-                    $productIds = $tagRelationModel->getProductIds();
-                    if ($tagRelationModel->getTagId()!=$tagModel->getId()) {
-                        $tagRelationModel->deactivate();
-                    } else {
-                        $tagRelationModel->delete();
-                    }
-
-                    foreach ($productIds as $productId) {
-                        Mage::getModel('tag/tag_relation')
-                            ->setTagId($tagModel->getId())
-                            ->setCustomerId($customerId)
-                            ->setStoreId($storeId)
-                            ->setActive(true)
-                            ->setProductId($productId)
-                            ->save();
-                    }
-                }
-
-                if ($tagModel->getId()) {
-                    $tagModel->aggregate();
-                    $this->getResponse()->setRedirect(Mage::getUrl('*/*/'));
-                }
-
-                $message = ($message) ? $message : Mage::helper('tag')->__('Your tag was successfully saved');
-                Mage::getSingleton('tag/session')->addSuccess($message);
-                $this->_redirect('*/*/');
-                return;
-            }
-            catch (Mage_Core_Exception $e) {
-                Mage::getSingleton('tag/session')->addError($e->getMessage());
-            }
-            catch (Exception $e) {
-                Mage::getSingleton('tag/session')->addException($e,
-                    Mage::helper('tag')->__('Unable to save your tag. Please, try again later.')
-                );
-            }
-        }
-        $this->_redirectReferer();
+        $this->_forward('noRoute');
     }
 }

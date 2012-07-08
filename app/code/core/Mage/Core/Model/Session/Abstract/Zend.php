@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,24 +42,25 @@ abstract class Mage_Core_Model_Session_Abstract_Zend extends Varien_Object
 
     public function getNamespace()
     {
-    	return $this->_namespace;
+        return $this->_namespace;
     }
 
     public function start()
     {
         Varien_Profiler::start(__METHOD__.'/setOptions');
         $options = array(
-        	'save_path'=>Mage::getBaseDir('session'),
-        	'use_only_cookies'=>'off',
+            'save_path'=>Mage::getBaseDir('session'),
+            'use_only_cookies'=>'off',
+            'throw_startup_exceptions' => E_ALL ^ E_NOTICE,
         );
         if ($this->getCookieDomain()) {
-        	$options['cookie_domain'] = $this->getCookieDomain();
+            $options['cookie_domain'] = $this->getCookieDomain();
         }
         if ($this->getCookiePath()) {
-        	$options['cookie_path'] = $this->getCookiePath();
+            $options['cookie_path'] = $this->getCookiePath();
         }
         if ($this->getCookieLifetime()) {
-        	$options['cookie_lifetime'] = $this->getCookieLifetime();
+            $options['cookie_lifetime'] = $this->getCookieLifetime();
         }
         Zend_Session::setOptions($options);
         Varien_Profiler::stop(__METHOD__.'/setOptions');
@@ -67,7 +68,7 @@ abstract class Mage_Core_Model_Session_Abstract_Zend extends Varien_Object
         Varien_Profiler::start(__METHOD__.'/setHandler');
         $sessionResource = Mage::getResourceSingleton('core/session');
         if ($sessionResource->hasConnection()) {
-        	Zend_Session::setSaveHandler($sessionResource);
+            Zend_Session::setSaveHandler($sessionResource);
         }
         Varien_Profiler::stop(__METHOD__.'/setHandler');
 */
@@ -85,9 +86,9 @@ abstract class Mage_Core_Model_Session_Abstract_Zend extends Varien_Object
      */
     public function init($namespace)
     {
-    	if (!Zend_Session::sessionExists()) {
-    		$this->start();
-    	}
+        if (!Zend_Session::sessionExists()) {
+            $this->start();
+        }
 
         Varien_Profiler::start(__METHOD__.'/init');
         $this->_namespace = new Zend_Session_Namespace($namespace, Zend_Session_Namespace::SINGLE_INSTANCE);
@@ -159,6 +160,17 @@ abstract class Mage_Core_Model_Session_Abstract_Zend extends Varien_Object
         if (!is_null($id)) {
             Zend_Session::setId($id);
         }
+        return $this;
+    }
+
+    /**
+     * Regenerate session Id
+     *
+     * @return Mage_Core_Model_Session_Abstract_Zend
+     */
+    public function regenerateSessionId()
+    {
+        Zend_Session::regenerateId();
         return $this;
     }
 }

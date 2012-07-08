@@ -17,8 +17,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 if(!window.Flex) {
@@ -63,8 +65,8 @@ if(!window.Flex) {
                 top: 300,
                 width:  flexWidth,
                 height: 20,
-                src:    uploaderSrc
-                // wmode: 'transparent'
+                src:    uploaderSrc,
+                wmode: 'transparent'
             });
             // this.getInnerElement('browse').disabled = true;
             // this.getInnerElement('upload').disabled = true;
@@ -221,7 +223,7 @@ if(!window.Flex) {
                     }
                 }
             }
-            
+
             if (file.status == 'full_complete' && !file.response.isJSON()) {
                 file.status = 'error';
             }

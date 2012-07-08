@@ -18,14 +18,26 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+
+/**
+ * Search Order Model
+ *
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Adminhtml_Model_Search_Order extends Varien_Object
 {
-
+    /**
+     * Load search results
+     *
+     * @return Mage_Adminhtml_Model_Search_Order
+     */
     public function load()
     {
         $arr = array();
@@ -35,45 +47,34 @@ class Mage_Adminhtml_Model_Search_Order extends Varien_Object
             return $this;
         }
 
+        $query = $this->getQuery();
         //TODO: add full name logic
         $collection = Mage::getResourceModel('sales/order_collection')
             ->addAttributeToSelect('*')
+            ->addAttributeToSearchFilter(array(
+                array('attribute' => 'increment_id',       'like'=>$query.'%'),
+                array('attribute' => 'billing_firstname',  'like'=>$query.'%'),
+                array('attribute' => 'billing_lastname',   'like'=>$query.'%'),
+                array('attribute' => 'billing_telephone',  'like'=>$query.'%'),
+                array('attribute' => 'billing_postcode',   'like'=>$query.'%'),
 
-            ->joinAttribute('billing_firstname', 'order_address/firstname', 'billing_address_id')
-            ->joinAttribute('billing_lastname', 'order_address/lastname', 'billing_address_id')
-            ->joinAttribute('billing_telephone', 'order_address/telephone', 'billing_address_id')
-            ->joinAttribute('billing_postcode', 'order_address/postcode', 'billing_address_id')
-
-            ->joinAttribute('shipping_firstname', 'order_address/firstname', 'shipping_address_id')
-            ->joinAttribute('shipping_lastname', 'order_address/lastname', 'shipping_address_id')
-            ->joinAttribute('shipping_telephone', 'order_address/telephone', 'shipping_address_id')
-            ->joinAttribute('shipping_postcode', 'order_address/postcode', 'shipping_address_id')
-
-            ->addAttributeToFilter(array(
-                array('attribute'=>'increment_id', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'billing_firstname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'billing_lastname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'billing_telephone', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'billing_postcode', 'like'=>$this->getQuery().'%'),
-
-                array('attribute'=>'shipping_firstname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'shipping_lastname', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'shipping_telephone', 'like'=>$this->getQuery().'%'),
-                array('attribute'=>'shipping_postcode', 'like'=>$this->getQuery().'%'),
+                array('attribute' => 'shipping_firstname', 'like'=>$query.'%'),
+                array('attribute' => 'shipping_lastname',  'like'=>$query.'%'),
+                array('attribute' => 'shipping_telephone', 'like'=>$query.'%'),
+                array('attribute' => 'shipping_postcode',  'like'=>$query.'%'),
             ))
-
             ->setCurPage($this->getStart())
             ->setPageSize($this->getLimit())
             ->load();
 
         foreach ($collection as $order) {
             $arr[] = array(
-                'id'            => 'order/1/'.$order->getId(),
-                'type'          => 'Order',
-                'name'          => Mage::helper('adminhtml')->__('Order #%s', $order->getIncrementId()),
-                'description'   => $order->getBillingFirstname().' '.$order->getBillingLastname(),
-                'form_panel_title' => Mage::helper('adminhtml')->__('Order #%s (%s)', $order->getIncrementId(), $order->getBillingFirstname().' '.$order->getBillingLastname()),
-                'url'           => Mage::helper('adminhtml')->getUrl('*/sales_order/view', array('order_id'=>$order->getId())),
+                'id'                => 'order/1/'.$order->getId(),
+                'type'              => Mage::helper('adminhtml')->__('Order'),
+                'name'              => Mage::helper('adminhtml')->__('Order #%s', $order->getIncrementId()),
+                'description'       => $order->getBillingFirstname().' '.$order->getBillingLastname(),
+                'form_panel_title'  => Mage::helper('adminhtml')->__('Order #%s (%s)', $order->getIncrementId(), $order->getBillingFirstname().' '.$order->getBillingLastname()),
+                'url' => Mage::helper('adminhtml')->getUrl('*/sales_order/view', array('order_id'=>$order->getId())),
             );
         }
 
@@ -81,6 +82,4 @@ class Mage_Adminhtml_Model_Search_Order extends Varien_Object
 
         return $this;
     }
-
 }
-

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogInventory
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogInventory
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -29,6 +29,15 @@
  */
 class Mage_CatalogInventory_Helper_Data extends Mage_Core_Helper_Abstract
 {
+    const XML_PATH_SHOW_OUT_OF_STOCK    = 'cataloginventory/options/show_out_of_stock';
+    const XML_PATH_ITEM_AUTO_RETURN     = 'cataloginventory/item_options/auto_return';
+
+    /**
+     * Error codes, that Catalog Inventory module can set to quote or quote items
+     */
+    const ERROR_QTY =               1;
+    const ERROR_QTY_INCREMENTS =    2;
+
     /**
      * All product types registry in scope of quantity availability
      *
@@ -91,7 +100,28 @@ class Mage_CatalogInventory_Helper_Data extends Mage_Core_Helper_Abstract
             'min_sale_qty',
             'max_sale_qty',
             'notify_stock_qty',
-            'manage_stock'
+            'manage_stock',
+            'enable_qty_increments',
+            'qty_increments',
         );
+    }
+
+    /**
+     * Display out of stock products option
+     *
+     * @return bool
+     */
+    public function isShowOutOfStock()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_SHOW_OUT_OF_STOCK);
+    }
+
+    /**
+     * Check if creditmemo items auto return option is enabled
+     * @return bool
+     */
+    public function isAutoReturnEnabled()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_ITEM_AUTO_RETURN);
     }
 }

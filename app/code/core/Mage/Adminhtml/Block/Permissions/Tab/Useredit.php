@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 class Mage_Adminhtml_Block_Permissions_Tab_Useredit extends Mage_Adminhtml_Block_Widget_Form
 {
@@ -131,22 +131,22 @@ class Mage_Adminhtml_Block_Permissions_Tab_Useredit extends Mage_Adminhtml_Block
         $fieldset->addField('is_active', 'select',
             array(
                 'name'  	=> 'is_active',
-                'label' 	=> Mage::helper('adminhtml')->__('This account is'),
+                'label' 	=> Mage::helper('adminhtml')->__('This Account is'),
                 'id'    	=> 'is_active',
-                'title' 	=> Mage::helper('adminhtml')->__('Account status'),
+                'title' 	=> Mage::helper('adminhtml')->__('Account Status'),
                 'class' 	=> 'input-select',
                 'required' 	=> false,
                 'style'		=> 'width: 80px',
                 'value'		=> '1',
                 'values'	=> array(
-                	array(
-                    	'label' => Mage::helper('adminhtml')->__('Active'),
-                    	'value'	=> '1',
-                	),
-                	array(
-                    	'label' => Mage::helper('adminhtml')->__('Inactive'),
-                    	'value' => '0',
-                	),
+                    array(
+                        'label' => Mage::helper('adminhtml')->__('Active'),
+                        'value'	=> '1',
+                    ),
+                    array(
+                        'label' => Mage::helper('adminhtml')->__('Inactive'),
+                        'value' => '0',
+                    ),
                 ),
             )
         );

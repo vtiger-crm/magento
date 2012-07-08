@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -52,6 +52,7 @@ class Mage_Adminhtml_Block_Report_Shopcart_Abandoned_Grid extends Mage_Adminhtml
             $storeIds = '';
         }
 
+        /** @var $collection Mage_Reports_Model_Resource_Quote_Collection */
         $collection = Mage::getResourceModel('reports/quote_collection');
 
         $filter = $this->getParam($this->getVarNameFilter(), array());
@@ -133,7 +134,7 @@ class Mage_Adminhtml_Block_Report_Shopcart_Abandoned_Grid extends Mage_Adminhtml
         ));
 
         $this->addColumn('created_at', array(
-            'header'    =>Mage::helper('reports')->__('Created at'),
+            'header'    =>Mage::helper('reports')->__('Created At'),
             'width'     =>'170px',
             'type'      =>'datetime',
             'index'     =>'created_at',
@@ -142,7 +143,7 @@ class Mage_Adminhtml_Block_Report_Shopcart_Abandoned_Grid extends Mage_Adminhtml
         ));
 
         $this->addColumn('updated_at', array(
-            'header'    =>Mage::helper('reports')->__('Updated at'),
+            'header'    =>Mage::helper('reports')->__('Updated At'),
             'width'     =>'170px',
             'type'      =>'datetime',
             'index'     =>'updated_at',
@@ -150,8 +151,15 @@ class Mage_Adminhtml_Block_Report_Shopcart_Abandoned_Grid extends Mage_Adminhtml
             'sortable'  =>false
         ));
 
+        $this->addColumn('remote_ip', array(
+            'header'    =>Mage::helper('reports')->__('IP Address'),
+            'width'     =>'80px',
+            'index'     =>'remote_ip',
+            'sortable'  =>false
+        ));
+
         $this->addExportType('*/*/exportAbandonedCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportAbandonedExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportAbandonedExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }
@@ -159,14 +167,5 @@ class Mage_Adminhtml_Block_Report_Shopcart_Abandoned_Grid extends Mage_Adminhtml
     public function getRowUrl($row)
     {
         return $this->getUrl('*/customer/edit', array('id'=>$row->getCustomerId(), 'active_tab'=>'cart'));
-    }
-
-    public function getRowClickCallback(){
-        return "function(grid, evt) {
-            var trElement = Event.findElement(evt, 'tr');
-            if(trElement && trElement.id != ''){
-                var newWindow = window.open(trElement.id, '_blank');
-                newWindow.focus();
-            }}";
     }
 }

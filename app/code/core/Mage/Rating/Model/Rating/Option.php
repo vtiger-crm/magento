@@ -18,52 +18,35 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rating
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rating
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Rating option model
  *
- * @category   Mage
- * @package    Mage_Rating
+ * @method Mage_Rating_Model_Resource_Rating_Option _getResource()
+ * @method Mage_Rating_Model_Resource_Rating_Option getResource()
+ * @method int getRatingId()
+ * @method Mage_Rating_Model_Rating_Option setRatingId(int $value)
+ * @method string getCode()
+ * @method Mage_Rating_Model_Rating_Option setCode(string $value)
+ * @method int getValue()
+ * @method Mage_Rating_Model_Rating_Option setValue(int $value)
+ * @method int getPosition()
+ * @method Mage_Rating_Model_Rating_Option setPosition(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Rating
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Rating_Model_Rating_Option extends Varien_Object
+class Mage_Rating_Model_Rating_Option extends Mage_Core_Model_Abstract
 {
-    public function __construct()
+    protected function _construct()
     {
-        parent::__construct();
-    }
-
-    public function getResource()
-    {
-        return Mage::getResourceModel('rating/rating_option');
-    }
-
-    public function getResourceCollection()
-    {
-        return Mage::getResourceModel('rating/rating_option_collection');
-    }
-
-    public function load($optionId)
-    {
-        $this->setData($this->getResource()->load($optionId));
-        return $this;
-    }
-
-    public function save()
-    {
-        $this->getResource()->save($this);
-        return $this;
-    }
-
-    public function delete()
-    {
-        $this->getResource()->delete($this);
-        return $this;
+        $this->_init('rating/rating_option');
     }
 
     public function addVote()
@@ -78,13 +61,8 @@ class Mage_Rating_Model_Rating_Option extends Varien_Object
         return $this;
     }
 
-    public function getId()
-    {
-        return $this->getOptionId();
-    }
-
-    public function getCollection()
-    {
-        return Mage::getResourceModel('rating/rating_option_collection');
-    }
+//    public function getId()
+//    {
+//        return $this->getOptionId();
+//    }
 }

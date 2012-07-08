@@ -14,10 +14,10 @@
  *
  * @category   Zend
  * @package    Zend_InfoCard
- * @subpackage Zend_InfoCard_Adapter
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @subpackage Adapter
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Default.php 13213 2008-12-14 11:05:07Z thomas $
+ * @version    $Id: Default.php 20096 2010-01-06 02:05:09Z bkarwin $
  */
 
 /**
@@ -33,8 +33,8 @@
  *
  * @category   Zend
  * @package    Zend_InfoCard
- * @subpackage Zend_InfoCard_Adapter
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @subpackage Adapter
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_InfoCard_Adapter_Default implements Zend_InfoCard_Adapter_Interface

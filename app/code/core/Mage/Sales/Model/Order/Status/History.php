@@ -18,21 +18,53 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-
+/**
+ * Order status history comments
+ *
+ * @method Mage_Sales_Model_Resource_Order_Status_History _getResource()
+ * @method Mage_Sales_Model_Resource_Order_Status_History getResource()
+ * @method int getParentId()
+ * @method Mage_Sales_Model_Order_Status_History setParentId(int $value)
+ * @method int getIsCustomerNotified()
+ * @method int getIsVisibleOnFront()
+ * @method Mage_Sales_Model_Order_Status_History setIsVisibleOnFront(int $value)
+ * @method string getComment()
+ * @method Mage_Sales_Model_Order_Status_History setComment(string $value)
+ * @method string getStatus()
+ * @method Mage_Sales_Model_Order_Status_History setStatus(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Sales_Model_Order_Status_History setCreatedAt(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Order_Status_History extends Mage_Sales_Model_Abstract
 {
+    const CUSTOMER_NOTIFICATION_NOT_APPLICABLE = 2;
+
     /**
      * Order instance
      *
      * @var Mage_Sales_Model_Order
      */
     protected $_order;
+
+    /**
+     * Whether setting order again is required (for example when setting non-saved yet order)
+     * @deprecated after 1.4, wrong logic of setting order id
+     * @var bool
+     */
+    private $_shouldSetOrderBeforeSave = false;
+
+    protected $_eventPrefix = 'sales_order_status_history';
+    protected $_eventObject = 'status_history';
 
     /**
      * Initialize resource model
@@ -43,7 +75,7 @@ class Mage_Sales_Model_Order_Status_History extends Mage_Sales_Model_Abstract
     }
 
     /**
-     * declare order instance
+     * Set order object and grab some metadata from it
      *
      * @param   Mage_Sales_Model_Order $order
      * @return  Mage_Sales_Model_Order_Status_History
@@ -51,7 +83,33 @@ class Mage_Sales_Model_Order_Status_History extends Mage_Sales_Model_Abstract
     public function setOrder(Mage_Sales_Model_Order $order)
     {
         $this->_order = $order;
+        $this->setStoreId($order->getStoreId());
         return $this;
+    }
+
+    /**
+     * Notification flag
+     *
+     * @param  mixed $flag OPTIONAL (notification is not applicable by default)
+     * @return Mage_Sales_Model_Order_Status_History
+     */
+    public function setIsCustomerNotified($flag = null)
+    {
+        if (is_null($flag)) {
+            $flag = self::CUSTOMER_NOTIFICATION_NOT_APPLICABLE;
+        }
+
+        return $this->setData('is_customer_notified', $flag);
+    }
+
+    /**
+     * Customer Notification Applicable check method
+     *
+     * @return boolean
+     */
+    public function isCustomerNotificationNotApplicable()
+    {
+        return $this->getIsCustomerNotified() == self::CUSTOMER_NOTIFICATION_NOT_APPLICABLE;
     }
 
     /**
@@ -87,5 +145,21 @@ class Mage_Sales_Model_Order_Status_History extends Mage_Sales_Model_Abstract
             return $this->getOrder()->getStore();
         }
         return Mage::app()->getStore();
+    }
+
+    /**
+     * Set order again if required
+     *
+     * @return Mage_Sales_Model_Order_Status_History
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+
+        if (!$this->getParentId() && $this->getOrder()) {
+            $this->setParentId($this->getOrder()->getId());
+        }
+
+        return $this;
     }
 }

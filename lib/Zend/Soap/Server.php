@@ -14,11 +14,14 @@
  *
  * @category   Zend
  * @package    Zend_Soap
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @subpackage Server
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 
-/** Zend_Server_Interface */
+/**
+ * @see Zend_Server_Interface
+ */
 #require_once 'Zend/Server/Interface.php';
 
 /**
@@ -26,10 +29,11 @@
  *
  * @category   Zend
  * @package    Zend_Soap
+ * @subpackage Server
  * @uses       Zend_Server_Interface
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Server.php 13216 2008-12-14 11:09:01Z thomas $
+ * @version    $Id: Server.php 22223 2010-05-21 08:06:47Z jan $
  */
 class Zend_Soap_Server implements Zend_Server_Interface
 {
@@ -67,6 +71,21 @@ class Zend_Soap_Server implements Zend_Server_Interface
      * @var string
      */
     protected $_encoding;
+
+    /**
+     * SOAP Server Features
+     *
+     * @var int
+     */
+    protected $_features;
+
+    /**
+     * WSDL Caching Options of SOAP Server
+     *
+     * @var mixed
+     */
+    protected $_wsdlCache;
+
 
     /**
      * Registered fault exceptions
@@ -159,11 +178,15 @@ class Zend_Soap_Server implements Zend_Server_Interface
      *
      * Allows setting options as an associative array of option => value pairs.
      *
-     * @param  array $options
+     * @param  array|Zend_Config $options
      * @return Zend_Soap_Server
      */
-    public function setOptions(array $options)
+    public function setOptions($options)
     {
+        if($options instanceof Zend_Config) {
+            $options = $options->toArray();
+        }
+
         foreach ($options as $key => $value) {
             switch ($key) {
                 case 'actor':
@@ -185,6 +208,14 @@ class Zend_Soap_Server implements Zend_Server_Interface
                     break;
                 case 'wsdl':
                     $this->setWsdl($value);
+                    break;
+                case 'featues':
+                    trigger_error(__METHOD__ . ': the option "featues" is deprecated as of 1.10.x and will be removed with 2.0.0; use "features" instead', E_USER_NOTICE);
+                case 'features':
+                    $this->setSoapFeatures($value);
+                    break;
+                case 'cache_wsdl':
+                    $this->setWsdlCache($value);
                     break;
                 default:
                     break;
@@ -220,6 +251,14 @@ class Zend_Soap_Server implements Zend_Server_Interface
 
         if (null !== $this->_uri) {
             $options['uri'] = $this->_uri;
+        }
+
+        if(null !== $this->_features) {
+            $options['features'] = $this->_features;
+        }
+
+        if(null !== $this->_wsdlCache) {
+            $options['cache_wsdl'] = $this->_wsdlCache;
         }
 
         return $options;
@@ -290,13 +329,13 @@ class Zend_Soap_Server implements Zend_Server_Interface
      */
     public function validateUrn($urn)
     {
-        $segs = parse_url($urn);
-        if (isset($segs['scheme'])) {
-            return true;
+        $scheme = parse_url($urn, PHP_URL_SCHEME);
+        if ($scheme === false || $scheme === null) {
+            #require_once 'Zend/Soap/Server/Exception.php';
+            throw new Zend_Soap_Server_Exception('Invalid URN');
         }
 
-        #require_once 'Zend/Soap/Server/Exception.php';
-        throw new Zend_Soap_Server_Exception('Invalid URN');
+        return true;
     }
 
     /**
@@ -360,11 +399,17 @@ class Zend_Soap_Server implements Zend_Server_Interface
     public function setClassmap($classmap)
     {
         if (!is_array($classmap)) {
+            /**
+             * @see Zend_Soap_Server_Exception
+             */
             #require_once 'Zend/Soap/Server/Exception.php';
             throw new Zend_Soap_Server_Exception('Classmap must be an array');
         }
         foreach ($classmap as $type => $class) {
             if (!class_exists($class)) {
+                /**
+                 * @see Zend_Soap_Server_Exception
+                 */
                 #require_once 'Zend/Soap/Server/Exception.php';
                 throw new Zend_Soap_Server_Exception('Invalid class in class map');
             }
@@ -392,8 +437,6 @@ class Zend_Soap_Server implements Zend_Server_Interface
      */
     public function setWsdl($wsdl)
     {
-        is_readable($wsdl);
-
         $this->_wsdl = $wsdl;
         return $this;
     }
@@ -406,6 +449,48 @@ class Zend_Soap_Server implements Zend_Server_Interface
     public function getWsdl()
     {
         return $this->_wsdl;
+    }
+
+    /**
+     * Set the SOAP Feature options.
+     *
+     * @param  string|int $feature
+     * @return Zend_Soap_Server
+     */
+    public function setSoapFeatures($feature)
+    {
+        $this->_features = $feature;
+        return $this;
+    }
+
+    /**
+     * Return current SOAP Features options
+     *
+     * @return int
+     */
+    public function getSoapFeatures()
+    {
+        return $this->_features;
+    }
+
+    /**
+     * Set the SOAP Wsdl Caching Options
+     *
+     * @param string|int|boolean $caching
+     * @return Zend_Soap_Server
+     */
+    public function setWsdlCache($options)
+    {
+        $this->_wsdlCache = $options;
+        return $this;
+    }
+
+    /**
+     * Get current SOAP Wsdl Caching option
+     */
+    public function getWsdlCache()
+    {
+        return $this->_wsdlCache;
     }
 
     /**
@@ -456,16 +541,14 @@ class Zend_Soap_Server implements Zend_Server_Interface
      * Accepts a class name to use when handling requests. Any additional
      * arguments will be passed to that class' constructor when instantiated.
      *
-     * @param mixed $class Class name or object instance to examine and attach
-     * to the server.
-     * @param mixed $arg1 Optional argument to pass to class constructor
-     * @param mixed $arg2 Optional second argument to pass to class constructor
-     * dispatch.
+     * See {@link setObject()} to set preconfigured object instances as request handlers.
+     *
+     * @param string $class Class Name which executes SOAP Requests at endpoint.
      * @return Zend_Soap_Server
      * @throws Zend_Soap_Server_Exception if called more than once, or if class
      * does not exist
      */
-    public function setClass($class, $arg1 = null, $arg2 = null)
+    public function setClass($class, $namespace = '', $argv = null)
     {
         if (isset($this->_class)) {
             #require_once 'Zend/Soap/Server/Exception.php';
@@ -592,7 +675,7 @@ class Zend_Soap_Server implements Zend_Server_Interface
      * @param DOMDocument|DOMNode|SimpleXMLElement|stdClass|string $request
      * @return Zend_Soap_Server
      */
-    private function _setRequest($request)
+    protected function _setRequest($request)
     {
         if ($request instanceof DOMDocument) {
             $xml = $request->saveXML();
@@ -608,7 +691,7 @@ class Zend_Soap_Server implements Zend_Server_Interface
             }
 
             $dom = new DOMDocument();
-            if (!$dom->loadXML($xml)) {
+            if(strlen($xml) == 0 || !$dom->loadXML($xml)) {
                 #require_once 'Zend/Soap/Server/Exception.php';
                 throw new Zend_Soap_Server_Exception('Invalid XML');
             }
@@ -725,21 +808,23 @@ class Zend_Soap_Server implements Zend_Server_Interface
         }
 
         // Set Zend_Soap_Server error handler
-        $displayErrorsOriginalState = ini_get('display_errors');
-        ini_set('display_errors', false);
-        set_error_handler(array($this, 'handlePhpErrors'), E_USER_ERROR);
+        $displayErrorsOriginalState = $this->_initializeSoapErrorContext();
 
+        $setRequestException = null;
+        /**
+         * @see Zend_Soap_Server_Exception
+         */
         #require_once 'Zend/Soap/Server/Exception.php';
         try {
             $this->_setRequest($request);
-        } catch (Zend_Soap_Server_Exception $setRequestException) {
-            // Do nothing. Catch exception and store it in the $setRequestException variable is all what we need.
+        } catch (Zend_Soap_Server_Exception $e) {
+            $setRequestException = $e;
         }
 
         $soap = $this->_getSoap();
 
         ob_start();
-        if (isset($setRequestException)) {
+        if($setRequestException instanceof Exception) {
             // Send SOAP fault message if we've catched exception
             $soap->fault("Sender", $setRequestException->getMessage());
         } else {
@@ -762,6 +847,19 @@ class Zend_Soap_Server implements Zend_Server_Interface
         }
 
         return $this->_response;
+    }
+
+    /**
+     * Method initalizes the error context that the SOAPServer enviroment will run in.
+     *
+     * @return boolean display_errors original value
+     */
+    protected function _initializeSoapErrorContext()
+    {
+        $displayErrorsOriginalState = ini_get('display_errors');
+        ini_set('display_errors', false);
+        set_error_handler(array($this, 'handlePhpErrors'), E_USER_ERROR);
+        return $displayErrorsOriginalState;
     }
 
     /**
@@ -817,7 +915,7 @@ class Zend_Soap_Server implements Zend_Server_Interface
      * @param  string $code SOAP Fault Codes
      * @return SoapFault
      */
-    public function fault($fault = null, $code = "Reciever")
+    public function fault($fault = null, $code = "Receiver")
     {
         if ($fault instanceof Exception) {
             $class = get_class($fault);
@@ -839,7 +937,7 @@ class Zend_Soap_Server implements Zend_Server_Interface
             'Sender', 'Receiver', 'Server'
         );
         if(!in_array($code, $allowedFaultModes)) {
-            $code = "Reciever";
+            $code = "Receiver";
         }
 
         return new SoapFault($code, $message);
@@ -858,6 +956,6 @@ class Zend_Soap_Server implements Zend_Server_Interface
      */
     public function handlePhpErrors($errno, $errstr, $errfile = null, $errline = null, array $errcontext = null)
     {
-        throw $this->fault($errstr, "Reciever");
+        throw $this->fault($errstr, "Receiver");
     }
 }

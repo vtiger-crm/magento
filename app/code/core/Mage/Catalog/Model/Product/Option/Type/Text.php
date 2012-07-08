@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -46,14 +46,20 @@ class Mage_Catalog_Model_Product_Option_Type_Text extends Mage_Catalog_Model_Pro
 
         $option = $this->getOption();
         $value = trim($this->getUserValue());
-        if (strlen($value) == 0 && $option->getIsRequire() && !$this->getProduct()->getSkipCheckRequiredOption()) {
+
+        // Check requires option to have some value
+        if (strlen($value) == 0 && $option->getIsRequire() && !$this->getSkipCheckRequiredOption()) {
             $this->setIsValid(false);
-            Mage::throwException(Mage::helper('catalog')->__('Please specify the product required option(s)'));
+            Mage::throwException(Mage::helper('catalog')->__('Please specify the product\'s required option(s).'));
         }
-        if (strlen($value) > $option->getMaxCharacters() && $option->getMaxCharacters() > 0) {
+
+        // Check maximal length limit
+        $maxCharacters = $option->getMaxCharacters();
+        if ($maxCharacters > 0 && Mage::helper('core/string')->strlen($value) > $maxCharacters) {
             $this->setIsValid(false);
-            Mage::throwException(Mage::helper('catalog')->__('Length of text is too long'));
+            Mage::throwException(Mage::helper('catalog')->__('The text is too long'));
         }
+
         $this->setUserValue($value);
         return $this;
     }

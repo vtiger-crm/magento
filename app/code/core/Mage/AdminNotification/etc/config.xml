@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!--
 /**
  * Magento
@@ -19,33 +19,33 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_AdminNotification
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_AdminNotification
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_AdminNotification>
-            <version>1.0.0</version>
+            <version>1.6.0.0</version>
         </Mage_AdminNotification>
     </modules>
-
     <global>
         <models>
             <adminnotification>
                 <class>Mage_AdminNotification_Model</class>
-                <resourceModel>adminnotification_mysql4</resourceModel>
+                <resourceModel>adminnotification_resource</resourceModel>
             </adminnotification>
-            <adminnotification_mysql4>
-                <class>Mage_AdminNotification_Model_Mysql4</class>
+            <adminnotification_resource>
+                <class>Mage_AdminNotification_Model_Resource</class>
+                <deprecatedNode>adminnotification_mysql4</deprecatedNode>
                 <entities>
                     <inbox>
                         <table>adminnotification_inbox</table>
                     </inbox>
                 </entities>
-            </adminnotification_mysql4>
+            </adminnotification_resource>
         </models>
         <helpers>
             <adminnotification>
@@ -57,74 +57,10 @@
                 <setup>
                     <module>Mage_AdminNotification</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </adminnotification_setup>
-            <adminnotification_read>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
-            </adminnotification_read>
-            <adminnotification_write>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
-            </adminnotification_write>
         </resources>
-        <blocks>
-            <productalert>
-                <class>Mage_AdminNotification_Block</class>
-            </productalert>
-        </blocks>
     </global>
-
     <adminhtml>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <adminnotification translate="title" module="adminnotification">
-                                    <title>Notifications</title>
-                                    <sort_order>10</sort_order>
-                                    <children>
-                                        <show_toolbar translate="title">
-                                            <title>Show Toolbar</title>
-                                            <sort_order>10</sort_order>
-                                        </show_toolbar>
-                                        <show_list translate="title">
-                                            <title>Show List</title>
-                                            <sort_order>20</sort_order>
-                                        </show_list>
-                                        <mark_as_read translate="title">
-                                            <title>Mark as read</title>
-                                            <sort_order>30</sort_order>
-                                        </mark_as_read>
-                                        <remove translate="title">
-                                            <title>Remove</title>
-                                            <sort_order>40</sort_order>
-                                        </remove>
-                                    </children>
-                                </adminnotification>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
-        <menu>
-            <system>
-                <children>
-                    <adminnotification translate="title" module="adminnotification">
-                        <title>Notifications</title>
-                        <action>adminhtml/notification</action>
-                        <sort_order>15</sort_order>
-                    </adminnotification>
-                </children>
-            </system>
-        </menu>
         <translate>
             <modules>
                 <Mage_AdminNotification>
@@ -138,20 +74,26 @@
             <controller_action_predispatch>
                 <observers>
                     <adminnotification>
-                        <type>singleton</type>
                         <class>adminnotification/observer</class>
                         <method>preDispatch</method>
                     </adminnotification>
                 </observers>
             </controller_action_predispatch>
         </events>
+        <layout>
+            <updates>
+                <adminnotification>
+                    <file>adminnotification.xml</file>
+                </adminnotification>
+            </updates>
+        </layout>
     </adminhtml>
-
     <default>
         <system>
             <adminnotification>
-                <feed_url>www.magentocommerce.com/notifications_feed</feed_url>
+                <feed_url>notifications.magentocommerce.com/community/notifications.rss</feed_url>
                 <popup_url>widgets.magentocommerce.com/notificationPopup</popup_url>
+                <severity_icons_url>widgets.magentocommerce.com/%s/%s.gif</severity_icons_url>
                 <use_https>0</use_https>
                 <frequency>1</frequency>
                 <last_update>0</last_update>

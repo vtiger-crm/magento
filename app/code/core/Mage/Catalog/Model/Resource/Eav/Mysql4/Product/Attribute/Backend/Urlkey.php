@@ -18,41 +18,21 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Product url key attribute backend
  *
- * @category   Mage
- * @package    Mage_Catalog
+ * @category    Mage
+ * @package     Mage_Catalog
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-
-class Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Attribute_Backend_Urlkey extends Mage_Eav_Model_Entity_Attribute_Backend_Abstract
+class Mage_Catalog_Model_Resource_Eav_Mysql4_Product_Attribute_Backend_Urlkey
+    extends Mage_Catalog_Model_Resource_Product_Attribute_Backend_Urlkey
 {
-    public function beforeSave($object)
-    {
-        $attributeName = $this->getAttribute()->getName();
-
-        $urlKey = $object->getData($attributeName);
-        if ($urlKey=='') {
-            $urlKey = $object->getName();
-        }
-
-        $object->setData($attributeName, $object->formatUrlKey($urlKey));
-
-        return $this;
-    }
-
-    public function afterSave($object)
-    {
-        if ($object->dataHasChangedFor($this->getAttribute()->getName())) {
-            Mage::getSingleton('catalog/url')->refreshProductRewrites(null, $object, true);
-        }
-        return $this;
-    }
 }

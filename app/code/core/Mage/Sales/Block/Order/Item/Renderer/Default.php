@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -160,9 +160,19 @@ class Mage_Sales_Block_Order_Item_Renderer_Default extends Mage_Core_Block_Templ
      */
     public function getSku()
     {
-        if ($this->getOrderItem()->getProductType() == Mage_Catalog_Model_Product_Type::TYPE_CONFIGURABLE) {
+        /*if ($this->getOrderItem()->getProductType() == Mage_Catalog_Model_Product_Type::TYPE_CONFIGURABLE) {
             return $this->getOrderItem()->getProductOptionByCode('simple_sku');
-        }
+        }*/
         return $this->getItem()->getSku();
+    }
+
+    /**
+     * Return product additional information block
+     *
+     * @return Mage_Core_Block_Abstract
+     */
+    public function getProductAdditionalInformationBlock()
+    {
+        return $this->getLayout()->getBlock('additional.product.info');
     }
 }

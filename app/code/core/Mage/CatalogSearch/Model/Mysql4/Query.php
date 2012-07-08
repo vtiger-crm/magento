@@ -18,82 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogSearch
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogSearch
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Catalog search query resource model
  *
+ * @category    Mage
+ * @package     Mage_CatalogSearch
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_CatalogSearch_Model_Mysql4_Query extends Mage_Core_Model_Mysql4_Abstract
+class Mage_CatalogSearch_Model_Mysql4_Query extends Mage_CatalogSearch_Model_Resource_Query
 {
-    /**
-     * Init resource data
-     *
-     */
-    protected function _construct()
-    {
-        $this->_init('catalogsearch/search_query', 'query_id');
-    }
-
-    /**
-     * Retrieve select object for load object data
-     *
-     * @param   string $field
-     * @param   mixed $value
-     * @return  Zend_Db_Select
-     */
-    protected function _getLoadSelect($field, $value, $object)
-    {
-	   	$select = $this->_getReadAdapter()->select()
-            ->from($this->getMainTable())
-            ->where($this->getMainTable().'.'.$field.'=?', $value);
-        return $select;
-    }
-
-    /**
-     * Custom load model by search query string
-     *
-     * @param Mage_Core_Model_Abstract $object
-     * @param string $value
-     * @return Mage_CatalogSearch_Model_Mysql4_Query
-     */
-    public function loadByQuery(Mage_Core_Model_Abstract $object, $value)
-    {
-        $select = $this->_getReadAdapter()->select()
-            ->from($this->getMainTable())
-            ->where('query_text=:query_text')
-            ->where('store_id=:store_id');
-        $bind = array(
-            ':query_text' => $value,
-            ':store_id'   => $object->getStoreId()
-        );
-        if ($data = $this->_getReadAdapter()->fetchRow($select, $bind)) {
-            $object->setData($data);
-            $this->_afterLoad($object);
-        }
-
-        return $this;
-    }
-
-    public function load(Mage_Core_Model_Abstract $object, $value, $field=null)
-    {
-        if (is_numeric($value)) {
-            return parent::load($object, $value);
-        }
-        else {
-            $this->loadByQuery($object,$value);
-        }
-        return $this;
-    }
-
-    public function _beforeSave(Mage_Core_Model_Abstract $object)
-    {
-        $object->setUpdatedAt($this->formatDate(Mage::getModel('core/date')->gmtTimestamp()));
-        return $this;
-    }
 }

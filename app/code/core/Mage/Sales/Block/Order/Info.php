@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Sales
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -88,23 +88,43 @@ class Mage_Sales_Block_Order_Info extends Mage_Core_Block_Template
     {
         $order = $this->getOrder();
         if (!$order->hasInvoices()) {
-        	unset($this->_links['invoice']);
+            unset($this->_links['invoice']);
         }
         if (!$order->hasShipments()) {
-        	unset($this->_links['shipment']);
+            unset($this->_links['shipment']);
         }
         if (!$order->hasCreditmemos()) {
-        	unset($this->_links['creditmemo']);
+            unset($this->_links['creditmemo']);
         }
     }
 
+    /**
+     * Get url for reorder action
+     *
+     * @deprecated after 1.6.0.0, logic moved to new block
+     * @param Mage_Sales_Order $order
+     * @return string
+     */
     public function getReorderUrl($order)
     {
+        if (!Mage::getSingleton('customer/session')->isLoggedIn()) {
+            return $this->getUrl('sales/guest/reorder', array('order_id' => $order->getId()));
+        }
         return $this->getUrl('sales/order/reorder', array('order_id' => $order->getId()));
     }
 
+    /**
+     * Get url for printing order
+     *
+     * @deprecated after 1.6.0.0, logic moved to new block
+     * @param Mage_Sales_Order $order
+     * @return string
+     */
     public function getPrintUrl($order)
     {
+        if (!Mage::getSingleton('customer/session')->isLoggedIn()) {
+            return $this->getUrl('sales/guest/print', array('order_id' => $order->getId()));
+        }
         return $this->getUrl('sales/order/print', array('order_id' => $order->getId()));
     }
 

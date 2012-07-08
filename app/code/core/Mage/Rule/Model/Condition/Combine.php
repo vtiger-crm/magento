@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rule
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rule
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -157,8 +157,10 @@ class Mage_Rule_Model_Condition_Combine extends Mage_Rule_Model_Condition_Abstra
 
     public function loadArray($arr, $key='conditions')
     {
-        $this->setAggregator(isset($arr['aggregator']) ? $arr['aggregator'] : $arr['attribute'])
-            ->setValue(isset($arr['value']) ? $arr['value'] : $arr['operator']);
+        $this->setAggregator(isset($arr['aggregator']) ? $arr['aggregator']
+                : (isset($arr['attribute']) ? $arr['attribute'] : null))
+            ->setValue(isset($arr['value']) ? $arr['value']
+                : (isset($arr['operator']) ? $arr['operator'] : null));
 
         if (!empty($arr[$key]) && is_array($arr[$key])) {
             foreach ($arr[$key] as $condArr) {
@@ -169,7 +171,7 @@ class Mage_Rule_Model_Condition_Combine extends Mage_Rule_Model_Condition_Abstra
                         $cond->loadArray($condArr, $key);
                     }
                 } catch (Exception $e) {
-
+                    Mage::logException($e);
                 }
             }
         }
@@ -266,8 +268,34 @@ class Mage_Rule_Model_Condition_Combine extends Mage_Rule_Model_Condition_Abstra
         return $this;
     }
 
+    /**
+     * Get conditions, if current prefix is undefined use 'conditions' key
+     *
+     * @return array
+     */
     public function getConditions()
     {
-        return $this->getData($this->getPrefix());
+        $key = $this->getPrefix() ? $this->getPrefix() : 'conditions';
+        return $this->getData($key);
+    }
+
+    /**
+     * Set conditions, if current prefix is undefined use 'conditions' key
+     *
+     * @param array $conditions
+     * @return Mage_Rule_Model_Condition_Combine
+     */
+    public function setConditions($conditions)
+    {
+        $key = $this->getPrefix() ? $this->getPrefix() : 'conditions';
+        return $this->setData($key, $conditions);
+    }
+
+    /**
+     * Getter for "Conditions Combination" select option for recursive combines
+     */
+    protected function _getRecursiveChildSelectOption()
+    {
+        return array('value' => $this->getType(), 'label' => Mage::helper('rule')->__('Conditions Combination'));
     }
 }

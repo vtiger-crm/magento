@@ -20,12 +20,45 @@
  *
  * @category    Mage
  * @package     Mage_Downloadable
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Downloadable links purchased item model
+ *
+ * @method Mage_Downloadable_Model_Resource_Link_Purchased_Item _getResource()
+ * @method Mage_Downloadable_Model_Resource_Link_Purchased_Item getResource()
+ * @method int getPurchasedId()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setPurchasedId(int $value)
+ * @method int getOrderItemId()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setOrderItemId(int $value)
+ * @method int getProductId()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setProductId(int $value)
+ * @method string getLinkHash()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkHash(string $value)
+ * @method int getNumberOfDownloadsBought()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setNumberOfDownloadsBought(int $value)
+ * @method int getNumberOfDownloadsUsed()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setNumberOfDownloadsUsed(int $value)
+ * @method int getLinkId()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkId(int $value)
+ * @method string getLinkTitle()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkTitle(string $value)
+ * @method int getIsShareable()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setIsShareable(int $value)
+ * @method string getLinkUrl()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkUrl(string $value)
+ * @method string getLinkFile()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkFile(string $value)
+ * @method string getLinkType()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setLinkType(string $value)
+ * @method string getStatus()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setStatus(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setCreatedAt(string $value)
+ * @method string getUpdatedAt()
+ * @method Mage_Downloadable_Model_Link_Purchased_Item setUpdatedAt(string $value)
  *
  * @category    Mage
  * @package     Mage_Downloadable
@@ -39,6 +72,7 @@ class Mage_Downloadable_Model_Link_Purchased_Item extends Mage_Core_Model_Abstra
     const LINK_STATUS_AVAILABLE = 'available';
     const LINK_STATUS_EXPIRED   = 'expired';
     const LINK_STATUS_PENDING_PAYMENT = 'pending_payment';
+    const LINK_STATUS_PAYMENT_REVIEW = 'payment_review';
 
     /**
      * Enter description here...
@@ -48,6 +82,20 @@ class Mage_Downloadable_Model_Link_Purchased_Item extends Mage_Core_Model_Abstra
     {
         $this->_init('downloadable/link_purchased_item');
         parent::_construct();
+    }
+
+    /**
+     * Check order item id
+     *
+     * @return Mage_Core_Model_Abstract
+     */
+    public function _beforeSave()
+    {
+        if (null == $this->getOrderItemId()) {
+            throw new Exception(
+                Mage::helper('downloadable')->__('Order item id cannot be null'));
+        }
+        return parent::_beforeSave();
     }
 
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Tag
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Tag
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -55,4 +55,34 @@ class Mage_Tag_Helper_Data extends Mage_Core_Helper_Abstract
             )
         );
     }
+
+    /**
+     * Check tags on the correctness of symbols and split string to array of tags
+     *
+     * @param string $tagNamesInString
+     * @return array
+     */
+    public function extractTags($tagNamesInString)
+    {
+        return explode("\n", preg_replace("/(\'(.*?)\')|(\s+)/i", "$1\n", $tagNamesInString));
+    }
+
+    /**
+     * Clear tag from the separating characters
+     *
+     * @param array $tagNamesArr
+     * @return array
+     */
+    public function cleanTags(array $tagNamesArr)
+    {
+        foreach ($tagNamesArr as $key => $tagName) {
+            $tagNamesArr[$key] = trim($tagNamesArr[$key], '\'');
+            $tagNamesArr[$key] = trim($tagNamesArr[$key]);
+            if ($tagNamesArr[$key] == '') {
+                unset($tagNamesArr[$key]);
+            }
+        }
+        return $tagNamesArr;
+    }
+
 }

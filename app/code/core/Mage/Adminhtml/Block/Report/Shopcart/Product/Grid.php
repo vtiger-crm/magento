@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -42,15 +42,10 @@ class Mage_Adminhtml_Block_Report_Shopcart_Product_Grid extends Mage_Adminhtml_B
 
     protected function _prepareCollection()
     {
-        $collection = Mage::getResourceModel('reports/product_collection')
-            ->addAttributeToSelect('name')
-            ->addAttributeToSelect('price')
-            ->setStoreId('')
-            ->addCartsCount()
-            ->addOrdersCount()
-            ->setSelectCountSqlType(Mage_Reports_Model_Mysql4_Product_Collection::SELECT_COUNT_SQL_TYPE_CART);
-        /* @var $collection Mage_Reports_Model_Mysql4_Product_Collection */
-
+        /** @var $collection Mage_Reports_Model_Resource_Quote_Collection */
+        $collection = Mage::getResourceModel('reports/quote_collection');
+        $collection->prepareForProductsInCarts()
+            ->setSelectCountSqlType(Mage_Reports_Model_Resource_Quote_Collection::SELECT_COUNT_SQL_TYPE_CART);
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
@@ -95,10 +90,14 @@ class Mage_Adminhtml_Block_Report_Shopcart_Product_Grid extends Mage_Adminhtml_B
         $this->setFilterVisibility(false);
 
         $this->addExportType('*/*/exportProductCsv', Mage::helper('reports')->__('CSV'));
-        $this->addExportType('*/*/exportProductExcel', Mage::helper('reports')->__('Excel'));
+        $this->addExportType('*/*/exportProductExcel', Mage::helper('reports')->__('Excel XML'));
 
         return parent::_prepareColumns();
     }
 
+    public function getRowUrl($row)
+    {
+        return $this->getUrl('*/catalog_product/edit', array('id'=>$row->getEntityId()));
+    }
 }
 

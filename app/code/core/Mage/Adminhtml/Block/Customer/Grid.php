@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -40,6 +40,7 @@ class Mage_Adminhtml_Block_Customer_Grid extends Mage_Adminhtml_Block_Widget_Gri
         $this->setId('customerGrid');
         $this->setUseAjax(true);
         $this->setDefaultSort('entity_id');
+        $this->setSaveParametersInSession(true);
     }
 
     protected function _prepareCollection()
@@ -163,7 +164,7 @@ class Mage_Adminhtml_Block_Customer_Grid extends Mage_Adminhtml_Block_Widget_Gri
         ));
 
         $this->addExportType('*/*/exportCsv', Mage::helper('customer')->__('CSV'));
-        $this->addExportType('*/*/exportXml', Mage::helper('customer')->__('XML'));
+        $this->addExportType('*/*/exportXml', Mage::helper('customer')->__('Excel XML'));
         return parent::_prepareColumns();
     }
 
@@ -179,12 +180,12 @@ class Mage_Adminhtml_Block_Customer_Grid extends Mage_Adminhtml_Block_Widget_Gri
         ));
 
         $this->getMassactionBlock()->addItem('newsletter_subscribe', array(
-             'label'    => Mage::helper('customer')->__('Subscribe to newsletter'),
+             'label'    => Mage::helper('customer')->__('Subscribe to Newsletter'),
              'url'      => $this->getUrl('*/*/massSubscribe')
         ));
 
         $this->getMassactionBlock()->addItem('newsletter_unsubscribe', array(
-             'label'    => Mage::helper('customer')->__('Unsubscribe from newsletter'),
+             'label'    => Mage::helper('customer')->__('Unsubscribe from Newsletter'),
              'url'      => $this->getUrl('*/*/massUnsubscribe')
         ));
 
@@ -192,7 +193,7 @@ class Mage_Adminhtml_Block_Customer_Grid extends Mage_Adminhtml_Block_Widget_Gri
 
         array_unshift($groups, array('label'=> '', 'value'=> ''));
         $this->getMassactionBlock()->addItem('assign_group', array(
-             'label'        => Mage::helper('customer')->__('Assign a customer group'),
+             'label'        => Mage::helper('customer')->__('Assign a Customer Group'),
              'url'          => $this->getUrl('*/*/massAssignGroup'),
              'additional'   => array(
                 'visibility'    => array(

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -120,12 +120,28 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
      */
     protected function _processData()
     {
+        return $this->_processActionData();
+    }
+
+    /**
+     * Process request data with additional logic for saving quote and creating order
+     *
+     * @param string $action
+     * @return Mage_Adminhtml_Sales_Order_CreateController
+     */
+    protected function _processActionData($action = null)
+    {
         /**
          * Saving order data
          */
         if ($data = $this->getRequest()->getPost('order')) {
             $this->_getOrderCreateModel()->importPostData($data);
         }
+
+        /**
+         * Initialize catalog rule data
+         */
+        $this->_getOrderCreateModel()->initRuleData();
 
         /**
          * init first billing address, need for virtual products
@@ -137,7 +153,12 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
          */
         if (!$this->_getOrderCreateModel()->getQuote()->isVirtual()) {
             $syncFlag = $this->getRequest()->getPost('shipping_as_billing');
-            if (!is_null($syncFlag)) {
+            if (is_null($syncFlag)
+                && $this->_getOrderCreateModel()->getShippingAddress()->getSameAsBilling()
+                && is_null($this->_getOrderCreateModel()->getShippingMethod())
+            ) {
+                $this->_getOrderCreateModel()->setShippingAsBilling(1);
+            } else {
                 $this->_getOrderCreateModel()->setShippingAsBilling((int)$syncFlag);
             }
         }
@@ -152,7 +173,9 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         /**
          * Collecting shipping rates
          */
-        if (!$this->_getOrderCreateModel()->getQuote()->isVirtual() && $this->getRequest()->getPost('collect_shipping_rates')) {
+        if (!$this->_getOrderCreateModel()->getQuote()->isVirtual() &&
+            $this->getRequest()->getPost('collect_shipping_rates')
+        ) {
             $this->_getOrderCreateModel()->collectShippingRates();
         }
 
@@ -165,17 +188,19 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         }
 
         /**
-         * Adding product to quote from shoping cart, wishlist etc.
+         * Adding product to quote from shopping cart, wishlist etc.
          */
         if ($productId = (int) $this->getRequest()->getPost('add_product')) {
-            $this->_getOrderCreateModel()->addProduct($productId);
+            $this->_getOrderCreateModel()->addProduct($productId, $this->getRequest()->getPost());
         }
 
         /**
-         * Adding products to quote from special grid and
+         * Adding products to quote from special grid
          */
-        if ($data = $this->getRequest()->getPost('add_products')) {
-            $this->_getOrderCreateModel()->addProducts(Zend_Json::decode($data));
+        if ($this->getRequest()->has('item') && !$this->getRequest()->getPost('update_items') && !($action == 'save')) {
+            $items = $this->getRequest()->getPost('item');
+            $items = $this->_processFiles($items);
+            $this->_getOrderCreateModel()->addProducts($items);
         }
 
         /**
@@ -183,23 +208,26 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
          */
         if ($this->getRequest()->getPost('update_items')) {
             $items = $this->getRequest()->getPost('item', array());
+            $items = $this->_processFiles($items);
             $this->_getOrderCreateModel()->updateQuoteItems($items);
         }
 
         /**
          * Remove quote item
          */
-        if ( ($itemId = (int) $this->getRequest()->getPost('remove_item'))
-             && ($from = (string) $this->getRequest()->getPost('from'))) {
-            $this->_getOrderCreateModel($itemId)->removeItem($itemId, $from);
+        $removeItemId = (int) $this->getRequest()->getPost('remove_item');
+        $removeFrom = (string) $this->getRequest()->getPost('from');
+        if ($removeItemId && $removeFrom) {
+            $this->_getOrderCreateModel()->removeItem($removeItemId, $removeFrom);
         }
 
         /**
          * Move quote item
          */
-        if ( ($itemId = (int) $this->getRequest()->getPost('move_item'))
-            && ($moveTo = (string) $this->getRequest()->getPost('to')) ) {
-            $this->_getOrderCreateModel()->moveQuoteItem($itemId, $moveTo);
+        $moveItemId = (int) $this->getRequest()->getPost('move_item');
+        $moveTo = (string) $this->getRequest()->getPost('to');
+        if ($moveItemId && $moveTo) {
+            $this->_getOrderCreateModel()->moveQuoteItem($moveItemId, $moveTo);
         }
 
         /*if ($paymentData = $this->getRequest()->getPost('payment')) {
@@ -217,7 +245,6 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         Mage::dispatchEvent('adminhtml_sales_order_create_process_data', $eventData);
 
         $this->_getOrderCreateModel()
-            ->initRuleData()
             ->saveQuote();
 
         if ($paymentData = $this->getRequest()->getPost('payment')) {
@@ -227,7 +254,8 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         /**
          * Saving of giftmessages
          */
-        if ($giftmessages = $this->getRequest()->getPost('giftmessage')) {
+        $giftmessages = $this->getRequest()->getPost('giftmessage');
+        if ($giftmessages) {
             $this->_getGiftmessageSaveModel()->setGiftmessages($giftmessages)
                 ->saveAllInQuote();
         }
@@ -236,7 +264,8 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
          * Importing gift message allow items from specific product grid
          */
         if ($data = $this->getRequest()->getPost('add_products')) {
-            $this->_getGiftmessageSaveModel()->importAllowQuoteItemsFromProducts(Zend_Json::decode($data));
+            $this->_getGiftmessageSaveModel()
+                ->importAllowQuoteItemsFromProducts(Mage::helper('core')->jsonDecode($data));
         }
 
         /**
@@ -251,6 +280,8 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         if (!empty($data['coupon']['code'])) {
             if ($this->_getQuote()->getCouponCode() !== $data['coupon']['code']) {
                 $this->_getSession()->addError($this->__('"%s" coupon code is not valid.', $data['coupon']['code']));
+            } else {
+                $this->_getSession()->addSuccess($this->__('The coupon code has been accepted.'));
             }
         }
 
@@ -258,14 +289,36 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
     }
 
     /**
+     * Process buyRequest file options of items
+     *
+     * @param array $items
+     * @return array
+     */
+    protected function _processFiles($items)
+    {
+        /* @var $productHelper Mage_Catalog_Helper_Product */
+        $productHelper = Mage::helper('catalog/product');
+        foreach ($items as $id => $item) {
+            $buyRequest = new Varien_Object($item);
+            $params = array('files_prefix' => 'item_' . $id . '_');
+            $buyRequest = $productHelper->addParamsToBuyRequest($buyRequest, $params);
+            if ($buyRequest->hasData()) {
+                $items[$id] = $buyRequest->toArray();
+            }
+        }
+        return $items;
+    }
+
+    /**
      * Index page
      */
     public function indexAction()
     {
+        $this->_title($this->__('Sales'))->_title($this->__('Orders'))->_title($this->__('New Order'));
+        $this->_initSession();
         $this->loadLayout();
 
-        $this->_initSession()
-            ->_setActiveMenu('sales/order')
+        $this->_setActiveMenu('sales/order')
             ->renderLayout();
     }
 
@@ -276,6 +329,9 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         $this->_getSession()->clear();
         $orderId = $this->getRequest()->getParam('order_id');
         $order = Mage::getModel('sales/order')->load($orderId);
+        if (!Mage::helper('sales/reorder')->canReorder($order)) {
+            return $this->_forward('noRoute');
+        }
 
         if ($order->getId()) {
             $order->setReordered(true);
@@ -301,6 +357,7 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
      */
     public function loadBlockAction()
     {
+        $request = $this->getRequest();
         try {
             $this->_initSession()
                 ->_processData();
@@ -311,13 +368,12 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
         }
         catch (Exception $e){
             $this->_reloadQuote();
-//            $this->_getSession()->addException($e, $this->__('Processing data problem'));
             $this->_getSession()->addException($e, $e->getMessage());
         }
 
 
-        $asJson= $this->getRequest()->getParam('json');
-        $block = $this->getRequest()->getParam('block');
+        $asJson= $request->getParam('json');
+        $block = $request->getParam('block');
 
         $update = $this->getLayout()->getUpdate();
         if ($asJson) {
@@ -337,7 +393,42 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
             }
         }
         $this->loadLayoutUpdates()->generateLayoutXml()->generateLayoutBlocks();
-        $this->getResponse()->setBody($this->getLayout()->getBlock('content')->toHtml());
+        $result = $this->getLayout()->getBlock('content')->toHtml();
+        if ($request->getParam('as_js_varname')) {
+            Mage::getSingleton('adminhtml/session')->setUpdateResult($result);
+            $this->_redirect('*/*/showUpdateResult');
+        } else {
+            $this->getResponse()->setBody($result);
+        }
+    }
+
+    /**
+     * Adds configured product to quote
+     */
+    public function addConfiguredAction()
+    {
+        $errorMessage = null;
+        try {
+            $this->_initSession()
+                ->_processData();
+        }
+        catch (Exception $e){
+            $this->_reloadQuote();
+            $errorMessage = $e->getMessage();
+        }
+
+        // Form result for client javascript
+        $updateResult = new Varien_Object();
+        if ($errorMessage) {
+            $updateResult->setError(true);
+            $updateResult->setMessage($errorMessage);
+        } else {
+            $updateResult->setOk(true);
+        }
+
+        $updateResult->setJsVarName($this->getRequest()->getParam('as_js_varname'));
+        Mage::getSingleton('adminhtml/session')->setCompositeProductResult($updateResult);
+        $this->_redirect('*/catalog_product/showUpdateResult');
     }
 
     /**
@@ -372,35 +463,49 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
     public function saveAction()
     {
         try {
-            $this->_processData();
+            $this->_processActionData('save');
             if ($paymentData = $this->getRequest()->getPost('payment')) {
                 $this->_getOrderCreateModel()->setPaymentData($paymentData);
                 $this->_getOrderCreateModel()->getQuote()->getPayment()->addData($paymentData);
             }
 
             $order = $this->_getOrderCreateModel()
+                ->setIsValidate(true)
                 ->importPostData($this->getRequest()->getPost('order'))
                 ->createOrder();
 
             $this->_getSession()->clear();
-            $url = $this->_redirect('*/sales_order/view', array('order_id' => $order->getId()));
-        }
-        catch (Mage_Core_Exception $e){
+            Mage::getSingleton('adminhtml/session')->addSuccess($this->__('The order has been created.'));
+            $this->_redirect('*/sales_order/view', array('order_id' => $order->getId()));
+        } catch (Mage_Payment_Model_Info_Exception $e) {
+            $this->_getOrderCreateModel()->saveQuote();
             $message = $e->getMessage();
             if( !empty($message) ) {
                 $this->_getSession()->addError($message);
             }
-            $url = $this->_redirect('*/*/');
+            $this->_redirect('*/*/');
+        } catch (Mage_Core_Exception $e){
+            $message = $e->getMessage();
+            if( !empty($message) ) {
+                $this->_getSession()->addError($message);
+            }
+            $this->_redirect('*/*/');
         }
         catch (Exception $e){
             $this->_getSession()->addException($e, $this->__('Order saving error: %s', $e->getMessage()));
-            $url = $this->_redirect('*/*/');
+            $this->_redirect('*/*/');
         }
     }
 
+    /**
+     * Acl check for admin
+     *
+     * @return bool
+     */
     protected function _isAllowed()
     {
-        switch ($this->getRequest()->getActionName()) {
+        $action = strtolower($this->getRequest()->getActionName());
+        switch ($action) {
             case 'index':
                 $aclResource = 'sales/order/actions/create';
                 break;
@@ -417,6 +522,93 @@ class Mage_Adminhtml_Sales_Order_CreateController extends Mage_Adminhtml_Control
                 $aclResource = 'sales/order/actions';
                 break;
         }
-        return Mage::getSingleton('admin/session')->isAllowed('sales/order');
+        return Mage::getSingleton('admin/session')->isAllowed($aclResource);
+    }
+
+    /*
+     * Ajax handler to response configuration fieldset of composite product in order
+     *
+     * @return Mage_Adminhtml_Sales_Order_CreateController
+     */
+    public function configureProductToAddAction()
+    {
+        // Prepare data
+        $productId  = (int) $this->getRequest()->getParam('id');
+
+        $configureResult = new Varien_Object();
+        $configureResult->setOk(true);
+        $configureResult->setProductId($productId);
+        $sessionQuote = Mage::getSingleton('adminhtml/session_quote');
+        $configureResult->setCurrentStoreId($sessionQuote->getStore()->getId());
+        $configureResult->setCurrentCustomerId($sessionQuote->getCustomerId());
+
+        // Render page
+        /* @var $helper Mage_Adminhtml_Helper_Catalog_Product_Composite */
+        $helper = Mage::helper('adminhtml/catalog_product_composite');
+        $helper->renderConfigureResult($this, $configureResult);
+
+        return $this;
+    }
+
+    /*
+     * Ajax handler to response configuration fieldset of composite product in quote items
+     *
+     * @return Mage_Adminhtml_Sales_Order_CreateController
+     */
+    public function configureQuoteItemsAction()
+    {
+        // Prepare data
+        $configureResult = new Varien_Object();
+        try {
+            $quoteItemId = (int) $this->getRequest()->getParam('id');
+            if (!$quoteItemId) {
+                Mage::throwException($this->__('Quote item id is not received.'));
+            }
+
+            $quoteItem = Mage::getModel('sales/quote_item')->load($quoteItemId);
+            if (!$quoteItem->getId()) {
+                Mage::throwException($this->__('Quote item is not loaded.'));
+            }
+
+            $configureResult->setOk(true);
+            $optionCollection = Mage::getModel('sales/quote_item_option')->getCollection()
+                    ->addItemFilter(array($quoteItemId));
+            $quoteItem->setOptions($optionCollection->getOptionsByItem($quoteItem));
+
+            $configureResult->setBuyRequest($quoteItem->getBuyRequest());
+            $configureResult->setCurrentStoreId($quoteItem->getStoreId());
+            $configureResult->setProductId($quoteItem->getProductId());
+            $sessionQuote = Mage::getSingleton('adminhtml/session_quote');
+            $configureResult->setCurrentCustomerId($sessionQuote->getCustomerId());
+
+        } catch (Exception $e) {
+            $configureResult->setError(true);
+            $configureResult->setMessage($e->getMessage());
+        }
+
+        // Render page
+        /* @var $helper Mage_Adminhtml_Helper_Catalog_Product_Composite */
+        $helper = Mage::helper('adminhtml/catalog_product_composite');
+        $helper->renderConfigureResult($this, $configureResult);
+
+        return $this;
+    }
+
+
+    /**
+     * Show item update result from loadBlockAction
+     * to prevent popup alert with resend data question
+     *
+     */
+    public function showUpdateResultAction()
+    {
+        $session = Mage::getSingleton('adminhtml/session');
+        if ($session->hasUpdateResult() && is_scalar($session->getUpdateResult())){
+            $this->getResponse()->setBody($session->getUpdateResult());
+            $session->unsUpdateResult();
+        } else {
+            $session->unsUpdateResult();
+            return false;
+        }
     }
 }

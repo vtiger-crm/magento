@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -49,16 +49,26 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
     public function getItems()
     {
         $items = $this->getParentBlock()->getItems();
+        $oldSuperMode = $this->getQuote()->getIsSuperMode();
+        $this->getQuote()->setIsSuperMode(false);
         foreach ($items as $item) {
+            // To dispatch inventory event sales_quote_item_qty_set_after, set item qty
+            $item->setQty($item->getQty());
             $stockItem = $item->getProduct()->getStockItem();
-            $check = $stockItem->checkQuoteItemQty($item->getQty(), $item->getQty(), $item->getQty());
-            $item->setMessage($check->getMessage());
-            $item->setHasError($check->getHasError());
-            if ($item->getProduct()->getStatus() == Mage_Catalog_Model_Product_Status::STATUS_DISABLED) {
-                $item->setMessage(Mage::helper('adminhtml')->__('This product is currently disabled'));
-                $item->setHasError(true);
+            if ($stockItem instanceof Mage_CatalogInventory_Model_Stock_Item) {
+                // This check has been performed properly in Inventory observer, so it has no sense
+                /*
+                $check = $stockItem->checkQuoteItemQty($item->getQty(), $item->getQty(), $item->getQty());
+                $item->setMessage($check->getMessage());
+                $item->setHasError($check->getHasError());
+                */
+                if ($item->getProduct()->getStatus() == Mage_Catalog_Model_Product_Status::STATUS_DISABLED) {
+                    $item->setMessage(Mage::helper('adminhtml')->__('This product is currently disabled.'));
+                    $item->setHasError(true);
+                }
             }
         }
+        $this->getQuote()->setIsSuperMode($oldSuperMode);
         return $items;
     }
 
@@ -75,14 +85,17 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
     public function getOriginalEditablePrice($item)
     {
         if ($item->hasOriginalCustomPrice()) {
-            return $item->getOriginalCustomPrice()*1;
+            $result = $item->getOriginalCustomPrice()*1;
+        } elseif ($item->hasCustomPrice()) {
+            $result = $item->getCustomPrice()*1;
         } else {
-            $result = $item->getCalculationPrice()*1;
-            if (Mage::helper('tax')->priceIncludesTax($this->getStore()) && $item->getTaxPercent()) {
-                $result = $result + ($result*($item->getTaxPercent()/100));
+            if (Mage::helper('tax')->priceIncludesTax($this->getStore())) {
+                $result = $item->getPriceInclTax()*1;
+            } else {
+                $result = $item->getOriginalPrice()*1;
             }
-            return $result;
         }
+        return $result;
     }
 
     public function getItemOrigPrice($item)
@@ -109,18 +122,40 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
         return Mage::getSingleton('adminhtml/giftmessage_save')->getIsAllowedQuoteItem($item);
     }
 
+    /**
+     * Check if we need display grid totals include tax
+     *
+     * @return bool
+     */
+    public function displayTotalsIncludeTax()
+    {
+        $res = Mage::getSingleton('tax/config')->displayCartSubtotalInclTax($this->getStore())
+            || Mage::getSingleton('tax/config')->displayCartSubtotalBoth($this->getStore());
+        return $res;
+    }
+
     public function getSubtotal()
     {
-        $totals = $this->getQuote()->getTotals();
-        if (isset($totals['subtotal'])) {
-            return $totals['subtotal']->getValue();
+        $address = $this->getQuoteAddress();
+        if ($this->displayTotalsIncludeTax()) {
+            if ($address->getSubtotalInclTax()) {
+                return $address->getSubtotalInclTax();
+            }
+            return $address->getSubtotal()+$address->getTaxAmount();
+        } else {
+            return $address->getSubtotal();
         }
         return false;
     }
 
     public function getSubtotalWithDiscount()
     {
-        return $this->getQuote()->getShippingAddress()->getSubtotalWithDiscount();
+        $address = $this->getQuoteAddress();
+        if ($this->displayTotalsIncludeTax()) {
+            return $address->getSubtotal()+$address->getTaxAmount()+$this->getDiscountAmount();
+        } else {
+            return $address->getSubtotal()+$this->getDiscountAmount();
+        }
     }
 
     public function getDiscountAmount()
@@ -128,14 +163,47 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
         return $this->getQuote()->getShippingAddress()->getDiscountAmount();
     }
 
+    /**
+     * Retrive quote address
+     *
+     * @return Mage_Sales_Model_Quote_Address
+     */
+    public function getQuoteAddress()
+    {
+        if ($this->getQuote()->isVirtual()) {
+            return $this->getQuote()->getBillingAddress();
+        }
+        else {
+            return $this->getQuote()->getShippingAddress();
+        }
+    }
+
+    /**
+     * Define if specified item has already applied custom price
+     *
+     * @param Mage_Sales_Model_Quote_Item $item
+     * @return bool
+     */
     public function usedCustomPriceForItem($item)
     {
         return $item->hasCustomPrice();
     }
 
+    /**
+     * Define if custom price can be applied for specified item
+     *
+     * @param Mage_Sales_Model_Quote_Item $item
+     * @return bool
+     */
+    public function canApplyCustomPrice($item)
+    {
+        return !$item->isChildrenCalculated();
+    }
+
     public function getQtyTitle($item)
     {
-        if ($prices = $item->getProduct()->getTierPrice()) {
+        $prices = $item->getProduct()->getTierPrice();
+        if ($prices) {
             $info = array();
             foreach ($prices as $data) {
                 $qty    = $data['price_qty']*1;
@@ -152,7 +220,8 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
     public function getTierHtml($item)
     {
         $html = '';
-        if ($prices = $item->getProduct()->getTierPrice()) {
+        $prices = $item->getProduct()->getTierPrice();
+        if ($prices) {
             foreach ($prices as $data) {
                 $qty    = $data['price_qty']*1;
                 $price  = $this->convertPrice($data['price']);
@@ -205,15 +274,19 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
 
     public function displaySubtotalInclTax($item)
     {
-        $tax = ($item->getTaxBeforeDiscount() ? $item->getTaxBeforeDiscount() : ($item->getTaxAmount() ? $item->getTaxAmount() : 0));
-        return $this->formatPrice($item->getRowTotal()+$tax);
+        if ($item->getTaxBeforeDiscount()) {
+            $tax = $item->getTaxBeforeDiscount();
+        } else {
+            $tax = $item->getTaxAmount() ? $item->getTaxAmount() : 0;
+        }
+        return $this->formatPrice($item->getRowTotal() + $tax);
     }
 
     public function displayOriginalPriceInclTax($item)
     {
         $tax = 0;
         if ($item->getTaxPercent()) {
-            $tax = $item->getPrice()*($item->getTaxPercent()/100);
+            $tax = $item->getPrice() * ($item->getTaxPercent() / 100);
         }
         return $this->convertPrice($item->getPrice()+($tax/$item->getQty()));
     }
@@ -221,7 +294,7 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
     public function displayRowTotalWithDiscountInclTax($item)
     {
         $tax = ($item->getTaxAmount() ? $item->getTaxAmount() : 0);
-        return $this->formatPrice($item->getRowTotalWithDiscount()+$tax);
+        return $this->formatPrice($item->getRowTotal()-$item->getDiscountAmount()+$tax);
     }
 
     public function getInclExclTaxMessage()
@@ -236,5 +309,52 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Items_Grid extends Mage_Adminhtml_
     public function getStore()
     {
         return $this->getQuote()->getStore();
+    }
+
+    /**
+     * Return html button which calls configure window
+     *
+     * @param  $item
+     * @return string
+     */
+    public function getConfigureButtonHtml($item)
+    {
+        $product = $item->getProduct();
+
+        $options = array('label' => Mage::helper('sales')->__('Configure'));
+        if ($product->canConfigure()) {
+            $options['onclick'] = sprintf('order.showQuoteItemConfiguration(%s)', $item->getId());
+        } else {
+            $options['class'] = ' disabled';
+            $options['title'] = Mage::helper('sales')->__('This product does not have any configurable options');
+        }
+
+        return $this->getLayout()->createBlock('adminhtml/widget_button')
+            ->setData($options)
+            ->toHtml();
+    }
+
+    /**
+     * Get order item extra info block
+     *
+     * @param Mage_Sales_Model_Quote_Item $item
+     * @return Mage_Core_Block_Abstract
+     */
+    public function getItemExtraInfo($item)
+    {
+        return $this->getLayout()
+            ->getBlock('order_item_extra_info')
+            ->setItem($item);
+    }
+
+    /**
+     * Returns whether moving to wishlist is allowed for this item
+     *
+     * @param Mage_Sales_Model_Quote_Item $item
+     * @return bool
+     */
+    public function isMoveToWishlistAllowed($item)
+    {
+        return $item->getProduct()->isVisibleInSiteVisibility();
     }
 }

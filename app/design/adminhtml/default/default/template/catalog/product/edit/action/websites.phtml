@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   design_default
- * @package    Mage
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 ?>
 <div class="entry-edit">
@@ -32,17 +32,17 @@
     <?php foreach ($this->getWebsiteCollection() as $_website): ?>
     <div>
         <div class="website-name">
-            <input name="add_website_ids[]" value="<?php echo $_website->getId() ?>" class="checkbox website-checkbox" id="add_product_website_<?php echo $_website->getId() ?>" type="checkbox" />
-            <big><strong><label for="add_product_website_<?php echo $_website->getId() ?>"><?php echo $_website->getName() ?></label></strong></big>
+            <input name="add_website_ids[]" value="<?php echo $_website->getId() ?>" <?php if($this->getWebsitesReadonly()): ?>disabled="disabled"<?php endif;?> class="checkbox website-checkbox" id="add_product_website_<?php echo $_website->getId() ?>" type="checkbox" />
+            <big><strong><label for="add_product_website_<?php echo $_website->getId() ?>"><?php echo $this->escapeHtml($_website->getName()) ?></label></strong></big>
         </div>
         <div class="webiste-groups" id="add_product_website_<?php echo $_website->getId() ?>_data">
         <?php foreach ($this->getGroupCollection($_website) as $_group): ?>
-            <h4><?php echo $_group->getName() ?></h4>
+            <h4><?php echo $this->escapeHtml($_group->getName()) ?></h4>
             <div class="group-stores">
             <table>
             <?php foreach ($this->getStoreCollection($_group) as $_store): ?>
                 <tr>
-                    <td><?php echo $_store->getName() ?></td>
+                    <td><?php echo $this->escapeHtml($_store->getName()) ?></td>
                     <td>&nbsp;</td>
                 </tr>
             <?php endforeach; ?>
@@ -63,24 +63,24 @@
         <ul class="messages">
             <li class="notice-msg">
                 <ul>
-                    <li><?php echo Mage::helper('catalog')->__("Items that you don't want to show in the catalog or search results should have status 'Disabled' in the desired store.") ?></li>
+                    <li><?php echo Mage::helper('catalog')->__("Items that you do not want to show in the catalog or search results should have status 'Disabled' in the desired store.") ?></li>
                 </ul>
             </li>
         </ul>
     <?php foreach ($this->getWebsiteCollection() as $_website): ?>
     <div>
         <div class="website-name">
-            <input name="remove_website_ids[]" value="<?php echo $_website->getId() ?>" class="checkbox website-checkbox" id="remove_product_website_<?php echo $_website->getId() ?>" type="checkbox"/>
-            <big><strong><label for="remove_product_website_<?php echo $_website->getId() ?>"><?php echo $_website->getName() ?></label></strong></big>
+            <input name="remove_website_ids[]" value="<?php echo $_website->getId() ?>" <?php if($this->getWebsitesReadonly()): ?>disabled="disabled"<?php endif;?> class="checkbox website-checkbox" id="remove_product_website_<?php echo $_website->getId() ?>" type="checkbox"/>
+            <big><strong><label for="remove_product_website_<?php echo $_website->getId() ?>"><?php echo $this->escapeHtml($_website->getName()) ?></label></strong></big>
         </div>
         <div class="webiste-groups" id="remove_product_website_<?php echo $_website->getId() ?>_data">
         <?php foreach ($this->getGroupCollection($_website) as $_group): ?>
-            <h4><?php echo $_group->getName() ?></h4>
+            <h4><?php echo $this->escapeHtml($_group->getName()) ?></h4>
             <div class="group-stores">
             <table>
             <?php foreach ($this->getStoreCollection($_group) as $_store): ?>
                 <tr>
-                    <td><?php echo $_store->getName() ?></td>
+                    <td><?php echo $this->escapeHtml($_store->getName()) ?></td>
                     <td>&nbsp;</td>
                 </tr>
             <?php endforeach; ?>

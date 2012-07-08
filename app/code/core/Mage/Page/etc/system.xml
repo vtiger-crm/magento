@@ -19,10 +19,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Page
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -37,6 +37,17 @@
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
                     <fields>
+                        <shortcut_icon translate="label comment">
+                            <label>Favicon Icon</label>
+                            <comment>Allowed file types: ICO, PNG, GIF, JPEG, APNG, SVG. Not all browsers support all these formats!</comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image_favicon</backend_model>
+                            <base_url type="media" scope_info="1">favicon</base_url>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </shortcut_icon>
                         <default_title translate="label">
                             <label>Default Title</label>
                             <frontend_type>text</frontend_type>
@@ -105,8 +116,8 @@
                         </default_charset>
 -->
                         <includes translate="label comment">
-                            <label>Miscellaneous scripts</label>
-                            <comment>This will be included before head closing tag in page HTML</comment>
+                            <label>Miscellaneous Scripts</label>
+                            <comment>This will be included before head closing tag in page HTML.</comment>
                             <frontend_type>textarea</frontend_type>
                             <sort_order>70</sort_order>
                             <show_in_default>1</show_in_default>
@@ -114,7 +125,7 @@
                             <show_in_store>1</show_in_store>
                         </includes>
                         <demonotice translate="label comment">
-                            <label>Display demo store notice</label>
+                            <label>Display Demo Store Notice</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
                             <sort_order>80</sort_order>
@@ -176,7 +187,7 @@
                         </copyright>
                         <absolute_footer translate="label comment">
                             <label>Miscellaneous HTML</label>
-                            <comment>This will be displayed just before body closing tag</comment>
+                            <comment>This will be displayed just before body closing tag.</comment>
                             <frontend_type>textarea</frontend_type>
                             <sort_order>20</sort_order>
                             <show_in_default>1</show_in_default>

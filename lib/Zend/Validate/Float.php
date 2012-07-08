@@ -14,9 +14,9 @@
  *
  * @category   Zend
  * @package    Zend_Validate
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Float.php 13375 2008-12-19 14:16:40Z thomas $
+ * @version    $Id: Float.php 22668 2010-07-25 14:50:46Z thomas $
  */
 
 /**
@@ -32,19 +32,20 @@
 /**
  * @category   Zend
  * @package    Zend_Validate
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Validate_Float extends Zend_Validate_Abstract
 {
-
+    const INVALID   = 'floatInvalid';
     const NOT_FLOAT = 'notFloat';
 
     /**
      * @var array
      */
     protected $_messageTemplates = array(
-        self::NOT_FLOAT => "'%value%' does not appear to be a float"
+        self::INVALID   => "Invalid type given. String, integer or float expected",
+        self::NOT_FLOAT => "'%value%' does not appear to be a float",
     );
 
     protected $_locale;
@@ -52,10 +53,29 @@ class Zend_Validate_Float extends Zend_Validate_Abstract
     /**
      * Constructor for the float validator
      *
-     * @param string|Zend_Locale $locale
+     * @param string|Zend_Config|Zend_Locale $locale
      */
     public function __construct($locale = null)
     {
+        if ($locale instanceof Zend_Config) {
+            $locale = $locale->toArray();
+        }
+
+        if (is_array($locale)) {
+            if (array_key_exists('locale', $locale)) {
+                $locale = $locale['locale'];
+            } else {
+                $locale = null;
+            }
+        }
+
+        if (empty($locale)) {
+            #require_once 'Zend/Registry.php';
+            if (Zend_Registry::isRegistered('Zend_Locale')) {
+                $locale = Zend_Registry::get('Zend_Locale');
+            }
+        }
+
         $this->setLocale($locale);
     }
 
@@ -89,17 +109,23 @@ class Zend_Validate_Float extends Zend_Validate_Abstract
      */
     public function isValid($value)
     {
-        $valueString = (string) $value;
+        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+            $this->_error(self::INVALID);
+            return false;
+        }
 
-        $this->_setValue($valueString);
+        if (is_float($value)) {
+            return true;
+        }
 
+        $this->_setValue($value);
         try {
             if (!Zend_Locale_Format::isFloat($value, array('locale' => $this->_locale))) {
-                $this->_error();
+                $this->_error(self::NOT_FLOAT);
                 return false;
             }
         } catch (Zend_Locale_Exception $e) {
-            $this->_error();
+            $this->_error(self::NOT_FLOAT);
             return false;
         }
 

@@ -18,12 +18,42 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Api
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Api
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_Api_Model_Resource_User _getResource()
+ * @method Mage_Api_Model_Resource_User getResource()
+ * @method string getFirstname()
+ * @method Mage_Api_Model_User setFirstname(string $value)
+ * @method string getLastname()
+ * @method Mage_Api_Model_User setLastname(string $value)
+ * @method string getEmail()
+ * @method Mage_Api_Model_User setEmail(string $value)
+ * @method string getUsername()
+ * @method Mage_Api_Model_User setUsername(string $value)
+ * @method string getApiKey()
+ * @method Mage_Api_Model_User setApiKey(string $value)
+ * @method string getCreated()
+ * @method Mage_Api_Model_User setCreated(string $value)
+ * @method string getModified()
+ * @method Mage_Api_Model_User setModified(string $value)
+ * @method int getLognum()
+ * @method Mage_Api_Model_User setLognum(int $value)
+ * @method int getReloadAclFlag()
+ * @method Mage_Api_Model_User setReloadAclFlag(int $value)
+ * @method int getIsActive()
+ * @method Mage_Api_Model_User setIsActive(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Api
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Api_Model_User extends Mage_Core_Model_Abstract
 {
     protected function _construct()
@@ -69,7 +99,9 @@ class Mage_Api_Model_User extends Mage_Core_Model_Abstract
 
     public function delete()
     {
+        $this->_beforeDelete();
         $this->_getResource()->delete($this);
+        $this->_afterDelete();
         return $this;
     }
 
@@ -109,7 +141,7 @@ class Mage_Api_Model_User extends Mage_Core_Model_Abstract
     }
 
     public function getCollection() {
-        return Mage::getResourceModel('admin/user_collection');
+        return Mage::getResourceModel('api/user_collection');
     }
 
     public function getName($separator=' ')

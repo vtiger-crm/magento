@@ -18,26 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Newsletter
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Newsletter
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Mage newsletter problem resource model
  *
- * @category   Mage
- * @package    Mage_Newsletter
+ * @category    Mage
+ * @package     Mage_Newsletter
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Newsletter_Model_Mysql4_Problem extends Mage_Core_Model_Mysql4_Abstract
+class Mage_Newsletter_Model_Mysql4_Problem extends Mage_Newsletter_Model_Resource_Problem
 {
-
-    protected function _construct()
-    {
-        $this->_init('newsletter/problem', 'problem_id');
-    }
-
 }

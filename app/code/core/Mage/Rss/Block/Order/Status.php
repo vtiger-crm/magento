@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rss
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rss
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -56,16 +56,15 @@ class Mage_Rss_Block_Order_Status extends Mage_Core_Block_Template
         $rssObj->_addHeader($data);
         $resourceModel = Mage::getResourceModel('rss/order');
         $results = $resourceModel->getAllCommentCollection($order->getId());
-        $entityTypes = $resourceModel->getEntityTypeIdsToTypes();
-        $incrementIds = $resourceModel->getEntityIdsToIncrementIds();
         if($results){
             foreach($results as $result){
                 $urlAppend = 'view';
-                $type = $entityTypes[$result['entity_type_id']];
+                $type = $result['entity_type_code'];
                 if($type && $type!='order'){
                    $urlAppend = $type;
                 }
-                $title = Mage::helper('rss')->__('Details for %s #%s', ucwords($type), $incrementIds[$result['parent_id']]);
+                $type  = Mage::helper('rss')->__(ucwords($type));
+                $title = Mage::helper('rss')->__('Details for %s #%s', $type, $result['increment_id']);
 
                 $description = '<p>'.
                 Mage::helper('rss')->__('Notified Date: %s<br/>',$this->formatDate($result['created_at'])).

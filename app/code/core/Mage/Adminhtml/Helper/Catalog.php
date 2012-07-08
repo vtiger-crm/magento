@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,6 +33,8 @@
  */
 class Mage_Adminhtml_Helper_Catalog extends Mage_Core_Helper_Abstract
 {
+    const XML_PATH_SITEMAP_VALID_PATHS = 'general/file/sitemap_generate_valid_paths';
+
     /**
      * Attribute Tab block name for product edit
      *
@@ -89,5 +91,19 @@ class Mage_Adminhtml_Helper_Catalog extends Mage_Core_Helper_Abstract
     {
         $this->_categoryAttributeTabBlock = $attributeTabBlock;
         return $this;
+    }
+
+    /**
+     * Get list valid paths for generate a sitemap XML file
+     *
+     * @return array
+     */
+    public function getSitemapValidPaths()
+    {
+        $path = Mage::getStoreConfig(self::XML_PATH_SITEMAP_VALID_PATHS);
+        /** @var $helper Mage_Core_Helper_Data */
+        $helper = Mage::helper('core');
+        $path = array_merge($path, $helper->getPublicFilesValidPath());
+        return $path;
     }
 }

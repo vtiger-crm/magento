@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogIndex
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -152,10 +152,10 @@ class Mage_CatalogIndex_Model_Data_Abstract extends Mage_Core_Model_Abstract
     public function getFinalPrice($product, $store, $group)
     {
         $basePrice = $specialPrice = $specialPriceFrom = $specialPriceTo = null;
-        $priceId = Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'price');
-        $specialPriceId = Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'special_price');
-        $specialPriceFromId = Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'special_from_date');
-        $specialPriceToId = Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'special_to_date');
+        $priceId = Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'price');
+        $specialPriceId = Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'special_price');
+        $specialPriceFromId = Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'special_from_date');
+        $specialPriceToId = Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'special_to_date');
 
         $attributes = array($priceId, $specialPriceId, $specialPriceFromId, $specialPriceToId);
 
@@ -194,8 +194,8 @@ class Mage_CatalogIndex_Model_Data_Abstract extends Mage_Core_Model_Abstract
     public function getMinimalPrice($products, $store)
     {
         $priceAttributes = array(
-            Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'tier_price'),
-            Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'price'));
+            Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'tier_price'),
+            Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'price'));
 
         $data = $this->getResource()->getMinimalPrice($products, $priceAttributes, $store->getId());
 
@@ -216,7 +216,7 @@ class Mage_CatalogIndex_Model_Data_Abstract extends Mage_Core_Model_Abstract
      */
     public function getTaxClassId($productId, $store)
     {
-        $attributeId = Mage::getSingleton('eav/entity_attribute')->getIdByCode('catalog_product', 'tax_class_id');
+        $attributeId = Mage::getSingleton('eav/entity_attribute')->getIdByCode(Mage_Catalog_Model_Product::ENTITY, 'tax_class_id');
         $taxClassId  = $this->getResource()->getAttributeData(array($productId), array($attributeId), $store->getId());
         if (is_array($taxClassId) && isset($taxClassId[0]['value'])) {
             $taxClassId = $taxClassId[0]['value'];

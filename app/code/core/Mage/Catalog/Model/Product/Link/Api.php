@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -33,6 +33,11 @@
  */
 class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resource
 {
+    /**
+     * Product link type mapping, used for references and validation
+     *
+     * @var array
+     */
     protected $_typeMap = array(
         'related'       => Mage_Catalog_Model_Product_Link::LINK_TYPE_RELATED,
         'up_sell'       => Mage_Catalog_Model_Product_Link::LINK_TYPE_UPSELL,
@@ -50,13 +55,14 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
      *
      * @param string $type
      * @param int|sku $productId
+     * @param  string $identifierType
      * @return array
      */
-    public function items($type, $productId)
+    public function items($type, $productId, $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -90,13 +96,14 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
      * @param int|string $productId
      * @param int|string $linkedProductId
      * @param array $data
+     * @param  string $identifierType
      * @return boolean
      */
-    public function assign($type, $productId, $linkedProductId, $data = array())
+    public function assign($type, $productId, $linkedProductId, $data = array(), $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -118,9 +125,22 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
         }
 
         try {
-            $link->getResource()->saveProductLinks($product, $links, $typeId);
+            if ($type == 'grouped') {
+                $link->getResource()->saveGroupedLinks($product, $links, $typeId);
+            } else {
+                $link->getResource()->saveProductLinks($product, $links, $typeId);
+            }
+
+            $_linkInstance = Mage::getSingleton('catalog/product_link');
+            $_linkInstance->saveProductRelations($product);
+
+            $indexerStock = Mage::getModel('cataloginventory/stock_status');
+            $indexerStock->updateStatus($productId);
+
+            $indexerPrice = Mage::getResourceModel('catalog/product_indexer_price');
+            $indexerPrice->reindexProductIds($productId);
         } catch (Exception $e) {
-            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product not exists.'));
+            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product does not exist.'));
         }
 
         return true;
@@ -133,13 +153,14 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
      * @param int|string $productId
      * @param int|string $linkedProductId
      * @param array $data
+     * @param  string $identifierType
      * @return boolean
      */
-    public function update($type, $productId, $linkedProductId, $data = array())
+    public function update($type, $productId, $linkedProductId, $data = array(), $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -160,9 +181,22 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
         }
 
         try {
-            $link->getResource()->saveProductLinks($product, $links, $typeId);
+            if ($type == 'grouped') {
+                $link->getResource()->saveGroupedLinks($product, $links, $typeId);
+            } else {
+                $link->getResource()->saveProductLinks($product, $links, $typeId);
+            }
+
+            $_linkInstance = Mage::getSingleton('catalog/product_link');
+            $_linkInstance->saveProductRelations($product);
+
+            $indexerStock = Mage::getModel('cataloginventory/stock_status');
+            $indexerStock->updateStatus($productId);
+
+            $indexerPrice = Mage::getResourceModel('catalog/product_indexer_price');
+            $indexerPrice->reindexProductIds($productId);
         } catch (Exception $e) {
-            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product not exists.'));
+            $this->_fault('data_invalid', Mage::helper('catalog')->__('Link product does not exist.'));
         }
 
         return true;
@@ -174,13 +208,14 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
      * @param string $type
      * @param int|string $productId
      * @param int|string $linkedProductId
+     * @param  string $identifierType
      * @return boolean
      */
-    public function remove($type, $productId, $linkedProductId)
+    public function remove($type, $productId, $linkedProductId, $identifierType = null)
     {
         $typeId = $this->_getTypeId($type);
 
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
 
         $link = $product->getLinkInstance()
             ->setLinkTypeId($typeId);
@@ -258,25 +293,15 @@ class Mage_Catalog_Model_Product_Link_Api extends Mage_Catalog_Model_Api_Resourc
     }
 
     /**
-     * Initilize and return product model
+     * Initialize and return product model
      *
      * @param int $productId
+     * @param  string $identifierType
      * @return Mage_Catalog_Model_Product
      */
-    protected function _initProduct($productId)
+    protected function _initProduct($productId, $identifierType = null)
     {
-
-
-        $product = Mage::getModel('catalog/product')
-            ->setStoreId($this->_getStoreId());
-
-        $idBySku = $product->getIdBySku($productId);
-        if ($idBySku) {
-            $productId = $idBySku;
-        }
-
-        $product->load($productId);
-
+        $product = Mage::helper('catalog/product')->getProduct($productId, null, $identifierType);
         if (!$product->getId()) {
             $this->_fault('product_not_exists');
         }

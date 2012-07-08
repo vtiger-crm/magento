@@ -18,19 +18,38 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogIndex
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * CatalogIndex Index operation model
  *
- * @category   Mage
- * @package    Mage_CatalogIndex
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_CatalogIndex_Model_Resource_Indexer _getResource()
+ * @method Mage_CatalogIndex_Model_Resource_Indexer getResource()
+ * @method int getEntityTypeId()
+ * @method Mage_CatalogIndex_Model_Indexer setEntityTypeId(int $value)
+ * @method int getAttributeSetId()
+ * @method Mage_CatalogIndex_Model_Indexer setAttributeSetId(int $value)
+ * @method string getTypeId()
+ * @method Mage_CatalogIndex_Model_Indexer setTypeId(string $value)
+ * @method string getSku()
+ * @method Mage_CatalogIndex_Model_Indexer setSku(string $value)
+ * @method int getHasOptions()
+ * @method Mage_CatalogIndex_Model_Indexer setHasOptions(int $value)
+ * @method int getRequiredOptions()
+ * @method Mage_CatalogIndex_Model_Indexer setRequiredOptions(int $value)
+ * @method string getCreatedAt()
+ * @method Mage_CatalogIndex_Model_Indexer setCreatedAt(string $value)
+ * @method string getUpdatedAt()
+ * @method Mage_CatalogIndex_Model_Indexer setUpdatedAt(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_CatalogIndex_Model_Indexer extends Mage_Core_Model_Abstract
 {
@@ -165,8 +184,9 @@ class Mage_CatalogIndex_Model_Indexer extends Mage_Core_Model_Abstract
      * @param   mixed $product
      * @return  Mage_CatalogIndex_Model_Indexer
      */
-    public function cleanup($product) {
-        $this->_getResource()->clear(true, true, true, true, true, $product);
+    public function cleanup($product)
+    {
+        $this->_getResource()->clear(true, true, true, true, true, $product, ($product->getNeedStoreForReindex() === true ? $this->_getStores() : null));
         return $this;
     }
 
@@ -613,7 +633,7 @@ class Mage_CatalogIndex_Model_Indexer extends Mage_Core_Model_Abstract
                                 $additionalCalculations[$code] = $response->getAdditionalCalculations();
 
                                 if ($indexer->isAttributeIdUsed()) {
-                                    $filter[$code]->where("$table.attribute_id = ?", $attribute->getId());
+                                    //$filter[$code]->where("$table.attribute_id = ?", $attribute->getId());
                                 }
                             }
                             if (is_array($values[$code])) {
@@ -629,14 +649,14 @@ class Mage_CatalogIndex_Model_Indexer extends Mage_Core_Model_Abstract
 
                                     if (strlen($values[$code]['from'])>0) {
                                         $filter[$code]->where(
-                                            "($table.value".implode('', $additionalCalculations[$code]).")*{$rateConversion} >= ?",
+                                            "($table.min_price".implode('', $additionalCalculations[$code]).")*{$rateConversion} >= ?",
                                             $values[$code]['from']
                                         );
                                     }
 
                                     if (strlen($values[$code]['to'])>0) {
                                         $filter[$code]->where(
-                                            "($table.value".implode('', $additionalCalculations[$code]).")*{$rateConversion} <= ?",
+                                            "($table.min_price".implode('', $additionalCalculations[$code]).")*{$rateConversion} <= ?",
                                             $values[$code]['to']
                                         );
                                     }

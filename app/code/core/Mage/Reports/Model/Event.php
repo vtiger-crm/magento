@@ -18,18 +18,33 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Reports
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Reports
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Events model
  *
- * @category   Mage
- * @package    Mage_Reports
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Reports_Model_Resource_Event _getResource()
+ * @method Mage_Reports_Model_Resource_Event getResource()
+ * @method string getLoggedAt()
+ * @method Mage_Reports_Model_Event setLoggedAt(string $value)
+ * @method int getEventTypeId()
+ * @method Mage_Reports_Model_Event setEventTypeId(int $value)
+ * @method int getObjectId()
+ * @method Mage_Reports_Model_Event setObjectId(int $value)
+ * @method int getSubjectId()
+ * @method Mage_Reports_Model_Event setSubjectId(int $value)
+ * @method int getSubtype()
+ * @method Mage_Reports_Model_Event setSubtype(int $value)
+ * @method int getStoreId()
+ * @method Mage_Reports_Model_Event setStoreId(int $value)
+ *
+ * @category    Mage
+ * @package     Mage_Reports
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Reports_Model_Event extends Mage_Core_Model_Abstract
 {

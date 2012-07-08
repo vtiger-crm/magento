@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -108,6 +108,21 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
         return false;
     }
 
+    /**
+     * Retrieve routers collection
+     *
+     * @return array
+     */
+    public function getRouters()
+    {
+        return $this->_routers;
+    }
+
+    /**
+     * Init Fron Controller
+     *
+     * @return Mage_Core_Controller_Varien_Front
+     */
     public function init()
     {
         Mage::dispatchEvent('controller_front_init_before', array('front'=>$this));
@@ -117,14 +132,14 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
         Varien_Profiler::start('mage::app::init_front_controller::collect_routers');
         foreach ($routersInfo as $routerCode => $routerInfo) {
             if (isset($routerInfo['disabled']) && $routerInfo['disabled']) {
-            	continue;
+                continue;
             }
             if (isset($routerInfo['class'])) {
-            	$router = new $routerInfo['class'];
-            	if (isset($routerInfo['area'])) {
-            		$router->collectRoutes($routerInfo['area'], $routerCode);
-            	}
-            	$this->addRouter($routerCode, $router);
+                $router = new $routerInfo['class'];
+                if (isset($routerInfo['area'])) {
+                    $router->collectRoutes($routerInfo['area'], $routerCode);
+                }
+                $this->addRouter($routerCode, $router);
             }
         }
         Varien_Profiler::stop('mage::app::init_front_controller::collect_routers');
@@ -141,16 +156,19 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
     public function dispatch()
     {
         $request = $this->getRequest();
+
+        // If pre-configured, check equality of base URL and requested URL
+        $this->_checkBaseUrl($request);
+
         $request->setPathInfo()->setDispatched(false);
-
-        Varien_Profiler::start('mage::dispatch::db_url_rewrite');
-        Mage::getModel('core/url_rewrite')->rewrite();
-        Varien_Profiler::stop('mage::dispatch::db_url_rewrite');
-
+        if (!$request->isStraight()) {
+            Varien_Profiler::start('mage::dispatch::db_url_rewrite');
+            Mage::getModel('core/url_rewrite')->rewrite();
+            Varien_Profiler::stop('mage::dispatch::db_url_rewrite');
+        }
         Varien_Profiler::start('mage::dispatch::config_url_rewrite');
         $this->rewrite();
         Varien_Profiler::stop('mage::dispatch::config_url_rewrite');
-
         Varien_Profiler::start('mage::dispatch::routers_match');
         $i = 0;
         while (!$request->isDispatched() && $i++<100) {
@@ -164,11 +182,12 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
         if ($i>100) {
             Mage::throwException('Front controller reached 100 router match iterations');
         }
-
+        //This event give possibility to launch smth before sending ouptut(Allow cookie setting)
+        Mage::dispatchEvent('controller_front_send_response_before', array('front'=>$this));
         Varien_Profiler::start('mage::app::dispatch::send_response');
         $this->getResponse()->sendResponse();
         Varien_Profiler::stop('mage::app::dispatch::send_response');
-
+        Mage::dispatchEvent('controller_front_send_response_after', array('front'=>$this));
         return $this;
     }
 
@@ -236,7 +255,7 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
             $to   = $this->_processRewriteUrl($to);
 
             $pathInfo = preg_replace($from, $to, $request->getPathInfo());
-            
+
             if (isset($rewrite->complete)) {
                 $request->setPathInfo($pathInfo);
             } else {
@@ -264,5 +283,54 @@ class Mage_Core_Controller_Varien_Front extends Varien_Object
             }
         }
         return $url;
+    }
+
+    /**
+     * Auto-redirect to base url (without SID) if the requested url doesn't match it.
+     * By default this feature is enabled in configuration.
+     *
+     * @param Zend_Controller_Request_Http $request
+     */
+    protected function _checkBaseUrl($request)
+    {
+        if (!Mage::isInstalled() || $request->getPost()) {
+            return;
+        }
+        if (!Mage::getStoreConfig('web/url/redirect_to_base')) {
+            return;
+        }
+
+        $adminPath = (string)Mage::getConfig()->getNode(Mage_Adminhtml_Helper_Data::XML_PATH_CUSTOM_ADMIN_PATH);
+        if (!$adminPath) {
+            $adminPath = (string)Mage::getConfig()
+                ->getNode(Mage_Adminhtml_Helper_Data::XML_PATH_ADMINHTML_ROUTER_FRONTNAME);
+        }
+        if (preg_match('#^' . $adminPath . '(\/.*)?$#', ltrim($request->getPathInfo(), '/'))
+            && (string)Mage::getConfig()->getNode(Mage_Adminhtml_Helper_Data::XML_PATH_USE_CUSTOM_ADMIN_URL)) {
+            return;
+        }
+
+        $baseUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB, Mage::app()->getStore()->isCurrentlySecure());
+
+        if (!$baseUrl) {
+            return;
+        }
+
+        $redirectCode = 302;
+        if (Mage::getStoreConfig('web/url/redirect_to_base') == 301) {
+            $redirectCode = 301;
+        }
+
+        $uri  = @parse_url($baseUrl);
+        $host = isset($uri['host']) ? $uri['host'] : '';
+        $path = isset($uri['path']) ? $uri['path'] : '';
+
+        $requestUri = $request->getRequestUri() ? $request->getRequestUri() : '/';
+        if ($host && $host != $request->getHttpHost() || $path && strpos($requestUri, $path) === false) {
+            Mage::app()->getFrontController()->getResponse()
+                ->setRedirect($baseUrl, $redirectCode)
+                ->sendResponse();
+            exit;
+        }
     }
 }

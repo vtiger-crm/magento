@@ -18,36 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Review
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Review
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Review sttuses collection
  *
- * @category   Mage
- * @package    Mage_Review
+ * @category    Mage
+ * @package     Mage_Review
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-
-class Mage_Review_Model_Mysql4_Review_Status_Collection extends Varien_Data_Collection_Db
+class Mage_Review_Model_Mysql4_Review_Status_Collection extends Mage_Review_Model_Resource_Review_Status_Collection
 {
-    protected $_reviewStatusTable;
-
-    public function __construct()
-    {
-        parent::__construct(Mage::getSingleton('core/resource')->getConnection('review_read'));
-        
-        $this->_setIdFieldName('status_id');
-        $this->_reviewStatusTable = Mage::getSingleton('core/resource')->getTableName('review/review_status');
-
-        $this->_select->from($this->_reviewStatusTable);
-    }
-
-    public function toOptionArray()
-    {
-        return parent::_toOptionArray('status_id', 'status_code');
-    }
 }

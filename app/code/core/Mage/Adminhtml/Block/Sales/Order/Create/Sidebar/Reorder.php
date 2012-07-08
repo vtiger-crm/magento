@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -34,11 +34,16 @@
 class Mage_Adminhtml_Block_Sales_Order_Create_Sidebar_Reorder extends Mage_Adminhtml_Block_Sales_Order_Create_Sidebar_Abstract
 {
 
-    protected $_sidebarStorageAction = 'reorder';
+    /**
+     * Storage action on selected item
+     *
+     * @var string
+     */
+    protected $_sidebarStorageAction = 'add_order_item';
 
-    public function __construct()
+    protected function _construct()
     {
-        parent::__construct();
+        parent::_construct();
         $this->setId('sales_order_create_sidebar_reorder');
         $this->setDataId('reorder');
     }
@@ -46,7 +51,7 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Sidebar_Reorder extends Mage_Admin
 
     public function getHeaderText()
     {
-        return Mage::helper('sales')->__('Last ordered items');
+        return Mage::helper('sales')->__('Last Ordered Items');
     }
 
     /**
@@ -58,11 +63,10 @@ class Mage_Adminhtml_Block_Sales_Order_Create_Sidebar_Reorder extends Mage_Admin
     {
         $storeIds = $this->getQuote()->getStore()->getWebsite()->getStoreIds();
         $collection = Mage::getResourceModel('sales/order_collection')
-            ->addAttributeToSelect('*')
-            ->addAttributeToFilter('customer_id', $this->getCustomerId())
-            ->addAttributeToFilter('store_id', array('in' => $storeIds))
-            ->addAttributeToSort('created_at', 'desc')
-            ->setPage(1, 1)
+            ->addFieldToFilter('customer_id', $this->getCustomerId())
+            ->addFieldToFilter('store_id', array('in' => $storeIds))
+            ->setOrder('created_at', 'desc')
+            ->setPageSize(1)
             ->load();
         foreach ($collection as $order) {
             return $order;

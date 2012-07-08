@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 require_once('CreateController.php');
@@ -61,4 +61,27 @@ class Mage_Adminhtml_Sales_Order_EditController extends Mage_Adminhtml_Sales_Ord
             $this->_redirect('*/sales_order/');
         }
     }
+
+    /**
+     * Index page
+     */
+    public function indexAction()
+    {
+        $this->_title($this->__('Sales'))->_title($this->__('Orders'))->_title($this->__('Edit Order'));
+        $this->loadLayout();
+
+        $this->_initSession()
+            ->_setActiveMenu('sales/order')
+            ->renderLayout();
+    }
+    
+    /**
+     * Acl check for admin
+     *
+     * @return bool
+     */
+    protected function _isAllowed()
+    {
+        return Mage::getSingleton('admin/session')->isAllowed('sales/order/actions/edit');
+    }    
 }

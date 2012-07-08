@@ -86,6 +86,28 @@ class Varien_Data_Form_Abstract extends Varien_Object
     }
 
     /**
+     * Disable elements
+     *
+     * @param boolean $readonly
+     * @param boolean $useDisabled
+     * @return Varien_Data_Form_Abstract
+     */
+    public function setReadonly($readonly, $useDisabled = false)
+    {
+        if ($useDisabled) {
+            $this->setDisabled($readonly);
+            $this->setData('readonly_disabled', $readonly);
+        } else {
+            $this->setData('readonly', $readonly);
+        }
+        foreach ($this->getElements() as $element) {
+            $element->setReadonly($readonly, $useDisabled);
+        }
+
+        return $this;
+    }
+
+    /**
      * Add form element
      *
      * @param   Varien_Data_Form_Element_Abstract $element
@@ -121,9 +143,6 @@ class Varien_Data_Form_Abstract extends Varien_Object
         }
         $element = new $className($config);
         $element->setId($elementId);
-        if ($element->getRequired()) {
-            $element->addClass('required-entry');
-        }
         $this->addElement($element, $after);
         return $element;
     }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -55,7 +55,13 @@ class Mage_Adminhtml_Block_Urlrewrite_Edit_Form extends Mage_Adminhtml_Block_Wid
         $product  = Mage::registry('current_product');
         $category = Mage::registry('current_category');
 
-        $form = new Varien_Data_Form(array('id' => 'edit_form', 'action' => $this->getData('action'), 'method' => 'post'));
+        $form = new Varien_Data_Form(
+            array(
+                'id' => 'edit_form',
+                'action' => $this->getData('action'),
+                'method' => 'post'
+            )
+        );
 
         // set form data either from model values or from session
         $formValues = array(
@@ -75,7 +81,7 @@ class Mage_Adminhtml_Block_Urlrewrite_Edit_Form extends Mage_Adminhtml_Block_Wid
         }
 
         $fieldset = $form->addFieldset('base_fieldset', array(
-            'legend'    => Mage::helper('adminhtml')->__('Urlrewrite Information')
+            'legend'    => Mage::helper('adminhtml')->__('URL Rewrite Information')
         ));
 
         $fieldset->addField('is_system', 'select', array(
@@ -91,23 +97,75 @@ class Mage_Adminhtml_Block_Urlrewrite_Edit_Form extends Mage_Adminhtml_Block_Wid
             'value'     => $model->getIsSystem()
         ));
 
+        $isFilterAllowed = false;
         // get store switcher or a hidden field with its id
         if (!Mage::app()->isSingleStoreMode()) {
+            $stores  = Mage::getSingleton('adminhtml/system_store')->getStoreValuesForForm();
+            $entityStores = array();
+            $noStoreError = false;
+
+            //showing websites that only associated to products
+            if ($product && $product->getId()) {
+                $entityStores = $product->getStoreIds() ? $product->getStoreIds() : array();
+                if  (!$entityStores) {
+                    $stores = array(); //reset the stores
+                    $noStoreError = $this->__('Chosen product does not associated with any website, so url rewrite is not possible.');
+                }
+                //if category is chosen, reset stores which are not related with this category
+                if ($category && $category->getId()) {
+                    $categoryStores = $category->getStoreIds() ? $category->getStoreIds() : array();
+                    $entityStores = array_intersect($entityStores, $categoryStores);
+
+                }
+                $isFilterAllowed = true;
+            } elseif ($category && $category->getId()) {
+                $entityStores = $category->getStoreIds() ? $category->getStoreIds() : array();
+                if  (!$entityStores) {
+                    $stores = array(); //reset the stores
+                    $noStoreError = $this->__('Chosen category does not associated with any website, so url rewrite is not possible.');
+                }
+                $isFilterAllowed = true;
+            }
+
+            /*
+             * Stores should be filtered only if product and/or category is specified.
+             * If we use custom rewrite, all stores are accepted.
+             */
+            if ($stores && $isFilterAllowed) {
+                foreach ($stores as $i => $store) {
+                    if (isset($store['value']) && $store['value']) {
+                        $found = false;
+                        foreach ($store['value'] as $_k => $_v) {
+                            if (isset($_v['value']) && in_array($_v['value'], $entityStores)) {
+                               $found = true;
+                            } else {
+                                unset($stores[$i]['value'][$_k]);
+                            }
+                        }
+                        if (!$found) {
+                            unset($stores[$i]);
+                        }
+                    }
+                }
+            }
+
             $element = $fieldset->addField('store_id', 'select', array(
                 'label'     => Mage::helper('adminhtml')->__('Store'),
                 'title'     => Mage::helper('adminhtml')->__('Store'),
                 'name'      => 'store_id',
                 'required'  => true,
-                'values'    => Mage::getSingleton('adminhtml/system_store')->getStoreValuesForForm(),
+                'values'    => $stores,
                 'disabled'  => true,
                 'value'     => $formValues['store_id'],
             ));
+            if ($noStoreError) {
+                $element->setAfterElementHtml($noStoreError);
+            }
             if (!$model->getIsSystem()) {
                 $element->unsetData('disabled');
             }
-        }
-        else {
-            $fieldset->addField('store_id', ($model->getId() ? 'hidden' : 'select'), array(
+        } else {
+            $fieldset->addField('store_id', 'hidden', array(
                 'name'      => 'store_id',
                 'value'     => Mage::app()->getStore(true)->getId()
             ));
@@ -139,16 +197,18 @@ class Mage_Adminhtml_Block_Urlrewrite_Edit_Form extends Mage_Adminhtml_Block_Wid
             'value'     => $formValues['target_path'],
         ));
 
-        // auto-generate paths for new urlrewrites
+        // auto-generate paths for new url rewrites
         if (!$model->getId()) {
             $_product  = null;
             $_category = null;
             if ($category->getId() || $product->getId()) {
                 $_category = $category;
             }
+
             if ($product->getId()) {
                 $_product = $product;
             }
+
             if ($_category || $_product) {
                 $catalogUrlModel = Mage::getSingleton('catalog/url');
                 $idPath->setValue($catalogUrlModel->generatePath('id', $_product, $_category));
@@ -156,13 +216,11 @@ class Mage_Adminhtml_Block_Urlrewrite_Edit_Form extends Mage_Adminhtml_Block_Wid
                     $requestPath->setValue($catalogUrlModel->generatePath('request', $_product, $_category, ''));
                 }
                 $targetPath->setValue($catalogUrlModel->generatePath('target', $_product, $_category));
-            }
-            else {
+            } else {
                 $idPath->unsetData('disabled');
                 $targetPath->unsetData('disabled');
             }
-        }
-        else {
+        } else {
             if (!$model->getProductId() && !$model->getCategoryId()) {
                 $idPath->unsetData('disabled');
                 $targetPath->unsetData('disabled');

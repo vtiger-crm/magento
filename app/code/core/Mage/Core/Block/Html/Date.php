@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -37,22 +37,36 @@ class Mage_Core_Block_Html_Date extends Mage_Core_Block_Template
 
     protected function _toHtml()
     {
-        $html  = '<input type="text" name="' . $this->getName() . '" id="' . $this->getId() . '" ';
-        $html .= 'value="'.$this->getValue().'" class="'.$this->getClass().'" style="width:100px" '.$this->getExtraParams().'/> ';
+        $displayFormat = Varien_Date::convertZendToStrFtime($this->getFormat(), true, (bool)$this->getTime());
 
-        $html .= '<img src="' . $this->getImage() . '" alt="" class="v-middle" ';
+        $html  = '<input type="text" name="' . $this->getName() . '" id="' . $this->getId() . '" ';
+        $html .= 'value="' . $this->escapeHtml($this->getValue()) . '" class="' . $this->getClass() . '" ' . $this->getExtraParams() . '/> ';
+
+        $html .= '<img src="' . $this->getImage() . '" alt="' . $this->helper('core')->__('Select Date') . '" class="v-middle" ';
         $html .= 'title="' . $this->helper('core')->__('Select Date') . '" id="' . $this->getId() . '_trig" />';
 
         $html .=
-
         '<script type="text/javascript">
-            Calendar.setup({
+        //<![CDATA[
+            var calendarSetupObject = {
                 inputField  : "' . $this->getId() . '",
-                ifFormat    : "' . $this->getFormat() . '",
+                ifFormat    : "' . $displayFormat . '",
+                showsTime   : "' . ($this->getTime() ? 'true' : 'false') . '",
                 button      : "' . $this->getId() . '_trig",
                 align       : "Bl",
                 singleClick : true
-            });
+            }';
+
+        $calendarYearsRange = $this->getYearsRange();
+        if ($calendarYearsRange) {
+            $html .= '
+                calendarSetupObject.range = ' . $calendarYearsRange . '
+                ';
+        }
+
+        $html .= '
+            Calendar.setup(calendarSetupObject);
+        //]]>
         </script>';
 
 

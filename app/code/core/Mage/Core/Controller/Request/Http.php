@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -35,6 +35,8 @@
 class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
 {
     const XML_NODE_DIRECT_FRONT_NAMES = 'global/request/direct_front_name';
+    const DEFAULT_HTTP_PORT = 80;
+    const DEFAULT_HTTPS_PORT = 443;
 
     /**
      * ORIGINAL_PATH_INFO
@@ -51,20 +53,27 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
      */
     protected $_rewritedPathInfo= null;
     protected $_requestedRouteName = null;
+    protected $_routingInfo = array();
 
     protected $_route;
 
-    protected $_directFrontNames = array();
+    protected $_directFrontNames = null;
     protected $_controllerModule = null;
 
-    public function __construct($uri = null)
-    {
-        parent::__construct($uri);
-        $names = Mage::getConfig()->getNode(self::XML_NODE_DIRECT_FRONT_NAMES);
-        if ($names) {
-            $this->_directFrontNames = $names->asArray();
-        }
-    }
+    /**
+     * Streight request flag.
+     * If flag is determined no additional logic is applicable
+     *
+     * @var $_isStraight bool
+     */
+    protected $_isStraight = false;
+
+    /**
+     * Request's original information before forward.
+     *
+     * @var array
+     */
+    protected $_beforeForwardInfo = array();
 
     /**
      * Returns ORIGINAL_PATH_INFO.
@@ -209,6 +218,14 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
      */
     public function getDirectFrontNames()
     {
+        if (is_null($this->_directFrontNames)) {
+            $names = Mage::getConfig()->getNode(self::XML_NODE_DIRECT_FRONT_NAMES);
+            if ($names) {
+                $this->_directFrontNames = $names->asArray();
+            } else {
+                return array();
+            }
+        }
         return $this->_directFrontNames;
     }
 
@@ -271,7 +288,7 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
             return false;
         }
         if ($trimPort) {
-            $host = split(':', $_SERVER['HTTP_HOST']);
+            $host = explode(':', $_SERVER['HTTP_HOST']);
             return $host[0];
         }
         return $_SERVER['HTTP_HOST'];
@@ -347,12 +364,45 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
     }
 
     /**
+     * Retrieve an alias
+     *
+     * Retrieve the actual key represented by the alias $name.
+     *
+     * @param string $name
+     * @return string|null Returns null when no alias exists
+     */
+    public function getAlias($name)
+    {
+        $aliases = $this->getAliases();
+        if (isset($aliases[$name])) {
+            return $aliases[$name];
+        }
+        return null;
+    }
+
+    /**
+     * Retrieve the list of all aliases
+     *
+     * @return array
+     */
+    public function getAliases()
+    {
+        if (isset($this->_routingInfo['aliases'])) {
+            return $this->_routingInfo['aliases'];
+        }
+        return parent::getAliases();
+    }
+
+    /**
      * Get route name used in request (ignore rewrite)
      *
      * @return string
      */
     public function getRequestedRouteName()
     {
+        if (isset($this->_routingInfo['requested_route'])) {
+            return $this->_routingInfo['requested_route'];
+        }
         if ($this->_requestedRouteName === null) {
             if ($this->_rewritedPathInfo !== null && isset($this->_rewritedPathInfo[0])) {
                 $fronName = $this->_rewritedPathInfo[0];
@@ -373,6 +423,9 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
      */
     public function getRequestedControllerName()
     {
+        if (isset($this->_routingInfo['requested_controller'])) {
+            return $this->_routingInfo['requested_controller'];
+        }
         if (($this->_rewritedPathInfo !== null) && isset($this->_rewritedPathInfo[1])) {
             return $this->_rewritedPathInfo[1];
         }
@@ -386,9 +439,95 @@ class Mage_Core_Controller_Request_Http extends Zend_Controller_Request_Http
      */
     public function getRequestedActionName()
     {
+        if (isset($this->_routingInfo['requested_action'])) {
+            return $this->_routingInfo['requested_action'];
+        }
         if (($this->_rewritedPathInfo !== null) && isset($this->_rewritedPathInfo[2])) {
             return $this->_rewritedPathInfo[2];
         }
         return $this->getActionName();
+    }
+
+    /**
+     * Set routing info data
+     *
+     * @param array $data
+     * @return Mage_Core_Controller_Request_Http
+     */
+    public function setRoutingInfo($data)
+    {
+        if (is_array($data)) {
+            $this->_routingInfo = $data;
+        }
+        return $this;
+    }
+
+    /**
+     * Collect properties changed by _forward in protected storage
+     * before _forward was called first time.
+     *
+     * @return Mage_Core_Controller_Varien_Action
+     */
+    public function initForward()
+    {
+        if (empty($this->_beforeForwardInfo)) {
+            $this->_beforeForwardInfo = array(
+                'params' => $this->getParams(),
+                'action_name' => $this->getActionName(),
+                'controller_name' => $this->getControllerName(),
+                'module_name' => $this->getModuleName()
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * Retrieve property's value which was before _forward call.
+     * If property was not changed during _forward call null will be returned.
+     * If passed name will be null whole state array will be returned.
+     *
+     * @param string $name
+     * @return array|string|null
+     */
+    public function getBeforeForwardInfo($name = null)
+    {
+        if (is_null($name)) {
+            return $this->_beforeForwardInfo;
+        } elseif (isset($this->_beforeForwardInfo[$name])) {
+            return $this->_beforeForwardInfo[$name];
+        }
+
+        return null;
+    }
+
+    /**
+     * Specify/get _isStraight flag value
+     *
+     * @param bool $flag
+     * @return bool
+     */
+    public function isStraight($flag = null)
+    {
+        if ($flag !== null) {
+            $this->_isStraight = $flag;
+        }
+        return $this->_isStraight;
+    }
+
+    /**
+     * Check is Request from AJAX
+     *
+     * @return boolean
+     */
+    public function isAjax()
+    {
+        if ($this->isXmlHttpRequest()) {
+            return true;
+        }
+        if ($this->getParam('ajax') || $this->getParam('isAjax')) {
+            return true;
+        }
+        return false;
     }
 }

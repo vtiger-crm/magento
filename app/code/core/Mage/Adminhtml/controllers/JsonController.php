@@ -18,19 +18,26 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Json controller
  *
+ * @category    Mage
+ * @package     Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Adminhtml_JsonController extends Mage_Adminhtml_Controller_Action
 {
+    /**
+     * Return JSON-encoded array of country regions
+     *
+     * @return string
+     */
     public function countryRegionAction()
     {
         $arrRes = array();
@@ -47,6 +54,6 @@ class Mage_Adminhtml_JsonController extends Mage_Adminhtml_Controller_Action
             }
         }
 
-        $this->getResponse()->setBody(Zend_Json::encode($arrRes));
+        $this->getResponse()->setBody(Mage::helper('core')->jsonEncode($arrRes));
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Checkout
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -69,11 +69,14 @@ class Mage_Checkout_Block_Onepage_Progress extends Mage_Checkout_Block_Onepage_A
         return $this->getChildHtml('payment_info');
     }
 
+    /**
+     * Get quote shipping price including tax
+     * @return float
+     */
     public function getShippingPriceInclTax()
     {
-        $exclTax = $this->getQuote()->getShippingAddress()->getShippingAmount();
-        $taxAmount = $this->getQuote()->getShippingAddress()->getShippingTaxAmount();
-        return $this->formatPrice($exclTax + $taxAmount);
+        $inclTax = $this->getQuote()->getShippingAddress()->getShippingInclTax();
+        return $this->formatPrice($inclTax);
     }
 
     public function getShippingPriceExclTax()

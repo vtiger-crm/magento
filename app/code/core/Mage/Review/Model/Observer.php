@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Review
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Review
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -45,6 +45,39 @@ class Mage_Review_Model_Observer
         $collection = $observer->getEvent()->getCollection();
         Mage::getSingleton('review/review')
             ->appendSummary($collection);
+
+        return $this;
+    }
+
+    /**
+     * Cleanup product reviews after product delete
+     *
+     * @param   Varien_Event_Observer $observer
+     * @return  Mage_CatalogIndex_Model_Observer
+     */
+    public function processProductAfterDeleteEvent(Varien_Event_Observer $observer)
+    {
+        $eventProduct = $observer->getEvent()->getProduct();
+        if ($eventProduct && $eventProduct->getId()) {
+            Mage::getResourceSingleton('review/review')->deleteReviewsByProductId($eventProduct->getId());
+        }
+
+        return $this;
+    }
+
+    /**
+     * Append review summary before rendering html
+     *
+     * @param Varien_Event_Observer $observer
+     * @return Mage_Review_Model_Observer
+     */
+    public function catalogBlockProductCollectionBeforeToHtml(Varien_Event_Observer $observer)
+    {
+        $productCollection = $observer->getEvent()->getCollection();
+        if ($productCollection instanceof Varien_Data_Collection) {
+            $productCollection->load();
+            Mage::getModel('review/review')->appendSummary($productCollection);
+        }
 
         return $this;
     }

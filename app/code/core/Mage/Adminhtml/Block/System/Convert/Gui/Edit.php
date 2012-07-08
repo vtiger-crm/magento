@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -43,10 +43,10 @@ class Mage_Adminhtml_Block_System_Convert_Gui_Edit extends Mage_Adminhtml_Block_
         $this->_updateButton('save', 'label', Mage::helper('adminhtml')->__('Save Profile'));
         $this->_updateButton('delete', 'label', Mage::helper('adminhtml')->__('Delete Profile'));
         $this->_addButton('savecontinue', array(
-            'label' => Mage::helper('adminhtml')->__('Save and Continue Editing'),
+            'label' => Mage::helper('adminhtml')->__('Save and Continue Edit'),
             'onclick' => "$('edit_form').action += 'continue/true/'; editForm.submit();",
             'class' => 'save',
-        ), -1);
+        ), -100);
 
     }
 

@@ -12,24 +12,19 @@
  * obtain it through the world-wide-web, please send an email
  * to license@zend.com so we can send you a copy immediately.
  *
+ * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: Element.php 22797 2010-08-06 15:02:12Z alexander $
  */
-
-
-/** Zend_Pdf_Element */
-#require_once 'Zend/Pdf/Element.php';
-
-/** Zend_Pdf_Element_Object */
-#require_once 'Zend/Pdf/Element/Object.php';
 
 
 /**
  * PDF file element implementation
  *
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 abstract class Zend_Pdf_Element
@@ -69,15 +64,33 @@ abstract class Zend_Pdf_Element
      */
     abstract public function toString($factory = null);
 
+    const CLONE_MODE_SKIP_PAGES    = 1; // Do not follow pages during deep copy process
+    const CLONE_MODE_FORCE_CLONING = 2; // Force top level object cloning even it's already processed
+
+    /**
+     * Detach PDF object from the factory (if applicable), clone it and attach to new factory.
+     *
+     * @todo It's nevessry to check if SplObjectStorage class works faster
+     * (Needs PHP 5.3.x to attach object _with_ additional data to storage)
+     *
+     * @param Zend_Pdf_ElementFactory $factory  The factory to attach
+     * @param array &$processed List of already processed indirect objects, used to avoid objects duplication
+     * @param integer $mode  Cloning mode (defines filter for objects cloning)
+     * @returns Zend_Pdf_Element
+     */
+    public function makeClone(Zend_Pdf_ElementFactory $factory, array &$processed, $mode)
+    {
+        return clone $this;
+    }
 
     /**
      * Set top level parent indirect object.
      *
      * @param Zend_Pdf_Element_Object $parent
      */
-    public function setParentObject(Zend_Pdf_Element_Object &$parent)
+    public function setParentObject(Zend_Pdf_Element_Object $parent)
     {
-        $this->_parentObject = &$parent;
+        $this->_parentObject = $parent;
     }
 
 
@@ -132,8 +145,10 @@ abstract class Zend_Pdf_Element
     public static function phpToPdf($input)
     {
         if (is_numeric($input)) {
+            #require_once 'Zend/Pdf/Element/Numeric.php';
             return new Zend_Pdf_Element_Numeric($input);
         } else if (is_bool($input)) {
+            #require_once 'Zend/Pdf/Element/Boolean.php';
             return new Zend_Pdf_Element_Boolean($input);
         } else if (is_array($input)) {
             $pdfElementsArray = array();
@@ -147,13 +162,15 @@ abstract class Zend_Pdf_Element
             }
 
             if ($isDictionary) {
+                #require_once 'Zend/Pdf/Element/Dictionary.php';
                 return new Zend_Pdf_Element_Dictionary($pdfElementsArray);
             } else {
+                #require_once 'Zend/Pdf/Element/Array.php';
                 return new Zend_Pdf_Element_Array($pdfElementsArray);
             }
         } else {
+            #require_once 'Zend/Pdf/Element/String.php';
             return new Zend_Pdf_Element_String((string)$input);
         }
     }
 }
-

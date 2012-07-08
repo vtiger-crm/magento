@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,9 +31,27 @@
  */
 class Mage_Customer_Helper_Address extends Mage_Core_Helper_Abstract
 {
-    protected $_config;
-    protected $_streetLines;
-    protected $_formatTemplate = array();
+    /**
+     * Array of Customer Address Attributes
+     *
+     * @var array
+     */
+    protected $_attributes;
+
+    /**
+     * Customer address config node per website
+     *
+     * @var array
+     */
+    protected $_config          = array();
+
+    /**
+     * Customer Number of Lines in a Street Address per website
+     *
+     * @var array
+     */
+    protected $_streetLines     = array();
+    protected $_formatTemplate  = array();
 
     /**
      * Addresses url
@@ -67,26 +85,119 @@ class Mage_Customer_Helper_Address extends Mage_Core_Helper_Abstract
         }
     }
 
-    public function getConfig($key, $store=null)
+    /**
+     * Return customer address config value by key and store
+     *
+     * @param string $key
+     * @param Mage_Core_Model_Store|int|string $store
+     * @return string|null
+     */
+    public function getConfig($key, $store = null)
     {
-        if (is_null($this->_config)) {
-            $this->_config = Mage::getStoreConfig('customer/address');
+        $websiteId = Mage::app()->getStore($store)->getWebsiteId();
+
+        if (!isset($this->_config[$websiteId])) {
+            $this->_config[$websiteId] = Mage::getStoreConfig('customer/address', $store);
         }
-        return isset($this->_config[$key]) ? $this->_config[$key] : null;
+        return isset($this->_config[$websiteId][$key]) ? (string)$this->_config[$websiteId][$key] : null;
     }
 
-    public function getStreetLines($store=null)
+    /**
+     * Return Number of Lines in a Street Address for store
+     *
+     * @param Mage_Core_Model_Store|int|string $store
+     * @return int
+     */
+    public function getStreetLines($store = null)
     {
-        if (is_null($this->_streetLines)) {
-            $lines = $this->getConfig('street_lines', $store);
-            $this->_streetLines = min(4, max(1, (int)$lines));
+        $websiteId = Mage::app()->getStore($store)->getWebsiteId();
+        if (!isset($this->_streetLines[$websiteId])) {
+            $attribute = Mage::getSingleton('eav/config')->getAttribute('customer_address', 'street');
+            $lines = (int)$attribute->getMultilineCount();
+            if($lines <= 0) {
+                $lines = 2;
+            }
+            $this->_streetLines[$websiteId] = min(4, $lines);
         }
-        return $this->_streetLines;
+
+        return $this->_streetLines[$websiteId];
     }
 
     public function getFormat($code)
     {
         $format = Mage::getSingleton('customer/address_config')->getFormatByCode($code);
         return $format->getRenderer() ? $format->getRenderer()->getFormat() : '';
+    }
+
+    /**
+     * Determine if specified address config value can show
+     *
+     * @return bool
+     */
+    public function canShowConfig($key)
+    {
+        $value = $this->getConfig($key);
+        if (empty($value)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Return array of Customer Address Attributes
+     *
+     * @return array
+     */
+    public function getAttributes()
+    {
+        if (is_null($this->_attributes)) {
+            $this->_attributes = array();
+            /* @var $config Mage_Eav_Model_Config */
+            $config = Mage::getSingleton('eav/config');
+            foreach ($config->getEntityAttributeCodes('customer_address') as $attributeCode) {
+                $this->_attributes[$attributeCode] = $config->getAttribute('customer_address', $attributeCode);
+            }
+        }
+        return $this->_attributes;
+    }
+
+    /**
+     * Convert streets array to new street lines count
+     * Examples of use:
+     *  $origStreets = array('street1', 'street2', 'street3', 'street4')
+     *  $toCount = 3
+     *  Result:
+     *   array('street1 street2', 'street3', 'street4')
+     *  $toCount = 2
+     *  Result:
+     *   array('street1 street2', 'street3 street4')
+     *
+     * @param array $origStreets
+     * @param int   $toCount
+     * @return array
+     */
+    public function convertStreetLines($origStreets, $toCount)
+    {
+        $lines = array();
+        if (!empty($origStreets) && $toCount > 0) {
+            $countArgs = (int)floor(count($origStreets)/$toCount);
+            $modulo = count($origStreets) % $toCount;
+            $offset = 0;
+            $neededLinesCount = 0;
+            for ($i = 0; $i < $toCount; $i++) {
+                $offset += $neededLinesCount;
+                $neededLinesCount = $countArgs;
+                if ($modulo > 0) {
+                    ++$neededLinesCount;
+                    --$modulo;
+                }
+                $values = array_slice($origStreets, $offset, $neededLinesCount);
+                if (is_array($values)) {
+                    $lines[] = implode(' ', $values);
+                }
+            }
+        }
+
+        return $lines;
     }
 }

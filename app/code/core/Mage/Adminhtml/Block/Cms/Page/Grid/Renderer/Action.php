@@ -18,18 +18,24 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Mage_Adminhtml_Block_Cms_Page_Grid_Renderer_Action extends Mage_Adminhtml_Block_Widget_Grid_Column_Renderer_Abstract
+class Mage_Adminhtml_Block_Cms_Page_Grid_Renderer_Action
+    extends Mage_Adminhtml_Block_Widget_Grid_Column_Renderer_Abstract
 {
     public function render(Varien_Object $row)
     {
         $urlModel = Mage::getModel('core/url')->setStore($row->getData('_first_store_id'));
-        $href = $urlModel->getUrl('', array('_current'=>false)) . "{$row->getIdentifier()}?___store={$row->getStoreCode()}";
+        $href = $urlModel->getUrl(
+            $row->getIdentifier(), array(
+                '_current' => false,
+                '_query' => '___store='.$row->getStoreCode()
+           )
+        );
         return '<a href="'.$href.'" target="_blank">'.$this->__('Preview').'</a>';
     }
 }

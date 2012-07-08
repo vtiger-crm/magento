@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -48,6 +48,10 @@ class Mage_Adminhtml_Report_CustomerController extends Mage_Adminhtml_Controller
 
     public function accountsAction()
     {
+        $this->_title($this->__('Reports'))
+             ->_title($this->__('Customers'))
+             ->_title($this->__('New Accounts'));
+
         $this->_initAction()
             ->_setActiveMenu('report/customer/accounts')
             ->_addBreadcrumb(Mage::helper('adminhtml')->__('New Accounts'), Mage::helper('adminhtml')->__('New Accounts'))
@@ -81,10 +85,14 @@ class Mage_Adminhtml_Report_CustomerController extends Mage_Adminhtml_Controller
 
     public function ordersAction()
     {
+        $this->_title($this->__('Reports'))
+             ->_title($this->__('Customers'))
+             ->_title($this->__('Customers by Number of Orders'));
+
         $this->_initAction()
             ->_setActiveMenu('report/customer/orders')
-            ->_addBreadcrumb(Mage::helper('reports')->__('Customers by number of orders'),
-                Mage::helper('reports')->__('Customers by number of orders'))
+            ->_addBreadcrumb(Mage::helper('reports')->__('Customers by Number of Orders'),
+                Mage::helper('reports')->__('Customers by Number of Orders'))
             ->_addContent($this->getLayout()->createBlock('adminhtml/report_customer_orders'))
             ->renderLayout();
     }
@@ -115,10 +123,14 @@ class Mage_Adminhtml_Report_CustomerController extends Mage_Adminhtml_Controller
 
     public function totalsAction()
     {
+        $this->_title($this->__('Reports'))
+             ->_title($this->__('Customers'))
+             ->_title($this->__('Customers by Orders Total'));
+
         $this->_initAction()
             ->_setActiveMenu('report/customer/totals')
-            ->_addBreadcrumb(Mage::helper('reports')->__('Customers by orders total'),
-                Mage::helper('reports')->__('Customers by orders total'))
+            ->_addBreadcrumb(Mage::helper('reports')->__('Customers by Orders Total'),
+                Mage::helper('reports')->__('Customers by Orders Total'))
             ->_addContent($this->getLayout()->createBlock('adminhtml/report_customer_totals'))
             ->renderLayout();
     }

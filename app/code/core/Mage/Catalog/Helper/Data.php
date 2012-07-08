@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -34,9 +34,23 @@
  */
 class Mage_Catalog_Helper_Data extends Mage_Core_Helper_Abstract
 {
-    const PRICE_SCOPE_GLOBAL            = 0;
-    const PRICE_SCOPE_WEBSITE           = 1;
-    const XML_PATH_PRICE_SCOPE          = 'catalog/price/scope';
+    const PRICE_SCOPE_GLOBAL               = 0;
+    const PRICE_SCOPE_WEBSITE              = 1;
+    const XML_PATH_PRICE_SCOPE             = 'catalog/price/scope';
+    const XML_PATH_SEO_SAVE_HISTORY        = 'catalog/seo/save_rewrites_history';
+    const CONFIG_USE_STATIC_URLS           = 'cms/wysiwyg/use_static_urls_in_catalog';
+    const CONFIG_PARSE_URL_DIRECTIVES      = 'catalog/frontend/parse_url_directives';
+    const XML_PATH_CONTENT_TEMPLATE_FILTER = 'global/catalog/content/tempate_filter';
+
+    /**
+     * Minimum advertise price constants
+     */
+    const XML_PATH_MSRP_ENABLED = 'sales/msrp/enabled';
+    const XML_PATH_MSRP_DISPLAY_ACTUAL_PRICE_TYPE = 'sales/msrp/display_price_type';
+    const XML_PATH_MSRP_APPLY_TO_ALL = 'sales/msrp/apply_for_all';
+    const XML_PATH_MSRP_EXPLANATION_MESSAGE = 'sales/msrp/explanation_message';
+    const XML_PATH_MSRP_EXPLANATION_MESSAGE_WHATS_THIS = 'sales/msrp/explanation_message_whats_this';
+
 
     /**
      * Breadcrumb Path cache
@@ -44,6 +58,32 @@ class Mage_Catalog_Helper_Data extends Mage_Core_Helper_Abstract
      * @var string
      */
     protected $_categoryPath;
+
+    /**
+     * Array of product types that MAP enabled
+     *
+     * @var array
+     */
+    protected $_mapApplyToProductType = null;
+
+    /**
+     * Currenty selected store ID if applicable
+     *
+     * @var int
+     */
+    protected $_storeId = null;
+
+    /**
+     * Set a specified store ID value
+     *
+     * @param int $store
+     * @return Mage_Catalog_Helper_Data
+     */
+    public function setStoreId($store)
+    {
+        $this->_storeId = $store;
+        return $this;
+    }
 
     /**
      * Return current category path or get it from current category
@@ -203,5 +243,225 @@ class Mage_Catalog_Helper_Data extends Mage_Core_Helper_Abstract
     public function isPriceGlobal()
     {
         return $this->getPriceScope() == self::PRICE_SCOPE_GLOBAL;
+    }
+
+    /**
+     * Indicate whether to save URL Rewrite History or not (create redirects to old URLs)
+     *
+     * @param int $storeId Store View
+     * @return bool
+     */
+    public function shouldSaveUrlRewritesHistory($storeId = null)
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_SEO_SAVE_HISTORY, $storeId);
+    }
+
+    /**
+     * Check if the store is configured to use static URLs for media
+     *
+     * @return bool
+     */
+    public function isUsingStaticUrlsAllowed()
+    {
+        return Mage::getStoreConfigFlag(self::CONFIG_USE_STATIC_URLS, $this->_storeId);
+    }
+
+    /**
+     * Check if the parsing of URL directives is allowed for the catalog
+     *
+     * @return bool
+     */
+    public function isUrlDirectivesParsingAllowed()
+    {
+        return Mage::getStoreConfigFlag(self::CONFIG_PARSE_URL_DIRECTIVES, $this->_storeId);
+    }
+
+    /**
+     * Retrieve template processor for catalog content
+     *
+     * @return Varien_Filter_Template
+     */
+    public function getPageTemplateProcessor()
+    {
+        $model = (string)Mage::getConfig()->getNode(self::XML_PATH_CONTENT_TEMPLATE_FILTER);
+        return Mage::getModel($model);
+    }
+
+    /**
+    * Initialize mapping for old and new field names
+    *
+    * @return array
+    */
+    public function getOldFieldMap()
+    {
+        $node = Mage::getConfig()->getNode('global/catalog_product/old_fields_map');
+        if ($node === false) {
+            return array();
+        }
+        return (array) $node;
+    }
+    /**
+     * Check if Minimum Advertised Price is enabled
+     *
+     * @return bool
+     */
+    public function isMsrpEnabled()
+    {
+        return (bool)Mage::getStoreConfig(self::XML_PATH_MSRP_ENABLED, $this->_storeId);
+    }
+
+    /**
+     * Return MAP display actual type
+     *
+     * @return null|string
+     */
+    public function getMsrpDisplayActualPriceType()
+    {
+        return Mage::getStoreConfig(self::XML_PATH_MSRP_DISPLAY_ACTUAL_PRICE_TYPE, $this->_storeId);
+    }
+
+    /**
+     * Check if MAP apply to all products
+     *
+     * @return bool
+     */
+    public function isMsrpApplyToAll()
+    {
+        return (bool)Mage::getStoreConfig(self::XML_PATH_MSRP_APPLY_TO_ALL, $this->_storeId);
+    }
+
+    /**
+     * Return MAP explanation message
+     *
+     * @return string
+     */
+    public function getMsrpExplanationMessage()
+    {
+        return $this->escapeHtml(
+            Mage::getStoreConfig(self::XML_PATH_MSRP_EXPLANATION_MESSAGE, $this->_storeId),
+            array('b','br','strong','i','u', 'p', 'span')
+        );
+    }
+
+    /**
+     * Return MAP explanation message for "Whats This" window
+     *
+     * @return string
+     */
+    public function getMsrpExplanationMessageWhatsThis()
+    {
+        return $this->escapeHtml(
+            Mage::getStoreConfig(self::XML_PATH_MSRP_EXPLANATION_MESSAGE_WHATS_THIS, $this->_storeId),
+            array('b','br','strong','i','u', 'p', 'span')
+        );
+    }
+
+    /**
+     * Check if can apply Minimum Advertise price to product
+     * in specific visibility
+     *
+     * @param int|Mage_Catalog_Model_Product $product
+     * @param int $visibility Check displaying price in concrete place (by default generally)
+     * @param bool $checkAssociatedItems
+     * @return bool
+     */
+    public function canApplyMsrp($product, $visibility = null, $checkAssociatedItems = true)
+    {
+        if (!$this->isMsrpEnabled()) {
+            return false;
+        }
+
+        if (is_numeric($product)) {
+            $product = Mage::getModel('catalog/product')
+                ->setStoreId(Mage::app()->getStore()->getId())
+                ->load($product);
+        }
+
+        if (!$this->canApplyMsrpToProductType($product)) {
+            return false;
+        }
+
+        $result = $product->getMsrpEnabled();
+        if ($result == Mage_Catalog_Model_Product_Attribute_Source_Msrp_Type_Enabled::MSRP_ENABLE_USE_CONFIG) {
+            $result = $this->isMsrpApplyToAll();
+        }
+
+        if (!$product->hasMsrpEnabled() && $this->isMsrpApplyToAll()) {
+            $result = true;
+        }
+
+        if ($result && $visibility !== null) {
+            $productVisibility = $product->getMsrpDisplayActualPriceType();
+            if ($productVisibility == Mage_Catalog_Model_Product_Attribute_Source_Msrp_Type_Price::TYPE_USE_CONFIG) {
+                $productVisibility = $this->getMsrpDisplayActualPriceType();
+            }
+            $result = ($productVisibility == $visibility);
+        }
+
+        if ($product->getTypeInstance(true)->isComposite($product)
+            && $checkAssociatedItems
+            && (!$result || $visibility !== null)
+        ) {
+            $resultInOptions = $product->getTypeInstance(true)->isMapEnabledInOptions($product, $visibility);
+            if ($resultInOptions !== null) {
+                $result = $resultInOptions;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Check whether MAP applied to product Product Type
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @return bool
+     */
+    public function canApplyMsrpToProductType($product)
+    {
+        if($this->_mapApplyToProductType === null) {
+            /** @var $attribute Mage_Catalog_Model_Resource_Eav_Attribute */
+            $attribute = Mage::getModel('catalog/resource_eav_attribute')
+                ->loadByCode(Mage_Catalog_Model_Product::ENTITY, 'msrp_enabled');
+            $this->_mapApplyToProductType = $attribute->getApplyTo();
+        }
+        return empty($this->_mapApplyToProductType) || in_array($product->getTypeId(), $this->_mapApplyToProductType);
+    }
+
+    /**
+     * Get MAP message for price
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @return string
+     */
+    public function getMsrpPriceMessage($product)
+    {
+        $message = "";
+        if ($this->canApplyMsrp(
+            $product,
+            Mage_Catalog_Model_Product_Attribute_Source_Msrp_Type::TYPE_IN_CART
+        )) {
+            $message = $this->__('To see product price, add this item to your cart. You can always remove it later.');
+        } elseif ($this->canApplyMsrp(
+            $product,
+            Mage_Catalog_Model_Product_Attribute_Source_Msrp_Type::TYPE_BEFORE_ORDER_CONFIRM
+        )) {
+            $message = $this->__('See price before order confirmation.');
+        }
+        return $message;
+    }
+
+    /**
+     * Check is product need gesture to show price
+     *
+     * @param Mage_Catalog_Model_Product $product
+     * @return bool
+     */
+    public function isShowPriceOnGesture($product)
+    {
+        return $this->canApplyMsrp(
+            $product,
+            Mage_Catalog_Model_Product_Attribute_Source_Msrp_Type::TYPE_ON_GESTURE
+        );
     }
 }

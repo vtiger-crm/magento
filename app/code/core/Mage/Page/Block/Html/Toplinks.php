@@ -18,18 +18,14 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Page
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Page
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
- * Html page block
- *
- * @category   Mage
- * @package    Mage_Page
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @deprecated after 1.4.0.1
  */
 class Mage_Page_Block_Html_Toplinks extends Mage_Core_Block_Template
 {

@@ -17,8 +17,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 var SessionError = Class.create();
@@ -39,15 +41,23 @@ Ajax.Request.addMethods({
         if (!url.match(new RegExp('[?&]isAjax=true',''))) {
             url = url.match(new RegExp('\\?',"g")) ? url + '&isAjax=true' : url + '?isAjax=true';
         }
-        if (!this.options.parameters) {
-            this.options.parameters = {
+        if (Object.isString(this.options.parameters)
+            && this.options.parameters.indexOf('form_key=') == -1
+        ) {
+            this.options.parameters += '&' + Object.toQueryString({
                 form_key: FORM_KEY
-            };
+            });
+        } else {
+            if (!this.options.parameters) {
+                this.options.parameters = {
+                    form_key: FORM_KEY
+                };
+            }
+            if (!this.options.parameters.form_key) {
+                this.options.parameters.form_key = FORM_KEY;
+            }
         }
-        if (!this.options.parameters.form_key) {
-            this.options.parameters.form_key = FORM_KEY;
-        }
-        
+
         this.request(url);
     },
     respondToReadyState: function(readyState) {
@@ -56,9 +66,10 @@ Ajax.Request.addMethods({
         if (state == 'Complete') {
             try {
                 this._complete = true;
-                if (response.responseJSON && typeof(response.responseJSON) == 'object') {
-                    if (response.responseJSON.ajaxExpired && response.responseJSON.ajaxRedirect) {
-                        window.location.replace(response.responseJSON.ajaxRedirect);
+                if (response.responseText.isJSON()) {
+                    var jsonObject = response.responseText.evalJSON();
+                    if (jsonObject.ajaxExpired && jsonObject.ajaxRedirect) {
+                        window.location.replace(jsonObject.ajaxRedirect);
                         throw new SessionError('session expired');
                     }
                 }
@@ -144,7 +155,7 @@ varienLoader.prototype = {
         }
 
         if (typeof(params.updaterId) != 'undefined') {
-            new Ajax.Updater(params.updaterId, url, {
+            new varienUpdater(params.updaterId, url, {
                 evalScripts : true,
                 onComplete: this.processResult.bind(this),
                 onFailure: this._processFailure.bind(this)
@@ -256,3 +267,16 @@ function toggleSelectsUnderBlock(block, flag){
 }
 
 Ajax.Responders.register(varienLoaderHandler.handler);
+
+var varienUpdater = Class.create(Ajax.Updater, {
+    updateContent: function($super, responseText) {
+        if (responseText.isJSON()) {
+            var responseJSON = responseText.evalJSON();
+            if (responseJSON.ajaxExpired && responseJSON.ajaxRedirect) {
+                window.location.replace(responseJSON.ajaxRedirect);
+            }
+        } else {
+            $super(responseText);
+        }
+    }
+});

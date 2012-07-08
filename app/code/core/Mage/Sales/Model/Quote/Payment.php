@@ -18,14 +18,67 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Quote payment information
+ *
+ * @method Mage_Sales_Model_Resource_Quote_Payment _getResource()
+ * @method Mage_Sales_Model_Resource_Quote_Payment getResource()
+ * @method int getQuoteId()
+ * @method Mage_Sales_Model_Quote_Payment setQuoteId(int $value)
+ * @method string getCreatedAt()
+ * @method Mage_Sales_Model_Quote_Payment setCreatedAt(string $value)
+ * @method string getUpdatedAt()
+ * @method Mage_Sales_Model_Quote_Payment setUpdatedAt(string $value)
+ * @method string getMethod()
+ * @method Mage_Sales_Model_Quote_Payment setMethod(string $value)
+ * @method string getCcType()
+ * @method Mage_Sales_Model_Quote_Payment setCcType(string $value)
+ * @method string getCcNumberEnc()
+ * @method Mage_Sales_Model_Quote_Payment setCcNumberEnc(string $value)
+ * @method string getCcLast4()
+ * @method Mage_Sales_Model_Quote_Payment setCcLast4(string $value)
+ * @method string getCcCidEnc()
+ * @method Mage_Sales_Model_Quote_Payment setCcCidEnc(string $value)
+ * @method string getCcOwner()
+ * @method Mage_Sales_Model_Quote_Payment setCcOwner(string $value)
+ * @method int getCcExpMonth()
+ * @method Mage_Sales_Model_Quote_Payment setCcExpMonth(int $value)
+ * @method int getCcExpYear()
+ * @method Mage_Sales_Model_Quote_Payment setCcExpYear(int $value)
+ * @method string getCcSsOwner()
+ * @method Mage_Sales_Model_Quote_Payment setCcSsOwner(string $value)
+ * @method int getCcSsStartMonth()
+ * @method Mage_Sales_Model_Quote_Payment setCcSsStartMonth(int $value)
+ * @method int getCcSsStartYear()
+ * @method Mage_Sales_Model_Quote_Payment setCcSsStartYear(int $value)
+ * @method string getCybersourceToken()
+ * @method Mage_Sales_Model_Quote_Payment setCybersourceToken(string $value)
+ * @method string getPaypalCorrelationId()
+ * @method Mage_Sales_Model_Quote_Payment setPaypalCorrelationId(string $value)
+ * @method string getPaypalPayerId()
+ * @method Mage_Sales_Model_Quote_Payment setPaypalPayerId(string $value)
+ * @method string getPaypalPayerStatus()
+ * @method Mage_Sales_Model_Quote_Payment setPaypalPayerStatus(string $value)
+ * @method string getPoNumber()
+ * @method Mage_Sales_Model_Quote_Payment setPoNumber(string $value)
+ * @method string getAdditionalData()
+ * @method Mage_Sales_Model_Quote_Payment setAdditionalData(string $value)
+ * @method string getCcSsIssue()
+ * @method Mage_Sales_Model_Quote_Payment setCcSsIssue(string $value)
+ * @method string getIdealIssuerId()
+ * @method Mage_Sales_Model_Quote_Payment setIdealIssuerId(string $value)
+ * @method string getIdealIssuerList()
+ * @method Mage_Sales_Model_Quote_Payment setIdealIssuerList(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Sales_Model_Quote_Payment extends Mage_Payment_Model_Info
 {
@@ -66,11 +119,13 @@ class Mage_Sales_Model_Quote_Payment extends Mage_Payment_Model_Info
     }
 
     /**
-     * Import data
+     * Import data array to payment method object,
+     * Method calls quote totals collect because payment method availability
+     * can be related to quote totals
      *
-     * @param array $data
-     * @throws Mage_Core_Exception
-     * @return Mage_Sales_Model_Quote_Payment
+     * @param   array $data
+     * @throws  Mage_Core_Exception
+     * @return  Mage_Sales_Model_Quote_Payment
      */
     public function importData(array $data)
     {
@@ -86,8 +141,14 @@ class Mage_Sales_Model_Quote_Payment extends Mage_Payment_Model_Info
         $this->setMethod($data->getMethod());
         $method = $this->getMethodInstance();
 
+        /**
+         * Payment avalability related with quote totals.
+         * We have recollect quote totals before checking
+         */
+        $this->getQuote()->collectTotals();
+
         if (!$method->isAvailable($this->getQuote())) {
-            Mage::throwException(Mage::helper('sales')->__('Requested Payment Method is not available'));
+            Mage::throwException(Mage::helper('sales')->__('The requested Payment Method is not available.'));
         }
 
         $method->assignData($data);
@@ -105,29 +166,54 @@ class Mage_Sales_Model_Quote_Payment extends Mage_Payment_Model_Info
      */
     protected function _beforeSave()
     {
+        if ($this->getQuote()) {
+            $this->setQuoteId($this->getQuote()->getId());
+        }
         try {
             $method = $this->getMethodInstance();
         } catch (Mage_Core_Exception $e) {
             return parent::_beforeSave();
         }
         $method->prepareSave();
-        if ($this->getQuote()) {
-            $this->setQuoteId($this->getQuote()->getId());
-        }
         return parent::_beforeSave();
     }
 
+    /**
+     * Checkout redirect URL getter
+     *
+     * @return string
+     */
     public function getCheckoutRedirectUrl()
     {
         $method = $this->getMethodInstance();
-
-        return $method ? $method->getCheckoutRedirectUrl() : false;
+        if ($method) {
+            return $method->getCheckoutRedirectUrl();
+        }
+        return '';
     }
 
+    /**
+     * Checkout order place redirect URL getter
+     *
+     * @return string
+     */
     public function getOrderPlaceRedirectUrl()
     {
         $method = $this->getMethodInstance();
+        if ($method) {
+            return $method->getOrderPlaceRedirectUrl();
+        }
+        return '';
+    }
 
-        return $method ? $method->getOrderPlaceRedirectUrl() : false;
+    /**
+     * Retrieve payment method model object
+     *
+     * @return Mage_Payment_Model_Method_Abstract
+     */
+    public function getMethodInstance()
+    {
+        $method = parent::getMethodInstance();
+        return $method->setStore($this->getQuote()->getStore());
     }
 }

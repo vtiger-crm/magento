@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rss
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Rss
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -66,7 +66,7 @@ class Mage_Rss_Helper_Data extends Mage_Core_Helper_Abstract
         }
         list($username, $password) = $this->authValidate();
         Mage::getSingleton('adminhtml/url')->setNoSecret(true);
-        $adminSession = Mage::getModel('admin/session');
+        $adminSession = Mage::getSingleton('admin/session');
         $user = $adminSession->login($username, $password);
         //$user = Mage::getModel('admin/user')->login($username, $password);
         if($user && $user->getId() && $user->getIsActive() == '1' && $adminSession->isAllowed($path)){
@@ -95,5 +95,24 @@ class Mage_Rss_Helper_Data extends Mage_Core_Helper_Abstract
     public function authFailed()
     {
         Mage::helper('core/http')->authFailed();
+    }
+
+    /**
+     * Disable using of flat catalog and/or product model to prevent limiting results to single store. Probably won't
+     * work inside a controller.
+     *
+     * @return null
+     */
+    public function disableFlat()
+    {
+        /* @var $flatHelper Mage_Catalog_Helper_Product_Flat */
+        $flatHelper = Mage::helper('catalog/product_flat');
+        if ($flatHelper->isEnabled()) {
+            /* @var $emulationModel Mage_Core_Model_App_Emulation */
+            $emulationModel = Mage::getModel('core/app_emulation');
+            // Emulate admin environment to disable using flat model - otherwise we won't get global stats
+            // for all stores
+            $emulationModel->startEnvironmentEmulation(0, Mage_Core_Model_App_Area::AREA_ADMINHTML);
+        }
     }
 }

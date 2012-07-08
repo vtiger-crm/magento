@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -63,12 +63,12 @@ class Mage_Customer_AddressController extends Mage_Core_Controller_Front_Action
             $this->_initLayoutMessages('customer/session');
             $this->_initLayoutMessages('catalog/session');
 
-            if ($block = $this->getLayout()->getBlock('address_book')) {
+            $block = $this->getLayout()->getBlock('address_book');
+            if ($block) {
                 $block->setRefererUrl($this->_getRefererUrl());
             }
             $this->renderLayout();
-        }
-        else {
+        } else {
             $this->getResponse()->setRedirect(Mage::getUrl('*/*/new'));
         }
     }
@@ -90,7 +90,8 @@ class Mage_Customer_AddressController extends Mage_Core_Controller_Front_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
-        if ($navigationBlock = $this->getLayout()->getBlock('customer_account_navigation')) {
+        $navigationBlock = $this->getLayout()->getBlock('customer_account_navigation');
+        if ($navigationBlock) {
             $navigationBlock->setActive('customer/address');
         }
         $this->renderLayout();
@@ -103,52 +104,61 @@ class Mage_Customer_AddressController extends Mage_Core_Controller_Front_Action
         }
         // Save data
         if ($this->getRequest()->isPost()) {
-            $address = Mage::getModel('customer/address')
-                ->setData($this->getRequest()->getPost())
-                ->setCustomerId(Mage::getSingleton('customer/session')->getCustomerId())
-                ->setIsDefaultBilling($this->getRequest()->getParam('default_billing', false))
-                ->setIsDefaultShipping($this->getRequest()->getParam('default_shipping', false));
+            $customer = $this->_getSession()->getCustomer();
+            /* @var $address Mage_Customer_Model_Address */
+            $address  = Mage::getModel('customer/address');
             $addressId = $this->getRequest()->getParam('id');
             if ($addressId) {
-                $customerAddress = $this->_getSession()->getCustomer()->getAddressById($addressId);
-                if ($customerAddress->getId() && $customerAddress->getCustomerId() == $this->_getSession()->getCustomerId()) {
-                    $address->setId($addressId);
-                }
-                else {
-                    $address->setId(null);
+                $existsAddress = $customer->getAddressById($addressId);
+                if ($existsAddress->getId() && $existsAddress->getCustomerId() == $customer->getId()) {
+                    $address->setId($existsAddress->getId());
                 }
             }
-            else {
-                $address->setId(null);
+
+            $errors = array();
+
+            /* @var $addressForm Mage_Customer_Model_Form */
+            $addressForm = Mage::getModel('customer/form');
+            $addressForm->setFormCode('customer_address_edit')
+                ->setEntity($address);
+            $addressData    = $addressForm->extractData($this->getRequest());
+            $addressErrors  = $addressForm->validateData($addressData);
+            if ($addressErrors !== true) {
+                $errors = $addressErrors;
             }
+
             try {
-                $accressValidation = $address->validate();
-                if (true === $accressValidation) {
+                $addressForm->compactData($addressData);
+                $address->setCustomerId($customer->getId())
+                    ->setIsDefaultBilling($this->getRequest()->getParam('default_billing', false))
+                    ->setIsDefaultShipping($this->getRequest()->getParam('default_shipping', false));
+
+                $addressErrors = $address->validate();
+                if ($addressErrors !== true) {
+                    $errors = array_merge($errors, $addressErrors);
+                }
+
+                if (count($errors) === 0) {
                     $address->save();
-                    $this->_getSession()->addSuccess($this->__('The address was successfully saved'));
+                    $this->_getSession()->addSuccess($this->__('The address has been saved.'));
                     $this->_redirectSuccess(Mage::getUrl('*/*/index', array('_secure'=>true)));
                     return;
                 } else {
                     $this->_getSession()->setAddressFormData($this->getRequest()->getPost());
-                    if (is_array($accressValidation)) {
-                        foreach ($accressValidation as $errorMessage) {
-                        	$this->_getSession()->addError($errorMessage);
-                        }
-                    } else {
-                        $this->_getSession()->addError($this->__('Can\'t save address'));
+                    foreach ($errors as $errorMessage) {
+                        $this->_getSession()->addError($errorMessage);
                     }
                 }
-            }
-            catch (Mage_Core_Exception $e) {
+            } catch (Mage_Core_Exception $e) {
                 $this->_getSession()->setAddressFormData($this->getRequest()->getPost())
                     ->addException($e, $e->getMessage());
-            }
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 $this->_getSession()->setAddressFormData($this->getRequest()->getPost())
-                    ->addException($e, $this->__('Can\'t save address'));
+                    ->addException($e, $this->__('Cannot save address.'));
             }
         }
-        $this->_redirectError(Mage::getUrl('*/*/edit', array('id'=>$address->getId())));
+
+        return $this->_redirectError(Mage::getUrl('*/*/edit', array('id' => $address->getId())));
     }
 
     public function deleteAction()
@@ -160,17 +170,16 @@ class Mage_Customer_AddressController extends Mage_Core_Controller_Front_Action
 
             // Validate address_id <=> customer_id
             if ($address->getCustomerId() != $this->_getSession()->getCustomerId()) {
-                $this->_getSession()->addError($this->__('The address does not belong to this customer'));
+                $this->_getSession()->addError($this->__('The address does not belong to this customer.'));
                 $this->getResponse()->setRedirect(Mage::getUrl('*/*/index'));
                 return;
             }
 
             try {
                 $address->delete();
-                $this->_getSession()->addSuccess($this->__('The address was successfully deleted'));
-            }
-            catch (Exception $e){
-                $this->_getSession()->addError($this->__('There was an error while deleting the address'));
+                $this->_getSession()->addSuccess($this->__('The address has been deleted.'));
+            } catch (Exception $e){
+                $this->_getSession()->addException($e, $this->__('An error occurred while deleting the address.'));
             }
         }
         $this->getResponse()->setRedirect(Mage::getUrl('*/*/index'));

@@ -18,14 +18,25 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Bundle Option Model
+ *
+ * @method Mage_Bundle_Model_Resource_Option _getResource()
+ * @method Mage_Bundle_Model_Resource_Option getResource()
+ * @method int getParentId()
+ * @method Mage_Bundle_Model_Option setParentId(int $value)
+ * @method int getRequired()
+ * @method Mage_Bundle_Model_Option setRequired(int $value)
+ * @method int getPosition()
+ * @method Mage_Bundle_Model_Option setPosition(int $value)
+ * @method string getType()
+ * @method Mage_Bundle_Model_Option setType(string $value)
  *
  * @category    Mage
  * @package     Mage_Bundle
@@ -149,5 +160,21 @@ class Mage_Bundle_Model_Option extends Mage_Core_Model_Abstract
     {
         return $this->_getResource()
             ->getSearchableData($productId, $storeId);
+    }
+
+    /**
+     * Return selection by it's id
+     *
+     * @param int $selectionId
+     * @return Mage_Bundle_Model_Selection
+     */
+    public function getSelectionById($selectionId)
+    {
+        $selections = $this->getSelections();
+        $i = count($selections);
+
+        while ($i-- && $selections[$i]->getSelectionId() != $selectionId);
+
+        return $i == -1 ? false : $selections[$i];
     }
 }

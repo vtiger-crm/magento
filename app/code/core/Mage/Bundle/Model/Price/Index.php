@@ -18,19 +18,31 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 /**
  * Bundle Product Price Index
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @author     Magento Core Team <core@magentocommerce.com>
+ * @method Mage_Bundle_Model_Resource_Price_Index _getResource()
+ * @method Mage_Bundle_Model_Resource_Price_Index getResource()
+ * @method Mage_Bundle_Model_Price_Index setEntityId(int $value)
+ * @method int getWebsiteId()
+ * @method Mage_Bundle_Model_Price_Index setWebsiteId(int $value)
+ * @method int getCustomerGroupId()
+ * @method Mage_Bundle_Model_Price_Index setCustomerGroupId(int $value)
+ * @method float getMinPrice()
+ * @method Mage_Bundle_Model_Price_Index setMinPrice(float $value)
+ * @method float getMaxPrice()
+ * @method Mage_Bundle_Model_Price_Index setMaxPrice(float $value)
+ *
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Bundle_Model_Price_Index extends Mage_Core_Model_Abstract
 {

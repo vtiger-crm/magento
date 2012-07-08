@@ -18,42 +18,65 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
- * Adminhtml order totals block
+ * Adminhtml order tax totals block
  *
- * @category   Mage
- * @package    Mage_Adminhtml
+ * @category    Mage
+ * @package     Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Sales_Order_Totals_Tax extends Mage_Adminhtml_Block_Sales_Order_Totals
+class Mage_Adminhtml_Block_Sales_Order_Totals_Tax extends Mage_Tax_Block_Sales_Order_Tax
 {
     /**
-     * Retrieve required options from parent
+     * Get full information about taxes applied to order
+     *
+     * @return array
      */
-    protected function _beforeToHtml()
-    {
-        if (!$this->getParentBlock()) {
-            Mage::throwException(Mage::helper('adminhtml')->__('Invalid parrent block for this block'));
-        }
-        $this->setOrder($this->getParentBlock()->getSource());
-
-        parent::_beforeToHtml();
-    }
-
     public function getFullTaxInfo()
     {
-        $rates = Mage::getModel('sales/order_tax')->getCollection()->loadByOrder($this->getOrder())->toArray();
-        return Mage::getSingleton('tax/calculation')->reproduceProcess($rates['items']);
+        /** @var $source Mage_Sales_Model_Order */
+        $source = $this->getOrder();
+
+        $taxClassAmount = array();
+        if ($source instanceof Mage_Sales_Model_Order) {
+            $taxClassAmount = Mage::helper('tax')->getCalculatedTaxes($source);
+            if (empty($taxClassAmount)) {
+                $rates = Mage::getModel('sales/order_tax')->getCollection()->loadByOrder($source)->toArray();
+                $taxClassAmount =  Mage::getSingleton('tax/calculation')->reproduceProcess($rates['items']);
+            } else {
+                $shippingTax    = Mage::helper('tax')->getShippingTax($source);
+                $taxClassAmount = array_merge($shippingTax, $taxClassAmount);
+            }
+        }
+
+        return $taxClassAmount;
     }
 
+    /**
+     * Display tax amount
+     *
+     * @return string
+     */
     public function displayAmount($amount, $baseAmount)
     {
-        return $this->displayPrices($baseAmount, $amount, false, '<br />');
+        return Mage::helper('adminhtml/sales')->displayPrices(
+            $this->getSource(), $baseAmount, $amount, false, '<br />'
+        );
+    }
+
+    /**
+     * Get store object for process configuration settings
+     *
+     * @return Mage_Core_Model_Store
+     */
+    public function getStore()
+    {
+        return Mage::app()->getStore();
     }
 }

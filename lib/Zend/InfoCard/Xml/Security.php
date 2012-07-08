@@ -15,9 +15,9 @@
  * @category   Zend
  * @package    Zend_InfoCard
  * @subpackage Zend_InfoCard_Xml_Security
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Security.php 13213 2008-12-14 11:05:07Z thomas $
+ * @version    $Id: Security.php 23280 2010-10-31 10:28:58Z ramon $
  */
 
 /**
@@ -30,7 +30,7 @@
  * @category   Zend
  * @package    Zend_InfoCard
  * @subpackage Zend_InfoCard_Xml_Security
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_InfoCard_Xml_Security
@@ -174,7 +174,7 @@ class Zend_InfoCard_Xml_Security
 
         $transformed_xml_binhash = pack("H*", sha1($transformed_xml));
 
-        if($transformed_xml_binhash != $dValue) {
+        if(!self::_secureStringCompare($transformed_xml_binhash, $dValue)) {
             #require_once 'Zend/InfoCard/Xml/Security/Exception.php';
             throw new Zend_InfoCard_Xml_Security_Exception("Locally Transformed XML does not match XML Document. Cannot Verify Signature");
         }
@@ -301,5 +301,27 @@ class Zend_InfoCard_Xml_Security
 
         #require_once 'Zend/InfoCard/Xml/Security/Exception.php';
         throw new Zend_InfoCard_Xml_Security_Exception("Invalid code path");
+    }
+
+    /**
+     * Securely compare two strings for equality while avoided C level memcmp()
+     * optimisations capable of leaking timing information useful to an attacker
+     * attempting to iteratively guess the unknown string (e.g. password) being
+     * compared against.
+     *
+     * @param string $a
+     * @param string $b
+     * @return bool
+     */
+    static protected function _secureStringCompare($a, $b)
+    {
+        if (strlen($a) !== strlen($b)) {
+            return false;
+        }
+        $result = 0;
+        for ($i = 0; $i < strlen($a); $i++) {
+            $result |= ord($a[$i]) ^ ord($b[$i]);
+        }
+        return $result == 0;
     }
 }

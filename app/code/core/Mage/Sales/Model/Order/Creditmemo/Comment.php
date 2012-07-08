@@ -18,13 +18,33 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Sales
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Sales
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
+/**
+ * Enter description here ...
+ *
+ * @method Mage_Sales_Model_Resource_Order_Creditmemo_Comment _getResource()
+ * @method Mage_Sales_Model_Resource_Order_Creditmemo_Comment getResource()
+ * @method int getParentId()
+ * @method Mage_Sales_Model_Order_Creditmemo_Comment setParentId(int $value)
+ * @method int getIsCustomerNotified()
+ * @method Mage_Sales_Model_Order_Creditmemo_Comment setIsCustomerNotified(int $value)
+ * @method int getIsVisibleOnFront()
+ * @method Mage_Sales_Model_Order_Creditmemo_Comment setIsVisibleOnFront(int $value)
+ * @method string getComment()
+ * @method Mage_Sales_Model_Order_Creditmemo_Comment setComment(string $value)
+ * @method string getCreatedAt()
+ * @method Mage_Sales_Model_Order_Creditmemo_Comment setCreatedAt(string $value)
+ *
+ * @category    Mage
+ * @package     Mage_Sales
+ * @author      Magento Core Team <core@magentocommerce.com>
+ */
 class Mage_Sales_Model_Order_Creditmemo_Comment extends Mage_Sales_Model_Abstract
 {
     /**
@@ -75,5 +95,21 @@ class Mage_Sales_Model_Order_Creditmemo_Comment extends Mage_Sales_Model_Abstrac
             return $this->getCreditmemo()->getStore();
         }
         return Mage::app()->getStore();
+    }
+
+    /**
+     * Before object save
+     *
+     * @return Mage_Sales_Model_Order_Creditmemo_Comment
+     */
+    protected function _beforeSave()
+    {
+        parent::_beforeSave();
+
+        if (!$this->getParentId() && $this->getCreditmemo()) {
+            $this->setParentId($this->getCreditmemo()->getId());
+        }
+
+        return $this;
     }
 }

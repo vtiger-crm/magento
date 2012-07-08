@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -58,7 +58,7 @@ class Mage_Adminhtml_Block_System_Convert_Profile_Edit_Tab_Run extends Mage_Admi
         */
 
         $html .= $this->getLayout()->createBlock('adminhtml/widget_button')->setType('button')
-            ->setClass('save')->setLabel($this->__('Run Profile In Popup'))
+            ->setClass('save')->setLabel($this->__('Run Profile in Popup'))
             ->setOnClick('runProfile(true)')
             ->toHtml();
 
@@ -86,6 +86,7 @@ class Mage_Adminhtml_Block_System_Convert_Profile_Edit_Tab_Run extends Mage_Admi
                 $files[] = $entry;
             }
         }
+        sort($files);
         $dir->close();
         return $files;
     }
@@ -94,6 +95,6 @@ class Mage_Adminhtml_Block_System_Convert_Profile_Edit_Tab_Run extends Mage_Admi
     {
         $data = Mage::registry('current_convert_profile')->getGuiData();
         if ($data)
-        	return ($data['parse']['type'] == 'excel_xml') ? 'xml': $data['parse']['type'];
+            return ($data['parse']['type'] == 'excel_xml') ? 'xml': $data['parse']['type'];
     }
 }

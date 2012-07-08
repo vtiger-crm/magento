@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -44,6 +44,7 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
     const XML_PATH_USE_HTTP_VIA         = 'web/session/use_http_via';
     const XML_PATH_USE_X_FORWARDED      = 'web/session/use_http_x_forwarded_for';
     const XML_PATH_USE_USER_AGENT       = 'web/session/use_http_user_agent';
+    const XML_PATH_USE_FRONTEND_SID     = 'web/session/use_frontend_sid';
 
     const XML_NODE_USET_AGENT_SKIP      = 'global/session/validation/http_user_agent_skip';
     const XML_PATH_LOG_EXCEPTION_FILE   = 'dev/log/exception_file';
@@ -172,6 +173,17 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
     }
 
     /**
+     * Check whether SID can be used for session initialization
+     * Admin area will always have this feature enabled
+     *
+     * @return bool
+     */
+    public function useSid()
+    {
+        return Mage::app()->getStore()->isAdmin() || Mage::getStoreConfig(self::XML_PATH_USE_FRONTEND_SID);
+    }
+
+    /**
      * Retrieve skip User Agent validation strings (Flash etc)
      *
      * @return array
@@ -201,6 +213,7 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
         if ($clear) {
             $messages = clone $this->getData('messages');
             $this->getData('messages')->clear();
+            Mage::dispatchEvent('core_session_abstract_clear_messages');
             return $messages;
         }
         return $this->getData('messages');
@@ -236,6 +249,7 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
     public function addMessage(Mage_Core_Model_Message_Abstract $message)
     {
         $this->getMessages()->add($message);
+        Mage::dispatchEvent('core_session_abstract_add_message');
         return $this;
     }
 
@@ -304,6 +318,56 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
     }
 
     /**
+     * Adds messages array to message collection, but doesn't add duplicates to it
+     *
+     * @param   array|string|Mage_Core_Model_Message_Abstract $messages
+     * @return  Mage_Core_Model_Session_Abstract
+     */
+    public function addUniqueMessages($messages)
+    {
+        if (!is_array($messages)) {
+            $messages = array($messages);
+        }
+        if (!$messages) {
+            return $this;
+        }
+
+        $messagesAlready = array();
+        $items = $this->getMessages()->getItems();
+        foreach ($items as $item) {
+            if ($item instanceof Mage_Core_Model_Message_Abstract) {
+                $text = $item->getText();
+            } else if (is_string($item)) {
+                $text = $item;
+            } else {
+                continue; // Some unknown object, do not put it in already existing messages
+            }
+            $messagesAlready[$text] = true;
+        }
+
+        foreach ($messages as $message) {
+            if ($message instanceof Mage_Core_Model_Message_Abstract) {
+                $text = $message->getText();
+            } else if (is_string($message)) {
+                $text = $message;
+            } else {
+                $text = null; // Some unknown object, add it anyway
+            }
+
+            // Check for duplication
+            if ($text !== null) {
+                if (isset($messagesAlready[$text])) {
+                    continue;
+                }
+                $messagesAlready[$text] = true;
+            }
+            $this->addMessage($message);
+        }
+
+        return $this;
+    }
+
+    /**
      * Specify session identifier
      *
      * @param   string|null $id
@@ -311,9 +375,9 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
      */
     public function setSessionId($id=null)
     {
-        if (is_null($id)) {
+        if (is_null($id) && $this->useSid()) {
             $_queryParam = $this->getSessionIdQueryParam();
-            if (isset($_GET[$_queryParam])) {
+            if (isset($_GET[$_queryParam]) && Mage::getSingleton('core/url')->isOwnOriginUrl()) {
                 $id = $_GET[$_queryParam];
                 /**
                  * No reason use crypt key for session
@@ -475,7 +539,7 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
     }
 
     /**
-     * Get sesssion save path
+     * Get session save path
      *
      * @return string
      */
@@ -486,4 +550,18 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
         }
         return parent::getSessionSavePath();
     }
+
+    /**
+     * Renew session id and update session cookie
+     *
+     * @return Mage_Core_Model_Session_Abstract
+     */
+    public function renewSession()
+    {
+        $this->getCookie()->delete($this->getSessionName());
+        $this->regenerateSessionId();
+
+        return $this;
+    }
+
 }

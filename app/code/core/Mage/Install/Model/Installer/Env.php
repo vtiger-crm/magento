@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Install
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Install
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -70,15 +70,15 @@ class Mage_Install_Model_Installer_Env extends Mage_Install_Model_Installer_Abst
 
             if (!$oneLoaded) {
                 Mage::getSingleton('install/session')->addError(
-                    Mage::helper('install')->__('One from PHP Extensions "%s" must be loaded', implode(',', $extension))
+                    Mage::helper('install')->__('One of PHP Extensions "%s" must be loaded.', implode(',', $extension))
                 );
                 return false;
             }
         }
-        elseif(!extension_loaded($extension)) {
-                Mage::getSingleton('install/session')->addError(
-                    Mage::helper('install')->__('PHP Extension "%s" must be loaded', $extension)
-                );
+        elseif (!extension_loaded($extension)) {
+            Mage::getSingleton('install/session')->addError(
+                Mage::helper('install')->__('PHP extension "%s" must be loaded.', $extension)
+            );
             return false;
         }
         else {

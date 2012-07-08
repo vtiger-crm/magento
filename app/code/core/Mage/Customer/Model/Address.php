@@ -18,18 +18,18 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Customer
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Customer
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
- * Customer address
+ * Customer address model
  *
  * @category   Mage
  * @package    Mage_Customer
- * @author      Magento Core Team <core@magentocommerce.com>
+ * @author     Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Customer_Model_Address extends Mage_Customer_Model_Address_Abstract
 {
@@ -81,6 +81,18 @@ class Mage_Customer_Model_Address extends Mage_Customer_Model_Address_Abstract
     }
 
     /**
+     * Specify address customer
+     *
+     * @param Mage_Customer_Model_Customer $customer
+     */
+    public function setCustomer(Mage_Customer_Model_Customer $customer)
+    {
+        $this->_customer = $customer;
+        $this->setCustomerId($customer->getId());
+        return $this;
+    }
+
+    /**
      * Delete customer address
      *
      * @return Mage_Customer_Model_Address
@@ -112,5 +124,52 @@ class Mage_Customer_Model_Address extends Mage_Customer_Model_Address_Abstract
     public function __clone()
     {
         $this->setId(null);
+    }
+
+    /**
+     * Return Entity Type instance
+     *
+     * @return Mage_Eav_Model_Entity_Type
+     */
+    public function getEntityType()
+    {
+        return $this->_getResource()->getEntityType();
+    }
+
+    /**
+     * Return Entity Type ID
+     *
+     * @return int
+     */
+    public function getEntityTypeId()
+    {
+        $entityTypeId = $this->getData('entity_type_id');
+        if (!$entityTypeId) {
+            $entityTypeId = $this->getEntityType()->getId();
+            $this->setData('entity_type_id', $entityTypeId);
+        }
+        return $entityTypeId;
+    }
+    
+    /**
+     * Return Region ID
+     *
+     * @return int
+     */
+    public function getRegionId()
+    {
+        return (int)$this->getData('region_id');
+    }
+    
+    /**
+     * Set Region ID. $regionId is automatically converted to integer
+     *
+     * @param int $regionId
+     * @return Mage_Customer_Model_Address
+     */
+    public function setRegionId($regionId)
+    {
+        $this->setData('region_id', (int)$regionId);
+        return $this;
     }
 }

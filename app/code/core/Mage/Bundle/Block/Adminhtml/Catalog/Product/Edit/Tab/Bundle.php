@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -31,7 +31,8 @@
  * @package     Mage_Bundle
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle extends Mage_Adminhtml_Block_Widget implements Mage_Adminhtml_Block_Widget_Tab_Interface
+class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle extends Mage_Adminhtml_Block_Widget
+    implements Mage_Adminhtml_Block_Widget_Tab_Interface
 {
     protected $_product = null;
     public function __construct()
@@ -43,7 +44,7 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle extends Mage_A
 
     public function getTabUrl()
     {
-        return $this->getUrl('bundle/product_edit/form', array('_current' => true));
+        return $this->getUrl('*/bundle_product_edit/form', array('_current' => true));
     }
 
     public function getTabClass()
@@ -51,6 +52,11 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle extends Mage_A
         return 'ajax';
     }
 
+    /**
+     * Prepare layout
+     *
+     * @return Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle
+     */
     protected function _prepareLayout()
     {
         $this->setChild('add_button',
@@ -64,7 +70,8 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle extends Mage_A
         );
 
         $this->setChild('options_box',
-            $this->getLayout()->createBlock('bundle/adminhtml_catalog_product_edit_tab_bundle_option')
+            $this->getLayout()->createBlock('bundle/adminhtml_catalog_product_edit_tab_bundle_option',
+                'adminhtml.catalog.product.edit.tab.bundle.option')
         );
 
         return parent::_prepareLayout();

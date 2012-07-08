@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -137,7 +137,7 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle_Option_Search_
         $this->addColumn('qty', array(
             'filter'    => false,
             'sortable'  => false,
-            'header'    => Mage::helper('sales')->__('Qty To Add'),
+            'header'    => Mage::helper('sales')->__('Qty to Add'),
             'name'      => 'qty',
             'inline_css'=> 'qty',
             'align'     => 'right',
@@ -152,7 +152,7 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle_Option_Search_
 
     public function getGridUrl()
     {
-        return $this->getUrl('bundle/selection/grid', array('index' => $this->getIndex(), 'productss' => implode(',', $this->_getProducts())));
+        return $this->getUrl('*/bundle_selection/grid', array('index' => $this->getIndex(), 'productss' => implode(',', $this->_getProducts())));
     }
 
     protected function _getSelectedProducts()
@@ -177,12 +177,13 @@ class Mage_Bundle_Block_Adminhtml_Catalog_Product_Edit_Tab_Bundle_Option_Search_
         return Mage::app()->getStore();
     }
 
+    /**
+     * Retrieve array of allowed product types for bundle selection product
+     *
+     * @return array
+     */
     public function getAllowedSelectionTypes()
     {
-        $config = Mage::getConfig()->getNode('global/catalog/product/type/bundle')->asArray();
-        return array_keys($config['allowed_selection_types']);
+        return Mage::helper('bundle')->getAllowedSelectionTypes();
     }
-
-
 }
-

@@ -19,26 +19,27 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Rating
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Rating
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_Rating>
-            <version>0.7.2</version>
+            <version>1.6.0.0</version>
         </Mage_Rating>
     </modules>
     <global>
         <models>
             <rating>
                 <class>Mage_Rating_Model</class>
-                <resourceModel>rating_mysql4</resourceModel>
+                <resourceModel>rating_resource</resourceModel>
             </rating>
-            <rating_mysql4>
-                <class>Mage_Rating_Model_Mysql4</class>
+            <rating_resource>
+                <class>Mage_Rating_Model_Resource</class>
+                <deprecatedNode>rating_mysql4</deprecatedNode>
                 <entities>
                     <rating>
                         <table>rating</table>
@@ -55,9 +56,6 @@
                     <rating_option>
                         <table>rating_option</table>
                     </rating_option>
-                    <rating_vote>
-                        <table>rating_option_vote</table>
-                    </rating_vote>
                     <rating_option_vote>
                         <table>rating_option_vote</table>
                     </rating_option_vote>
@@ -65,32 +63,19 @@
                         <table>rating_option_vote_aggregated</table>
                     </rating_vote_aggregated>
                 </entities>
-            </rating_mysql4>
+            </rating_resource>
         </models>
         <resources>
             <rating_setup>
                 <setup>
                     <module>Mage_Rating</module>
                 </setup>
-                <connection>
-                    <use>core_setup</use>
-                </connection>
             </rating_setup>
-            <rating_write>
-                <connection>
-                    <use>core_write</use>
-                </connection>
-            </rating_write>
-            <rating_read>
-                <connection>
-                    <use>core_read</use>
-                </connection>
-            </rating_read>
         </resources>
         <blocks>
-                <rating>
-                    <class>Mage_Rating_Block</class>
-                </rating>
+            <rating>
+                <class>Mage_Rating_Block</class>
+            </rating>
         </blocks>
     </global>
     <frontend>
@@ -104,27 +89,7 @@
             </modules>
         </translate>
     </frontend>
-
     <adminhtml>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <catalog>
-                            <children>
-                                <reviews_ratings>
-                                    <children>
-                                        <ratings translate="title" module="rating">
-                                            <title>Manage Ratings</title>
-                                        </ratings>
-                                     </children>
-                                </reviews_ratings>
-                            </children>
-                        </catalog>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
         <translate>
             <modules>
                 <Mage_Rating>
@@ -134,5 +99,15 @@
                 </Mage_Rating>
             </modules>
         </translate>
+        <events>
+            <catalog_product_delete_after_done>
+                <observers>
+                    <rating>
+                        <class>rating/observer</class>
+                        <method>processProductAfterDeleteEvent</method>
+                    </rating>
+                </observers>
+            </catalog_product_delete_after_done>
+        </events>
     </adminhtml>
 </config>

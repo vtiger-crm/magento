@@ -14,16 +14,14 @@
  *
  * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ * @version    $Id: Object.php 22844 2010-08-16 15:38:53Z alexander $
  */
 
 
 /** Zend_Pdf_Element */
 #require_once 'Zend/Pdf/Element.php';
-
-/** Zend_Pdf_ElementFactory */
-#require_once 'Zend/Pdf/ElementFactory.php';
 
 
 /**
@@ -31,7 +29,7 @@
  *
  * @category   Zend
  * @package    Zend_Pdf
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Pdf_Element_Object extends Zend_Pdf_Element
@@ -76,14 +74,17 @@ class Zend_Pdf_Element_Object extends Zend_Pdf_Element
     public function __construct(Zend_Pdf_Element $val, $objNum, $genNum, Zend_Pdf_ElementFactory $factory)
     {
         if ($val instanceof self) {
-            throw new Zend_Pdf_Exception('Object number must not be instance of Zend_Pdf_Element_Object.');
+            #require_once 'Zend/Pdf/Exception.php';
+            throw new Zend_Pdf_Exception('Object number must not be an instance of Zend_Pdf_Element_Object.');
         }
 
         if ( !(is_integer($objNum) && $objNum > 0) ) {
+            #require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Object number must be positive integer.');
         }
 
         if ( !(is_integer($genNum) && $genNum >= 0) ) {
+            #require_once 'Zend/Pdf/Exception.php';
             throw new Zend_Pdf_Exception('Generation number must be non-negative integer.');
         }
 
@@ -92,7 +93,9 @@ class Zend_Pdf_Element_Object extends Zend_Pdf_Element
         $this->_genNum  = $genNum;
         $this->_factory = $factory;
 
-        $factory->registerObject($this);
+        $this->setParentObject($this);
+
+        $factory->registerObject($this, $objNum . ' ' . $genNum);
     }
 
 
@@ -205,22 +208,43 @@ class Zend_Pdf_Element_Object extends Zend_Pdf_Element
      */
     public function __call($method, $args)
     {
-        switch (count($args)) {
-            case 0:
-                return $this->_value->$method();
-            case 1:
-                return $this->_value->$method($args[0]);
-            case 2:
-                return $this->_value->$method($args[0], $args[1]);
-            case 3:
-                return $this->_value->$method($args[0], $args[1], $args[2]);
-            case 4:
-                return $this->_value->$method($args[0], $args[1], $args[2], $args[3]);
-            default:
-                throw new Zend_Pdf_Exception('Unsupported number of arguments');
-        }
+        return call_user_func_array(array($this->_value, $method), $args);
     }
 
+    /**
+     * Detach PDF object from the factory (if applicable), clone it and attach to new factory.
+     *
+     * @param Zend_Pdf_ElementFactory $factory  The factory to attach
+     * @param array &$processed  List of already processed indirect objects, used to avoid objects duplication
+     * @param integer $mode  Cloning mode (defines filter for objects cloning)
+     * @returns Zend_Pdf_Element
+     */
+    public function makeClone(Zend_Pdf_ElementFactory $factory, array &$processed, $mode)
+    {
+        $id = spl_object_hash($this);
+        if (isset($processed[$id])) {
+            // Do nothing if object is already processed
+            // return it
+            return $processed[$id];
+        }
+
+        // Create obect with null value and register it in $processed container
+        $processed[$id] = $clonedObject = $factory->newObject(new Zend_Pdf_Element_Null());
+
+        // Pecursively process actual data
+        $clonedObject->_value = $this->_value->makeClone($factory, $processed, $mode);
+
+        if ($clonedObject->_value instanceof Zend_Pdf_Element_Null) {
+            // Do not store null objects within $processed container since it may be filtered
+            // by $mode parameter but used in some future pass
+            unset($processed[$id]);
+
+            // Return direct null object
+            return $clonedObject->_value;
+        }
+
+        return $clonedObject;
+    }
 
     /**
      * Mark object as modified, to include it into new PDF file segment
@@ -228,6 +252,16 @@ class Zend_Pdf_Element_Object extends Zend_Pdf_Element
     public function touch()
     {
         $this->_factory->markAsModified($this);
+    }
+
+    /**
+     * Return object, which can be used to identify object and its references identity
+     *
+     * @return Zend_Pdf_Element_Object
+     */
+    public function getObject()
+    {
+        return $this;
     }
 
     /**

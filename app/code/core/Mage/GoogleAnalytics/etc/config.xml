@@ -19,25 +19,28 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleAnalytics
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleAnalytics
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
     <modules>
         <Mage_GoogleAnalytics>
-            <version>0.7.0</version>
+            <version>1.6.0.0</version>
         </Mage_GoogleAnalytics>
     </modules>
-
     <global>
         <models>
-            <googleanalytics><class>Mage_GoogleAnalytics_Model</class></googleanalytics>
+            <googleanalytics>
+                <class>Mage_GoogleAnalytics_Model</class>
+            </googleanalytics>
         </models>
         <blocks>
-            <googleanalytics><class>Mage_GoogleAnalytics_Block</class></googleanalytics>
+            <googleanalytics>
+                <class>Mage_GoogleAnalytics_Block</class>
+            </googleanalytics>
         </blocks>
         <helpers>
             <googleanalytics>
@@ -45,7 +48,6 @@
             </googleanalytics>
         </helpers>
     </global>
-
     <frontend>
         <translate>
             <modules>
@@ -60,12 +62,27 @@
             <checkout_onepage_controller_success_action>
                 <observers>
                     <googleanalytics_order_success>
-                        <type>singleton</type>
                         <class>googleanalytics/observer</class>
-                        <method>order_success_page_view</method>
+                        <method>setGoogleAnalyticsOnOrderSuccessPageView</method>
                     </googleanalytics_order_success>
                 </observers>
             </checkout_onepage_controller_success_action>
+            <checkout_multishipping_controller_success_action>
+                <observers>
+                    <googleanalytics_order_success>
+                        <class>googleanalytics/observer</class>
+                        <method>setGoogleAnalyticsOnOrderSuccessPageView</method>
+                    </googleanalytics_order_success>
+                </observers>
+            </checkout_multishipping_controller_success_action>
+            <googlecheckout_block_link_html_before>
+                <observers>
+                    <googleanalytics_googlecheckout_integration>
+                        <class>googleanalytics/observer</class>
+                        <method>injectAnalyticsInGoogleCheckoutLink</method>
+                    </googleanalytics_googlecheckout_integration>
+                </observers>
+            </googlecheckout_block_link_html_before>
         </events>
         <layout>
             <updates>
@@ -75,7 +92,6 @@
             </updates>
         </layout>
     </frontend>
-
     <adminhtml>
         <translate>
             <modules>
@@ -86,24 +102,5 @@
                 </Mage_GoogleAnalytics>
             </modules>
         </translate>
-        <acl>
-            <resources>
-                <admin>
-                    <children>
-                        <system>
-                            <children>
-                                <config>
-                                    <children>
-                                        <google translate="title" module="googleanalytics">
-                                            <title>Google API</title>
-                                        </google>
-                                    </children>
-                                </config>
-                            </children>
-                        </system>
-                    </children>
-                </admin>
-            </resources>
-        </acl>
     </adminhtml>
 </config>

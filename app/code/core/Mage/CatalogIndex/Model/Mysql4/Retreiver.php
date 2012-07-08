@@ -18,35 +18,20 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogIndex
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
+
 
 /**
  * Index type retreiver resource model
  *
- * @author Magento Core Team <core@magentocommerce.com>
+ * @category    Mage
+ * @package     Mage_CatalogIndex
+ * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_CatalogIndex_Model_Mysql4_Retreiver extends Mage_Core_Model_Mysql4_Abstract
+class Mage_CatalogIndex_Model_Mysql4_Retreiver extends Mage_CatalogIndex_Model_Resource_Retreiver
 {
-    protected function _construct()
-    {
-        $this->_init('catalog/product', 'entity_id');
-    }
-
-    /**
-     * Return id-type pairs
-     *
-     * @param array $ids
-     * @return array
-     */
-    public function getProductTypes($ids)
-    {
-        $select = $this->_getReadAdapter()->select()
-            ->from(array('main_table'=>$this->getTable('catalog/product')), array('id'=>'main_table.entity_id', 'type'=>'main_table.type_id'))
-            ->where('main_table.entity_id in (?)', $ids);
-        return $this->_getReadAdapter()->fetchAll($select);
-    }
 }

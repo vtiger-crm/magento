@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -52,7 +52,7 @@ class Mage_Adminhtml_Sales_Order_View_GiftmessageController extends Mage_Adminht
         } catch (Mage_Core_Exception $e) {
             $this->_getSession()->addError($e->getMessage());
         } catch (Exception $e) {
-            $this->_getSession()->addError(Mage::helper('giftmessage')->__('Error while saving gift message'));
+            $this->_getSession()->addError(Mage::helper('giftmessage')->__('An error occurred while saving the gift message.'));
         }
 
         if($this->getRequest()->getParam('type')=='order_item') {
@@ -61,7 +61,7 @@ class Mage_Adminhtml_Sales_Order_View_GiftmessageController extends Mage_Adminht
             );
         } else {
             $this->getResponse()->setBody(
-                Mage::helper('giftmessage')->__('Gift message has been successfully saved')
+                Mage::helper('giftmessage')->__('The gift message has been saved.')
             );
         }
     }

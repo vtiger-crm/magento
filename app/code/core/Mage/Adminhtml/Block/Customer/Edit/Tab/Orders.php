@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -44,26 +44,19 @@ class Mage_Adminhtml_Block_Customer_Edit_Tab_Orders extends Mage_Adminhtml_Block
 
     protected function _prepareCollection()
     {
-        //TODO: add full name logic
-        $collection = Mage::getResourceModel('sales/order_collection')
-            ->addAttributeToSelect('increment_id')
-            ->addAttributeToSelect('created_at')
-            ->addAttributeToSelect('grand_total')
-            ->addAttributeToSelect('order_currency_code')
-            ->addAttributeToSelect('store_id')
-            ->joinAttribute('billing_firstname', 'order_address/firstname', 'billing_address_id', null, 'left')
-            ->joinAttribute('billing_lastname', 'order_address/lastname', 'billing_address_id', null, 'left')
-            ->joinAttribute('shipping_firstname', 'order_address/firstname', 'shipping_address_id', null, 'left')
-            ->joinAttribute('shipping_lastname', 'order_address/lastname', 'shipping_address_id', null, 'left')
-            ->addExpressionAttributeToSelect('billing_name',
-                'CONCAT({{billing_firstname}}, " ", {{billing_lastname}})',
-                array('billing_firstname', 'billing_lastname'))
-            ->addExpressionAttributeToSelect('shipping_name',
-                'CONCAT({{shipping_firstname}}, " ", {{shipping_lastname}})',
-                array('shipping_firstname', 'shipping_lastname'))
+        $collection = Mage::getResourceModel('sales/order_grid_collection')
+            ->addFieldToSelect('entity_id')
+            ->addFieldToSelect('increment_id')
+            ->addFieldToSelect('customer_id')
+            ->addFieldToSelect('created_at')
+            ->addFieldToSelect('grand_total')
+            ->addFieldToSelect('order_currency_code')
+            ->addFieldToSelect('store_id')
+            ->addFieldToSelect('billing_name')
+            ->addFieldToSelect('shipping_name')
+            ->addFieldToFilter('customer_id', Mage::registry('current_customer')->getId())
+            ->setIsCustomerMode(true);
 
-            ->addAttributeToFilter('customer_id', Mage::registry('current_customer')->getEntityId())
-        ;
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
@@ -117,13 +110,15 @@ class Mage_Adminhtml_Block_Customer_Edit_Tab_Orders extends Mage_Adminhtml_Block
             ));
         }
 
-        $this->addColumn('action', array(
-            'header'    => ' ',
-            'filter'    => false,
-            'sortable'  => false,
-            'width'     => '100px',
-            'renderer'  => 'adminhtml/sales_reorder_renderer_action'
-        ));
+        if (Mage::helper('sales/reorder')->isAllow()) {
+            $this->addColumn('action', array(
+                'header'    => ' ',
+                'filter'    => false,
+                'sortable'  => false,
+                'width'     => '100px',
+                'renderer'  => 'adminhtml/sales_reorder_renderer_action'
+            ));
+        }
 
         return parent::_prepareColumns();
     }

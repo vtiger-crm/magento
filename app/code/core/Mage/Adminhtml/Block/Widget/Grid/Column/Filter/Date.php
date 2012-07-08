@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -74,9 +74,33 @@ class Mage_Adminhtml_Block_Widget_Grid_Column_Filter_Date extends Mage_Adminhtml
                 align : "Bl",
                 singleClick : true
             });
+
+            $("'.$htmlId.'_to_trig").observe("click", showCalendar);
+            $("'.$htmlId.'_from_trig").observe("click", showCalendar);
+
+            function showCalendar(event){
+                var element = event.element(event);
+                var offset = $(element).viewportOffset();
+                var scrollOffset = $(element).cumulativeScrollOffset();
+                var dimensionsButton = $(element).getDimensions();
+                var index = $("widget-chooser").getStyle("zIndex");
+
+                $$("div.calendar").each(function(item){
+                    if ($(item).visible()) {
+                        var dimensionsCalendar = $(item).getDimensions();
+
+                        $(item).setStyle({
+                            "zIndex" : index + 1,
+                            "left" : offset[0] + scrollOffset[0] - dimensionsCalendar.width + dimensionsButton.width + "px",
+                            "top" : offset[1] + scrollOffset[1] + dimensionsButton.height + "px"
+                        });
+                    };
+                });
+            };
         </script>';
         return $html;
     }
+
     public function getEscapedValue($index=null)
     {
         $value = $this->getValue($index);

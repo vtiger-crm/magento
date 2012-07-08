@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -81,16 +81,27 @@ class Mage_Catalog_Block_Product_View_Options_Type_Date extends Mage_Catalog_Blo
      */
     public function getCalendarDateHtml()
     {
-        // $require = $this->getOption()->getIsRequire() ? ' required-entry' : '';
+        $option = $this->getOption();
+        $value = $this->getProduct()->getPreconfiguredValues()->getData('options/' . $option->getId() . '/date');
+
+        //$require = $this->getOption()->getIsRequire() ? ' required-entry' : '';
         $require = '';
+
+        $yearStart = Mage::getSingleton('catalog/product_option_type_date')->getYearStart();
+        $yearEnd = Mage::getSingleton('catalog/product_option_type_date')->getYearEnd();
+
         $calendar = $this->getLayout()
             ->createBlock('core/html_date')
             ->setId('options_'.$this->getOption()->getId().'_date')
             ->setName('options['.$this->getOption()->getId().'][date]')
             ->setClass('product-custom-option datetime-picker input-text' . $require)
-            ->setImage(Mage::getDesign()->getSkinUrl('images/grid-cal.gif'))
-            ->setExtraParams('onchange="opConfig.reloadPrice()"')
-            ->setFormat(Mage::app()->getLocale()->getDateStrFormat(Mage_Core_Model_Locale::FORMAT_TYPE_SHORT));
+            ->setImage($this->getSkinUrl('images/calendar.gif'))
+            ->setFormat(Mage::app()->getLocale()->getDateStrFormat(Mage_Core_Model_Locale::FORMAT_TYPE_SHORT))
+            ->setValue($value)
+            ->setYearsRange('[' . $yearStart . ', ' . $yearEnd . ']');
+        if (!$this->getSkipJsReloadPrice()) {
+            $calendar->setExtraParams('onchange="opConfig.reloadPrice()"');
+        }
 
         return $calendar->getHtml();
     }
@@ -102,23 +113,23 @@ class Mage_Catalog_Block_Product_View_Options_Type_Date extends Mage_Catalog_Blo
      */
     public function getDropDownsDateHtml()
     {
-        $_fieldsSeparator = '&nbsp;';
-        $_fieldsOrder = Mage::getSingleton('catalog/product_option_type_date')->getConfigData('date_fields_order');
-        $_fieldsOrder = str_replace(',', $_fieldsSeparator, $_fieldsOrder);
+        $fieldsSeparator = '&nbsp;';
+        $fieldsOrder = Mage::getSingleton('catalog/product_option_type_date')->getConfigData('date_fields_order');
+        $fieldsOrder = str_replace(',', $fieldsSeparator, $fieldsOrder);
 
         $monthsHtml = $this->_getSelectFromToHtml('month', 1, 12);
         $daysHtml = $this->_getSelectFromToHtml('day', 1, 31);
 
-        $_yearStart = Mage::getSingleton('catalog/product_option_type_date')->getYearStart();
-        $_yearEnd = Mage::getSingleton('catalog/product_option_type_date')->getYearEnd();
-        $yearsHtml = $this->_getSelectFromToHtml('year', $_yearStart, $_yearEnd);
+        $yearStart = Mage::getSingleton('catalog/product_option_type_date')->getYearStart();
+        $yearEnd = Mage::getSingleton('catalog/product_option_type_date')->getYearEnd();
+        $yearsHtml = $this->_getSelectFromToHtml('year', $yearStart, $yearEnd);
 
-        $_translations = array(
+        $translations = array(
             'd' => $daysHtml,
             'm' => $monthsHtml,
             'y' => $yearsHtml
         );
-        return strtr($_fieldsOrder, $_translations);
+        return strtr($fieldsOrder, $translations);
     }
 
     /**
@@ -178,16 +189,29 @@ class Mage_Catalog_Block_Product_View_Options_Type_Date extends Mage_Catalog_Blo
      */
     protected function _getHtmlSelect($name, $value = null)
     {
+        $option = $this->getOption();
+
         // $require = $this->getOption()->getIsRequire() ? ' required-entry' : '';
         $require = '';
         $select = $this->getLayout()->createBlock('core/html_select')
             ->setId('options_' . $this->getOption()->getId() . '_' . $name)
             ->setClass('product-custom-option datetime-picker' . $require)
-            ->setExtraParams('style="width:auto;" onchange="opConfig.reloadPrice()"')
-            ->setName('options[' . $this->getOption()->getId() . '][' . $name . ']');
+            ->setExtraParams()
+            ->setName('options[' . $option->getId() . '][' . $name . ']');
+
+        $extraParams = 'style="width:auto"';
+        if (!$this->getSkipJsReloadPrice()) {
+            $extraParams .= ' onchange="opConfig.reloadPrice()"';
+        }
+        $select->setExtraParams($extraParams);
+
+        if (is_null($value)) {
+            $value = $this->getProduct()->getPreconfiguredValues()->getData('options/' . $option->getId() . '/' . $name);
+        }
         if (!is_null($value)) {
             $select->setValue($value);
         }
+
         return $select;
     }
 

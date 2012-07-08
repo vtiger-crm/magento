@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Catalog
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -40,9 +40,9 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
         $this->_storeIdSessionField = 'product_store_id';
     }
 
-    public function info($productId)
+    public function info($productId, $identifierType = null)
     {
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
         $tierPrices = $product->getData(self::ATTRIBUTE_CODE);
 
         if (!is_array($tierPrices)) {
@@ -54,7 +54,10 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
         foreach ($tierPrices as $tierPrice) {
             $row = array();
             $row['customer_group_id'] = (empty($tierPrice['all_groups']) ? $tierPrice['cust_group'] : 'all' );
-            $row['website']           = ($tierPrice['website_id'] ? Mage::app()->getWebsite($tierPrice['website_id'])->getCode() : 'all');
+            $row['website']           = ($tierPrice['website_id'] ?
+                            Mage::app()->getWebsite($tierPrice['website_id'])->getCode() :
+                            'all'
+                    );
             $row['qty']               = $tierPrice['price_qty'];
             $row['price']             = $tierPrice['price'];
 
@@ -64,9 +67,57 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
         return $result;
     }
 
-    public function update($productId, $tierPrices)
+    /**
+     * Update tier prices of product
+     *
+     * @param int|string $productId
+     * @param array $tierPrices
+     * @return boolean
+     */
+    public function update($productId, $tierPrices, $identifierType = null)
     {
-        $product = $this->_initProduct($productId);
+        $product = $this->_initProduct($productId, $identifierType);
+
+        $updatedTierPrices = $this->prepareTierPrices($product, $tierPrices);
+        if (is_null($updatedTierPrices)) {
+            $this->_fault('data_invalid', Mage::helper('catalog')->__('Invalid Tier Prices'));
+        }
+
+        $product->setData(self::ATTRIBUTE_CODE, $updatedTierPrices);
+        try {
+            /**
+             * @todo implement full validation process with errors returning which are ignoring now
+             * @todo see Mage_Catalog_Model_Product::validate()
+             */
+            if (is_array($errors = $product->validate())) {
+                $strErrors = array();
+                foreach($errors as $code=>$error) {
+                    $strErrors[] = ($error === true)? Mage::helper('catalog')->__('Value for "%s" is invalid.', $code) : Mage::helper('catalog')->__('Value for "%s" is invalid: %s', $code, $error);
+                }
+                $this->_fault('data_invalid', implode("\n", $strErrors));
+            }
+
+            $product->save();
+        } catch (Mage_Core_Exception $e) {
+            $this->_fault('not_updated', $e->getMessage());
+        }
+
+        return true;
+    }
+
+    /**
+     *  Prepare tier prices for save
+     *
+     *  @param      Mage_Catalog_Model_Product $product
+     *  @param      array $tierPrices
+     *  @return     array
+     */
+    public function prepareTierPrices($product, $tierPrices = null)
+    {
+        if (!is_array($tierPrices)) {
+            return null;
+        }
+
         if (!is_array($tierPrices)) {
             $this->_fault('data_invalid', Mage::helper('catalog')->__('Invalid Tier Prices'));
         }
@@ -90,6 +141,10 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
                 }
             }
 
+            if (intval($tierPrice['website']) > 0 && !in_array($tierPrice['website'], $product->getWebsiteIds())) {
+                $this->_fault('data_invalid', Mage::helper('catalog')->__('Invalid tier prices. The product is not associated to the requested website.'));
+            }
+
             if (!isset($tierPrice['customer_group_id'])) {
                 $tierPrice['customer_group_id'] = 'all';
             }
@@ -104,27 +159,9 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
                 'price_qty'  => $tierPrice['qty'],
                 'price'      => $tierPrice['price']
             );
-
         }
 
-
-        try {
-            if (is_array($errors = $product->validate())) {
-                $this->_fault('data_invalid', implode("\n", $errors));
-            }
-        } catch (Mage_Core_Exception $e) {
-            $this->_fault('data_invalid', $e->getMessage());
-        }
-
-        try {
-        	$product->setData(self::ATTRIBUTE_CODE ,$updateValue);
-            $product->validate();
-            $product->save();
-        } catch (Mage_Core_Exception $e) {
-            $this->_fault('not_updated', $e->getMessage());
-        }
-
-        return true;
+        return $updateValue;
     }
 
     /**
@@ -132,22 +169,12 @@ class Mage_Catalog_Model_Product_Attribute_Tierprice_Api extends Mage_Catalog_Mo
      *
      * @param int $productId
      * @param string|int $store
+     * @param  string $identifierType
      * @return Mage_Catalog_Model_Product
      */
-    protected function _initProduct($productId)
+    protected function _initProduct($productId, $identifierType = null)
     {
-        $product = Mage::getModel('catalog/product')
-                       ->setStoreId($this->_getStoreId());
-
-        $idBySku = $product->getIdBySku($productId);
-        if ($idBySku) {
-            $productId = $idBySku;
-        }
-
-        $product->load($productId);
-
-        /* @var $product Mage_Catalog_Model_Product */
-
+        $product = Mage::helper('catalog/product')->getProduct($productId, $this->_getStoreId($store), $identifierType);
         if (!$product->getId()) {
             $this->_fault('product_not_exists');
         }

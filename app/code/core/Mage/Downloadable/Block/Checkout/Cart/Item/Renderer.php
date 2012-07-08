@@ -20,7 +20,7 @@
  *
  * @category    Mage
  * @package     Mage_Downloadable
- * @copyright   Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -35,23 +35,13 @@ class Mage_Downloadable_Block_Checkout_Cart_Item_Renderer extends Mage_Checkout_
 {
 
     /**
-     * Enter description here...
+     * Retrieves item links options
      *
      * @return array
      */
     public function getLinks()
     {
-        $itemLinks = array();
-        if ($linkIds = $this->getItem()->getOptionByCode('downloadable_link_ids')) {
-            $productLinks = $this->getProduct()->getTypeInstance(true)
-                ->getLinks($this->getProduct());
-            foreach (explode(',', $linkIds->getValue()) as $linkId) {
-                if (isset($productLinks[$linkId])) {
-                    $itemLinks[] = $productLinks[$linkId];
-                }
-            }
-        }
-        return $itemLinks;
+        return Mage::helper('downloadable/catalog_product_configuration')->getLinks($this->getItem());
     }
 
     /**
@@ -61,10 +51,6 @@ class Mage_Downloadable_Block_Checkout_Cart_Item_Renderer extends Mage_Checkout_
      */
     public function getLinksTitle()
     {
-        if ($this->getProduct()->getLinksTitle()) {
-            return $this->getProduct()->getLinksTitle();
-        }
-        return Mage::getStoreConfig(Mage_Downloadable_Model_Link::XML_PATH_LINKS_TITLE);
+        return Mage::helper('downloadable/catalog_product_configuration')->getLinksTitle($this->getProduct());
     }
-
 }

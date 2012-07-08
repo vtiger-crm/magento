@@ -18,33 +18,38 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Tax
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Tax
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
 class Mage_Tax_Model_Class_Source_Product extends Mage_Eav_Model_Entity_Attribute_Source_Abstract
 {
-	public function getAllOptions($withEmpty = false)
-	{
-		if (is_null($this->_options)) {
-			$this->_options = Mage::getResourceModel('tax/class_collection')
-        		->addFieldToFilter('class_type', 'PRODUCT')
-        		->load()
-        		->toOptionArray();
-		}
+    /**
+     * Get all options
+     *
+     * @return array
+     */
+    public function getAllOptions($withEmpty = false)
+    {
+        if (is_null($this->_options)) {
+            $this->_options = Mage::getResourceModel('tax/class_collection')
+                ->addFieldToFilter('class_type', Mage_Tax_Model_Class::TAX_CLASS_TYPE_PRODUCT)
+                ->load()
+                ->toOptionArray();
+        }
 
-		$options = $this->_options;
+        $options = $this->_options;
         array_unshift($options, array('value'=>'0', 'label'=>Mage::helper('tax')->__('None')));
         if ($withEmpty) {
             array_unshift($options, array('value'=>'', 'label'=>Mage::helper('tax')->__('-- Please Select --')));
         }
         return $options;
-	}
+    }
 
-	/**
+    /**
      * Get a text for option value
      *
      * @param string|integer $value
@@ -62,31 +67,44 @@ class Mage_Tax_Model_Class_Source_Product extends Mage_Eav_Model_Entity_Attribut
         return false;
     }
 
-	public function toOptionArray()
-	{
-		return $this->getAllOptions();
-	}
+    /**
+     * Convert to options array
+     *
+     * @return array
+     */
+    public function toOptionArray()
+    {
+        return $this->getAllOptions();
+    }
 
     /**
-     * Get Column(s) names for flat data building
+     * Retrieve flat column definition
      *
      * @return array
      */
     public function getFlatColums()
     {
-        $columns = array();
-        $columns[$this->getAttribute()->getAttributeCode()] = array(
-            'type'      => 'int',
-            'unsigned'  => false,
-            'is_null'   => true,
+        $attributeCode = $this->getAttribute()->getAttributeCode();
+        $column = array(
+            'unsigned'  => true,
             'default'   => null,
             'extra'     => null
         );
-        return $columns;
+
+        if (Mage::helper('core')->useDbCompatibleMode()) {
+            $column['type']     = 'int';
+            $column['is_null']  = true;
+        } else {
+            $column['type']     = Varien_Db_Ddl_Table::TYPE_INTEGER;
+            $column['nullable'] = true;
+            $column['comment']  = $attributeCode . ' tax column';
+        }
+
+        return array($attributeCode => $column);
    }
 
     /**
-     * Retrieve Select for update Attribute value in flat table
+     * Retrieve Select for update attribute value in flat table
      *
      * @param   int $store
      * @return  Varien_Db_Select|null

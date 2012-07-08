@@ -19,10 +19,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Wishlist
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category    Mage
+ * @package     Mage_Wishlist
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -37,7 +37,7 @@
             <show_in_store>1</show_in_store>
             <groups>
                 <email translate="label">
-                    <label>Share options</label>
+                    <label>Share Options</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>2</sort_order>
                     <show_in_default>1</show_in_default>
@@ -83,6 +83,24 @@
                         </active>
                     </fields>
                 </general>
+                <wishlist_link translate="label">
+                    <label>My Wishlist Link</label>
+                    <sort_order>3</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <use_qty translate="label">
+                            <label>Display Wishlist Summary</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>wishlist/config_source_summary</source_model>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </use_qty>
+                    </fields>
+                </wishlist_link>
             </groups>
         </wishlist>
     </sections>

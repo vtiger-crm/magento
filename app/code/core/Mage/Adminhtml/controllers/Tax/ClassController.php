@@ -18,17 +18,17 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
  * Adminhtml common tax class controller
  *
- * @category   Mage
- * @package    Mage_Adminhtml
+ * @category    Mage
+ * @package     Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
 class Mage_Adminhtml_Tax_ClassController extends Mage_Adminhtml_Controller_Action
@@ -40,8 +40,11 @@ class Mage_Adminhtml_Tax_ClassController extends Mage_Adminhtml_Controller_Actio
     public function saveAction()
     {
         if ($postData = $this->getRequest()->getPost()) {
-            $model = Mage::getModel('tax/class')
-                ->setData($postData);
+
+            //filtering
+            $postData['class_name'] = Mage::helper('adminhtml')->stripTags($postData['class_name']);
+
+            $model = Mage::getModel('tax/class')->setData($postData);
 
             try {
                 $model->save();
@@ -49,24 +52,28 @@ class Mage_Adminhtml_Tax_ClassController extends Mage_Adminhtml_Controller_Actio
                 $classType  = $model->getClassType();
                 $classUrl   = '*/tax_class_' . strtolower($classType);
 
-                Mage::getSingleton('adminhtml/session')->addSuccess(Mage::helper('tax')->__('Tax class was successfully saved'));
+                Mage::getSingleton('adminhtml/session')->addSuccess(
+                    Mage::helper('tax')->__('The tax class has been saved.')
+                );
                 $this->_redirect($classUrl);
 
                 return ;
-            }
-            catch (Mage_Core_Exception $e) {
+            } catch (Mage_Core_Exception $e) {
                 Mage::getSingleton('adminhtml/session')->addError($e->getMessage());
                 Mage::getSingleton('adminhtml/session')->setClassData($postData);
                 $this->_redirectReferer();
-            }
-            catch (Exception $e) {
-                Mage::getSingleton('adminhtml/session')->addError(Mage::helper('tax')->__('Error while saving this tax class. Please try again later.'));
+            } catch (Exception $e) {
+                Mage::getSingleton('adminhtml/session')->addError(
+                    Mage::helper('tax')->__('An error occurred while saving this tax class.')
+                );
                 Mage::getSingleton('adminhtml/session')->setClassData($postData);
                 $this->_redirectReferer();
             }
 
             $this->_redirectReferer();
+            return;
         }
+        $this->getResponse()->setRedirect($this->getUrl('*/tax_class'));
     }
 
     /**
@@ -84,5 +91,16 @@ class Mage_Adminhtml_Tax_ClassController extends Mage_Adminhtml_Controller_Actio
         ;
 
         return $this;
+    }
+
+    /**
+     * Check current user permission on resource and privilege
+     *
+     * @return bool
+     */
+    protected function _isAllowed()
+    {
+        return Mage::getSingleton('admin/session')->isAllowed('sales/tax/classes_product')
+            || Mage::getSingleton('admin/session')->isAllowed('sales/tax/classes_customer');
     }
 }

@@ -15,9 +15,9 @@
  * @category   Zend
  * @package    Zend_Db
  * @subpackage Profiler
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id: Query.php 9101 2008-03-30 19:54:38Z thomas $
+ * @version    $Id: Query.php 23382 2010-11-18 22:50:50Z bittarman $
  */
 
 
@@ -25,7 +25,7 @@
  * @category   Zend
  * @package    Zend_Db
  * @subpackage Profiler
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Db_Profiler_Query
@@ -194,6 +194,20 @@ class Zend_Db_Profiler_Query
         }
 
         return $this->_endedMicrotime - $this->_startedMicrotime;
+    }
+
+    /**
+     * Get the time (in seconds) when the profiler started running.
+     *
+     * @return bool|float
+     */
+    public function getStartedMicrotime()
+    {
+        if(null === $this->_startedMicrotime) {
+            return false;
+        }
+
+        return $this->_startedMicrotime;
     }
 }
 

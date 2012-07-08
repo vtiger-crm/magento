@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Bundle
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Bundle
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -47,4 +47,53 @@ class Mage_Bundle_Block_Catalog_Product_Price extends Mage_Catalog_Block_Product
         return (floatval($defaultTax) > 0 || floatval($currentTax) > 0);
     }
 
+    /**
+     * Check if we have display prices including and excluding tax
+     * With corrections for Dynamic prices
+     *
+     * @return bool
+     */
+    public function displayBothPrices()
+    {
+        $product = $this->getProduct();
+        if ($product->getPriceType() == Mage_Bundle_Model_Product_Price::PRICE_TYPE_DYNAMIC &&
+            $product->getPriceModel()->getIsPricesCalculatedByIndex() !== false) {
+            return false;
+        }
+        return $this->helper('tax')->displayBothPrices();
+    }
+
+    /**
+     * Convert block to html string
+     *
+     * @return string
+     */
+    protected function _toHtml()
+    {
+        $product = $this->getProduct();
+        if ($this->getMAPTemplate() && Mage::helper('catalog')->canApplyMsrp($product)
+                && $product->getPriceType() != Mage_Bundle_Model_Product_Price::PRICE_TYPE_DYNAMIC
+        ) {
+            $hiddenPriceHtml = parent::_toHtml();
+            if (Mage::helper('catalog')->isShowPriceOnGesture($product)) {
+                $this->setWithoutPrice(true);
+            }
+            $realPriceHtml = parent::_toHtml();
+            $this->unsWithoutPrice();
+            $addToCartUrl  = $this->getLayout()->getBlock('product.info.bundle')->getAddToCartUrl($product);
+            $product->setAddToCartUrl($addToCartUrl);
+            $html = $this->getLayout()
+                ->createBlock('catalog/product_price')
+                ->setTemplate($this->getMAPTemplate())
+                ->setRealPriceHtml($hiddenPriceHtml)
+                ->setPriceElementIdPrefix('bundle-price-')
+                ->setIdSuffix($this->getIdSuffix())
+                ->setProduct($product)
+                ->toHtml();
+
+            return $realPriceHtml . $html;
+        }
+
+        return parent::_toHtml();
+    }
 }

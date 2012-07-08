@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -32,8 +32,50 @@
  * @package    Mage_Adminhtml
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions extends Mage_Adminhtml_Block_Widget_Form
+class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions
+    extends Mage_Adminhtml_Block_Widget_Form
+    implements Mage_Adminhtml_Block_Widget_Tab_Interface
 {
+    /**
+     * Prepare content for tab
+     *
+     * @return string
+     */
+    public function getTabLabel()
+    {
+        return Mage::helper('salesrule')->__('Actions');
+    }
+
+    /**
+     * Prepare title for tab
+     *
+     * @return string
+     */
+    public function getTabTitle()
+    {
+        return Mage::helper('salesrule')->__('Actions');
+    }
+
+    /**
+     * Returns status flag about this tab can be showen or not
+     *
+     * @return true
+     */
+    public function canShowTab()
+    {
+        return true;
+    }
+
+    /**
+     * Returns status flag about this tab hidden or not
+     *
+     * @return true
+     */
+    public function isHidden()
+    {
+        return false;
+    }
+
     protected function _prepareForm()
     {
         $model = Mage::registry('current_promo_quote_rule');
@@ -49,23 +91,23 @@ class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions extends Mage_Adminhtml_B
             'label'     => Mage::helper('salesrule')->__('Apply'),
             'name'      => 'simple_action',
             'options'    => array(
-                'by_percent' => Mage::helper('salesrule')->__('Percent of product price discount'),
-                'by_fixed' => Mage::helper('salesrule')->__('Fixed amount discount'),
-                'cart_fixed' => Mage::helper('salesrule')->__('Fixed amount discount for whole cart'),
-                'buy_x_get_y' => Mage::helper('salesrule')->__('Buy X get Y free (discount amount is Y)'),
+                Mage_SalesRule_Model_Rule::BY_PERCENT_ACTION => Mage::helper('salesrule')->__('Percent of product price discount'),
+                Mage_SalesRule_Model_Rule::BY_FIXED_ACTION => Mage::helper('salesrule')->__('Fixed amount discount'),
+                Mage_SalesRule_Model_Rule::CART_FIXED_ACTION => Mage::helper('salesrule')->__('Fixed amount discount for whole cart'),
+                Mage_SalesRule_Model_Rule::BUY_X_GET_Y_ACTION => Mage::helper('salesrule')->__('Buy X get Y free (discount amount is Y)'),
             ),
         ));
         $fieldset->addField('discount_amount', 'text', array(
             'name' => 'discount_amount',
             'required' => true,
             'class' => 'validate-not-negative-number',
-            'label' => Mage::helper('salesrule')->__('Discount amount'),
+            'label' => Mage::helper('salesrule')->__('Discount Amount'),
         ));
         $model->setDiscountAmount($model->getDiscountAmount()*1);
 
         $fieldset->addField('discount_qty', 'text', array(
             'name' => 'discount_qty',
-            'label' => Mage::helper('salesrule')->__('Maximum Qty Discount is Applied to'),
+            'label' => Mage::helper('salesrule')->__('Maximum Qty Discount is Applied To'),
         ));
         $model->setDiscountQty($model->getDiscountQty()*1);
 
@@ -74,9 +116,16 @@ class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions extends Mage_Adminhtml_B
             'label' => Mage::helper('salesrule')->__('Discount Qty Step (Buy X)'),
         ));
 
+        $fieldset->addField('apply_to_shipping', 'select', array(
+            'label'     => Mage::helper('salesrule')->__('Apply to Shipping Amount'),
+            'title'     => Mage::helper('salesrule')->__('Apply to Shipping Amount'),
+            'name'      => 'apply_to_shipping',
+            'values'    => Mage::getSingleton('adminhtml/system_config_source_yesno')->toOptionArray(),
+        ));
+
         $fieldset->addField('simple_free_shipping', 'select', array(
-            'label'     => Mage::helper('salesrule')->__('Free shipping'),
-            'title'     => Mage::helper('salesrule')->__('Free shipping'),
+            'label'     => Mage::helper('salesrule')->__('Free Shipping'),
+            'title'     => Mage::helper('salesrule')->__('Free Shipping'),
             'name'      => 'simple_free_shipping',
             'options'    => array(
                 0 => Mage::helper('salesrule')->__('No'),
@@ -86,8 +135,8 @@ class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions extends Mage_Adminhtml_B
         ));
 
         $fieldset->addField('stop_rules_processing', 'select', array(
-            'label'     => Mage::helper('salesrule')->__('Stop further rules processing'),
-            'title'     => Mage::helper('salesrule')->__('Stop further rules processing'),
+            'label'     => Mage::helper('salesrule')->__('Stop Further Rules Processing'),
+            'title'     => Mage::helper('salesrule')->__('Stop Further Rules Processing'),
             'name'      => 'stop_rules_processing',
             'options'    => array(
                 '1' => Mage::helper('salesrule')->__('Yes'),
@@ -105,10 +154,12 @@ class Mage_Adminhtml_Block_Promo_Quote_Edit_Tab_Actions extends Mage_Adminhtml_B
 
         $fieldset->addField('actions', 'text', array(
             'name' => 'actions',
-            'label' => Mage::helper('salesrule')->__('Apply to'),
-            'title' => Mage::helper('salesrule')->__('Apply to'),
+            'label' => Mage::helper('salesrule')->__('Apply To'),
+            'title' => Mage::helper('salesrule')->__('Apply To'),
             'required' => true,
         ))->setRule($model)->setRenderer(Mage::getBlockSingleton('rule/actions'));
+
+        Mage::dispatchEvent('adminhtml_block_salesrule_actions_prepareform', array('form' => $form));
 
         $form->setValues($model->getData());
 

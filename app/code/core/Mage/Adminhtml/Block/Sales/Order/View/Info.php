@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -39,7 +39,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Info extends Mage_Adminhtml_Block_Sa
     protected function _beforeToHtml()
     {
         if (!$this->getParentBlock()) {
-            Mage::throwException(Mage::helper('adminhtml')->__('Invalid parrent block for this block'));
+            Mage::throwException(Mage::helper('adminhtml')->__('Invalid parent block for this block.'));
         }
         $this->setOrder($this->getParentBlock()->getOrder());
 
@@ -55,7 +55,8 @@ class Mage_Adminhtml_Block_Sales_Order_View_Info extends Mage_Adminhtml_Block_Sa
         if ($this->getOrder()) {
             $storeId = $this->getOrder()->getStoreId();
             if (is_null($storeId)) {
-                return nl2br($this->getOrder()->getStoreName());
+                $deleted = Mage::helper('adminhtml')->__(' [deleted]');
+                return nl2br($this->getOrder()->getStoreName()) . $deleted;
             }
             $store = Mage::app()->getStore($storeId);
             $name = array(
@@ -78,7 +79,7 @@ class Mage_Adminhtml_Block_Sales_Order_View_Info extends Mage_Adminhtml_Block_Sa
 
     public function getCustomerViewUrl()
     {
-        if ($this->getOrder()->getCustomerIsGuest()) {
+        if ($this->getOrder()->getCustomerIsGuest() || !$this->getOrder()->getCustomerId()) {
             return false;
         }
         return $this->getUrl('*/customer/edit', array('id' => $this->getOrder()->getCustomerId()));
@@ -87,5 +88,77 @@ class Mage_Adminhtml_Block_Sales_Order_View_Info extends Mage_Adminhtml_Block_Sa
     public function getViewUrl($orderId)
     {
         return $this->getUrl('*/sales_order/view', array('order_id'=>$orderId));
+    }
+
+    /**
+     * Find sort order for account data
+     * Sort Order used as array key
+     *
+     * @param array $data
+     * @param int $sortOrder
+     * @return int
+     */
+    protected function _prepareAccountDataSortOrder(array $data, $sortOrder)
+    {
+        if (isset($data[$sortOrder])) {
+            return $this->_prepareAccountDataSortOrder($data, $sortOrder + 1);
+        }
+        return $sortOrder;
+    }
+
+    /**
+     * Return array of additional account data
+     * Value is option style array
+     *
+     * @return array
+     */
+    public function getCustomerAccountData()
+    {
+        $accountData = array();
+
+        /* @var $config Mage_Eav_Model_Config */
+        $config     = Mage::getSingleton('eav/config');
+        $entityType = 'customer';
+        $customer   = Mage::getModel('customer/customer');
+        foreach ($config->getEntityAttributeCodes($entityType) as $attributeCode) {
+            /* @var $attribute Mage_Customer_Model_Attribute */
+            $attribute = $config->getAttribute($entityType, $attributeCode);
+            if (!$attribute->getIsVisible() || $attribute->getIsSystem()) {
+                continue;
+            }
+            $orderKey   = sprintf('customer_%s', $attribute->getAttributeCode());
+            $orderValue = $this->getOrder()->getData($orderKey);
+            if ($orderValue != '') {
+                $customer->setData($attribute->getAttributeCode(), $orderValue);
+                $dataModel  = Mage_Customer_Model_Attribute_Data::factory($attribute, $customer);
+                $value      = $dataModel->outputValue(Mage_Customer_Model_Attribute_Data::OUTPUT_FORMAT_HTML);
+                $sortOrder  = $attribute->getSortOrder() + $attribute->getIsUserDefined() ? 200 : 0;
+                $sortOrder  = $this->_prepareAccountDataSortOrder($accountData, $sortOrder);
+                $accountData[$sortOrder] = array(
+                    'label' => $attribute->getFrontendLabel(),
+                    'value' => $this->escapeHtml($value, array('br'))
+                );
+            }
+        }
+
+        ksort($accountData, SORT_NUMERIC);
+
+        return $accountData;
+    }
+
+    /**
+     * Get link to edit order address page
+     *
+     * @param Mage_Sales_Model_Order_Address $address
+     * @param string $label
+     * @return string
+     */
+    public function getAddressEditLink($address, $label='')
+    {
+        if (empty($label)) {
+            $label = $this->__('Edit');
+        }
+        $url = $this->getUrl('*/sales_order/address', array('address_id'=>$address->getId()));
+        return '<a href="'.$url.'">' . $label . '</a>';
     }
 }

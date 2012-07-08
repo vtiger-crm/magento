@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -43,14 +43,13 @@ class Mage_Adminhtml_Block_Dashboard_Orders_Grid extends Mage_Adminhtml_Block_Da
 
     protected function _prepareCollection()
     {
-        //TODO: add full name logic
+        if (!Mage::helper('core')->isModuleEnabled('Mage_Reports')) {
+            return $this;
+        }
         $collection = Mage::getResourceModel('reports/order_collection')
             ->addItemCountExpr()
-            ->addExpressionAttributeToSelect('customer',
-                "IFNULL(CONCAT({{customer_firstname}},' ',{{customer_lastname}}), '{$this->__('Guest')}')",
-                array('customer_firstname','customer_lastname')
-            )
-            ->setOrder('created_at');
+            ->joinCustomerName('customer')
+            ->orderByCreatedAt();
 
         if($this->getParam('store') || $this->getParam('website') || $this->getParam('group')) {
             if ($this->getParam('store')) {
@@ -63,13 +62,9 @@ class Mage_Adminhtml_Block_Dashboard_Orders_Grid extends Mage_Adminhtml_Block_Da
                 $collection->addAttributeToFilter('store_id', array('in' => $storeIds));
             }
 
-            $collection->addExpressionAttributeToSelect('revenue',
-                '({{base_grand_total}})',
-                array('base_grand_total'));
+            $collection->addRevenueToSelect();
         } else {
-            $collection->addExpressionAttributeToSelect('revenue',
-                '({{base_grand_total}}/{{store_to_base_rate}})',
-                array('base_grand_total', 'store_to_base_rate'));
+            $collection->addRevenueToSelect(true);
         }
 
         $this->setCollection($collection);
@@ -77,17 +72,30 @@ class Mage_Adminhtml_Block_Dashboard_Orders_Grid extends Mage_Adminhtml_Block_Da
         return parent::_prepareCollection();
     }
 
+    /**
+     * Prepares page sizes for dashboard grid with las 5 orders
+     *
+     * @return void
+     */
+    protected function _preparePage()
+    {
+        $this->getCollection()->setPageSize($this->getParam($this->getVarNameLimit(), $this->_defaultLimit));
+        // Remove count of total orders $this->getCollection()->setCurPage($this->getParam($this->getVarNamePage(), $this->_defaultPage));
+    }
+
     protected function _prepareColumns()
     {
         $this->addColumn('customer', array(
             'header'    => $this->__('Customer'),
             'sortable'  => false,
-            'index'     => 'customer'
+            'index'     => 'customer',
+            'default'   => $this->__('Guest'),
         ));
 
         $this->addColumn('items', array(
             'header'    => $this->__('Items'),
             'align'     => 'right',
+            'type'      => 'number',
             'sortable'  => false,
             'index'     => 'items_count'
         ));

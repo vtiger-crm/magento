@@ -14,9 +14,9 @@
  *
  * @category  Zend
  * @package   Zend_Validate
- * @copyright Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
- * @version   $Id: $
+ * @version   $Id: NotExists.php 20352 2010-01-17 17:55:38Z thomas $
  */
 
 /**
@@ -29,7 +29,7 @@
  *
  * @category  Zend
  * @package   Zend_Validate
- * @copyright Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
  */
 class Zend_Validate_File_NotExists extends Zend_Validate_File_Exists
@@ -43,7 +43,7 @@ class Zend_Validate_File_NotExists extends Zend_Validate_File_Exists
      * @var array Error message templates
      */
     protected $_messageTemplates = array(
-        self::DOES_EXIST => "The file '%value%' does exist"
+        self::DOES_EXIST => "File '%value%' exists",
     );
 
     /**

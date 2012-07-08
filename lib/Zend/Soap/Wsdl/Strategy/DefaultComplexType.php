@@ -15,11 +15,25 @@
  * @category   Zend
  * @package    Zend_Soap
  * @subpackage Wsdl
- * @copyright  Copyright (c) 2005-2008 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
- * @version    $Id$
+ * @version    $Id: DefaultComplexType.php 22674 2010-07-25 19:35:20Z ramon $
  */
 
+/**
+ * @see Zend_Soap_Wsdl_Strategy_Abstract
+ */
+#require_once "Zend/Soap/Wsdl/Strategy/Abstract.php";
+
+/**
+ * Zend_Soap_Wsdl_Strategy_DefaultComplexType
+ *
+ * @category   Zend
+ * @package    Zend_Soap
+ * @subpackage Wsdl
+ * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license    http://framework.zend.com/license/new-bsd     New BSD License
+ */
 class Zend_Soap_Wsdl_Strategy_DefaultComplexType extends Zend_Soap_Wsdl_Strategy_Abstract
 {
     /**
@@ -41,21 +55,29 @@ class Zend_Soap_Wsdl_Strategy_DefaultComplexType extends Zend_Soap_Wsdl_Strategy
         $dom = $this->getContext()->toDomDocument();
         $class = new ReflectionClass($type);
 
+        $defaultProperties = $class->getDefaultProperties();
+
         $complexType = $dom->createElement('xsd:complexType');
         $complexType->setAttribute('name', $type);
 
         $all = $dom->createElement('xsd:all');
 
         foreach ($class->getProperties() as $property) {
-            if (preg_match_all('/@var\s+([^\s]+)/m', $property->getDocComment(), $matches)) {
+            if ($property->isPublic() && preg_match_all('/@var\s+([^\s]+)/m', $property->getDocComment(), $matches)) {
 
                 /**
                  * @todo check if 'xsd:element' must be used here (it may not be compatible with using 'complexType'
                  * node for describing other classes used as attribute types for current class
                  */
                 $element = $dom->createElement('xsd:element');
-                $element->setAttribute('name', $property->getName());
+                $element->setAttribute('name', $propertyName = $property->getName());
                 $element->setAttribute('type', $this->getContext()->getType(trim($matches[1][0])));
+
+                // If the default value is null, then this property is nillable.
+                if ($defaultProperties[$propertyName] === null) {
+                    $element->setAttribute('nillable', 'true');
+                }
+
                 $all->appendChild($element);
             }
         }

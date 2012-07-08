@@ -12,14 +12,24 @@
  * obtain it through the world-wide-web, please send an email
  * to license@magentocommerce.com so we can send you a copy immediately.
  *
- * @category   Mage
- * @package    Mage_Catalog
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade Magento to newer
+ * versions in the future. If you wish to customize Magento for your
+ * needs please refer to http://www.magentocommerce.com for more information.
+ *
+ * @category    Mage
+ * @package     Mage_Weee
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 class Mage_Weee_Model_Attribute_Backend_Weee_Tax extends Mage_Catalog_Model_Product_Attribute_Backend_Price
 {
+    public static function getBackendModelName()
+    {
+        return 'weee/attribute_backend_weee_tax';
+    }
     /**
      * Retrieve resource model
      *
@@ -27,7 +37,7 @@ class Mage_Weee_Model_Attribute_Backend_Weee_Tax extends Mage_Catalog_Model_Prod
      */
     protected function _getResource()
     {
-        return Mage::getResourceSingleton('weee/attribute_backend_weee_tax');
+        return Mage::getResourceSingleton(self::getBackendModelName());
     }
 
     /**
@@ -139,3 +149,4 @@ class Mage_Weee_Model_Attribute_Backend_Weee_Tax extends Mage_Catalog_Model_Prod
         return $this->_getResource()->getTable('weee/tax');
     }
 }
+

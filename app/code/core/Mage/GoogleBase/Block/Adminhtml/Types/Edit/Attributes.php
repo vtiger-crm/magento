@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_GoogleBase
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_GoogleBase
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -82,8 +82,8 @@ class Mage_GoogleBase_Block_Adminhtml_Types_Edit_Attributes extends Mage_Adminht
         }
 
         $select = $this->getLayout()->createBlock('adminhtml/html_select')
-            ->setId($this->getFieldId().'_{{index}}_gattribute')
-            ->setName($this->getFieldName().'[{{index}}][gbase_attribute]')
+            ->setId($this->getFieldId() . '_{{index}}_gattribute')
+            ->setName($this->getFieldName() . '[{{index}}][gbase_attribute]')
             ->setOptions($options);
         return $select->getHtml();
     }
@@ -97,8 +97,8 @@ class Mage_GoogleBase_Block_Adminhtml_Types_Edit_Attributes extends Mage_Adminht
     public function getAttributesSelectHtml($escapeJsQuotes = false)
     {
         $select = $this->getLayout()->createBlock('adminhtml/html_select')
-            ->setId($this->getFieldId().'_{{index}}_attribute')
-            ->setName($this->getFieldName().'[{{index}}][attribute_id]')
+            ->setId($this->getFieldId() . '_{{index}}_attribute')
+            ->setName($this->getFieldName() . '[{{index}}][attribute_id]')
             ->setOptions($this->_getAttributes($this->getAttributeSetId(), $escapeJsQuotes));
         return $select->getHtml();
     }
@@ -135,6 +135,6 @@ class Mage_GoogleBase_Block_Adminhtml_Types_Edit_Attributes extends Mage_Adminht
 
     protected function _toJson($data)
     {
-        return Zend_Json::encode($data);
+        return Mage::helper('core')->jsonEncode($data);
     }
 }

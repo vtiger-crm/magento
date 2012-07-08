@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Adminhtml
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Adminhtml
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -41,17 +41,5 @@ class Mage_Adminhtml_Block_Catalog_Category_Edit extends Mage_Adminhtml_Block_Wi
 
         parent::__construct();
         $this->setTemplate('catalog/category/edit.phtml');
-    }
-
-    protected function _prepareLayout()
-    {
-        $category = Mage::registry('current_category');
-        if (Mage::app()->getConfig()->getModuleConfig('Mage_GoogleOptimizer')->is('active', true)
-            && Mage::helper('googleoptimizer')->isOptimizerActive($category->getStoreId())) {
-            $this->setChild('googleoptimizer_js',
-                $this->getLayout()->createBlock('googleoptimizer/js')->setTemplate('googleoptimizer/js.phtml')
-            );
-        }
-        return parent::_prepareLayout();
     }
 }

@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_Core
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_Core
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -41,11 +41,39 @@ class Mage_Core_Block_Messages extends Mage_Core_Block_Template
     protected $_messages;
 
     /**
+     * Store first level html tag name for messages html output
+     *
+     * @var string
+     */
+    protected $_messagesFirstLevelTagName = 'ul';
+
+    /**
+     * Store second level html tag name for messages html output
+     *
+     * @var string
+     */
+    protected $_messagesSecondLevelTagName = 'li';
+
+    /**
+     * Store content wrapper html tag name for messages html output
+     *
+     * @var string
+     */
+    protected $_messagesContentWrapperTagName = 'span';
+
+    /**
      * Flag which require message text escape
      *
      * @var bool
      */
     protected $_escapeMessageFlag = false;
+
+    /**
+     * Storage for used types of message storages
+     *
+     * @var array
+     */
+    protected $_usedStorageTypes = array('core/session');
 
     public function _prepareLayout()
     {
@@ -182,13 +210,13 @@ class Mage_Core_Block_Messages extends Mage_Core_Block_Template
      */
     public function getHtml($type=null)
     {
-        $html = '<ul id="admin_messages">';
+        $html = '<' . $this->_messagesFirstLevelTagName . ' id="admin_messages">';
         foreach ($this->getMessages($type) as $message) {
-            $html.= '<li class="'.$message->getType().'-msg">'
+            $html.= '<' . $this->_messagesSecondLevelTagName . ' class="'.$message->getType().'-msg">'
                 . ($this->_escapeMessageFlag) ? $this->htmlEscape($message->getText()) : $message->getText()
-                . '</li>';
+                . '</' . $this->_messagesSecondLevelTagName . '>';
         }
-        $html .= '</ul>';
+        $html .= '</' . $this->_messagesFirstLevelTagName . '>';
         return $html;
     }
 
@@ -210,22 +238,24 @@ class Mage_Core_Block_Messages extends Mage_Core_Block_Template
         foreach ($types as $type) {
             if ( $messages = $this->getMessages($type) ) {
                 if ( !$html ) {
-                    $html .= '<ul class="messages">';
+                    $html .= '<' . $this->_messagesFirstLevelTagName . ' class="messages">';
                 }
-                $html .= '<li class="' . $type . '-msg">';
-                $html .= '<ul>';
+                $html .= '<' . $this->_messagesSecondLevelTagName . ' class="' . $type . '-msg">';
+                $html .= '<' . $this->_messagesFirstLevelTagName . '>';
 
                 foreach ( $messages as $message ) {
-                    $html.= '<li>';
+                    $html.= '<' . $this->_messagesSecondLevelTagName . '>';
+                    $html.= '<' . $this->_messagesContentWrapperTagName . '>';
                     $html.= ($this->_escapeMessageFlag) ? $this->htmlEscape($message->getText()) : $message->getText();
-                    $html.= '</li>';
+                    $html.= '</' . $this->_messagesContentWrapperTagName . '>';
+                    $html.= '</' . $this->_messagesSecondLevelTagName . '>';
                 }
-                $html .= '</ul>';
-                $html .= '</li>';
+                $html .= '</' . $this->_messagesFirstLevelTagName . '>';
+                $html .= '</' . $this->_messagesSecondLevelTagName . '>';
             }
         }
         if ( $html) {
-            $html .= '</ul>';
+            $html .= '</' . $this->_messagesFirstLevelTagName . '>';
         }
         return $html;
     }
@@ -233,5 +263,47 @@ class Mage_Core_Block_Messages extends Mage_Core_Block_Template
     protected function _toHtml()
     {
         return $this->getGroupedHtml();
+    }
+
+    /**
+     * Set messages first level html tag name for output messages as html
+     *
+     * @param string $tagName
+     */
+    public function setMessagesFirstLevelTagName($tagName)
+    {
+        $this->_messagesFirstLevelTagName = $tagName;
+    }
+
+    /**
+     * Set messages first level html tag name for output messages as html
+     *
+     * @param string $tagName
+     */
+    public function setMessagesSecondLevelTagName($tagName)
+    {
+        $this->_messagesSecondLevelTagName = $tagName;
+    }
+
+    /**
+     * Get cache key informative items
+     *
+     * @return array
+     */
+    public function getCacheKeyInfo()
+    {
+        return array(
+            'storage_types' => serialize($this->_usedStorageTypes)
+        );
+    }
+
+    /**
+     * Add used storage type
+     *
+     * @param string $type
+     */
+    public function addStorageType($type)
+    {
+        $this->_usedStorageTypes[] = $type;
     }
 }

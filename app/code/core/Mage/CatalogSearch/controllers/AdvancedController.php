@@ -18,10 +18,10 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category   Mage
- * @package    Mage_CatalogSearch
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @category    Mage
+ * @package     Mage_CatalogSearch
+ * @copyright   Copyright (c) 2011 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -48,7 +48,11 @@ class Mage_CatalogSearch_AdvancedController extends Mage_Core_Controller_Front_A
             Mage::getSingleton('catalogsearch/advanced')->addFilters($this->getRequest()->getQuery());
         } catch (Mage_Core_Exception $e) {
             Mage::getSingleton('catalogsearch/session')->addError($e->getMessage());
-            $this->_redirectError(Mage::getURL('*/*/'));
+            $this->_redirectError(
+                Mage::getModel('core/url')
+                    ->setQueryParams($this->getRequest()->getQuery())
+                    ->getUrl('*/*/')
+            );
         }
         $this->_initLayoutMessages('catalog/session');
         $this->renderLayout();
